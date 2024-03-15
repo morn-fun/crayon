@@ -4,22 +4,14 @@ import '../node/basic_node.dart';
 import 'basic_command.dart';
 
 class ModifyNode implements BasicCommand {
-  final EditingCursor oldCursor;
-  final EditingCursor newCursor;
+  final EditingCursor cursor;
   final EditorNode node;
+  final bool record;
 
-  ModifyNode(this.oldCursor, this.newCursor, this.node, {this.old});
-
-  EditorNode? old;
-
-  @override
-  void execute(RichEditorController controller) {
-    old ??= controller.getNode(newCursor.index)!;
-    controller.update(UpdateData(node, newCursor));
-  }
+  ModifyNode(this.cursor, this.node, {this.record = true});
 
   @override
-  void undo(RichEditorController controller) {
-    controller.update(UpdateData(old!, oldCursor));
+  void run(RichEditorController controller) {
+    controller.update(UpdateOne(node, cursor, cursor.index), record: record);
   }
 }

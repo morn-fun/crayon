@@ -14,7 +14,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   final RichEditorController controller;
 
-  final ValueChanged<CommandIfRecord> onCommand;
+  final ValueChanged<BasicCommand> onCommand;
 
   BasicCursor get cursor => controller.cursor;
 
@@ -63,11 +63,9 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   @override
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
     if (cursor is NoneCursor) return;
-    logger.i(
-        '$_tag, updateEditingValueWithDeltas : length ${textEditingDeltas.last}');
     final last = textEditingDeltas.last;
     final noComposing = last.composing == TextRange.empty;
-    CommandIfRecord? commandIfRecord = generateCommand(last, controller);
+    BasicCommand? command = generateCommand(last, controller);
     if ((last is TextEditingDeltaNonTextUpdate) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing)) {
@@ -76,7 +74,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     } else {
       _typing = true;
     }
-    if (commandIfRecord != null) onCommand.call(commandIfRecord);
+    if (command != null) onCommand.call(command);
   }
 
   void restartInput() {

@@ -3,26 +3,20 @@ import 'package:flutter/material.dart';
 import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/command_exception.dart';
-import 'command_invoker.dart';
 import 'controller.dart';
 import 'input_manager.dart';
 import 'logger.dart';
 
 class EditorContext {
   final RichEditorController controller;
-  final CommandInvoker invoker;
   final InputManager inputManager;
   final FocusNode focusNode;
 
-  EditorContext(
-      this.controller, this.inputManager, this.invoker, this.focusNode);
+  EditorContext(this.controller, this.inputManager, this.focusNode);
 
-  void execute(
-    BasicCommand command, {
-    bool record = true,
-  }) {
+  void execute(BasicCommand command) {
     try {
-      invoker.execute(command, controller, record: record);
+      controller.execute(command);
     } on PerformCommandException catch (e) {
       logger.e('$e');
     }
@@ -30,7 +24,7 @@ class EditorContext {
 
   void undo() {
     try {
-      invoker.undo(controller);
+      controller.undo();
     } on PerformCommandException catch (e) {
       logger.e('undo $e');
     }
@@ -38,7 +32,7 @@ class EditorContext {
 
   void redo() {
     try {
-      invoker.redo(controller);
+      controller.redo();
     } on PerformCommandException catch (e) {
       logger.e('redo $e');
     }

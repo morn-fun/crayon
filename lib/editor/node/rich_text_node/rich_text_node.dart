@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
-import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
 import '../../widget/rich_text_widget.dart';
@@ -11,14 +10,21 @@ import '../basic_node.dart';
 import 'rich_text_span.dart';
 
 class RichTextNode extends EditorNode<RichTextNodePosition> {
+  ///there must be at least one span in [spans]
   final UnmodifiableListView<RichTextSpan> spans;
 
-  RichTextNode._(this.spans, {super.id});
+  RichTextNode._(List<RichTextSpan> spans, {super.id})
+      : spans = _buildInitSpans(spans);
 
-  RichTextNode.empty() : spans = UnmodifiableListView([]);
+  RichTextNode.empty({super.id}) : spans = _buildInitSpans([]);
 
-  RichTextNode.from(List<RichTextSpan> spans)
-      : spans = UnmodifiableListView(spans);
+  RichTextNode.from(List<RichTextSpan> spans) : spans = _buildInitSpans(spans);
+
+  static UnmodifiableListView<RichTextSpan> _buildInitSpans(
+      List<RichTextSpan> spans) {
+    if (spans.isEmpty) return UnmodifiableListView([RichTextSpan()]);
+    return UnmodifiableListView(spans);
+  }
 
   TextSpan get textSpan => TextSpan(
       children:
@@ -39,7 +45,7 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
         textSpans.add(span.buildSpan());
         continue;
       }
-      if(left.index == right.index) {
+      if (left.index == right.index) {
         textSpans.addAll(span.buildSelectingSpan(left.offset, right.offset));
         continue;
       }
@@ -49,7 +55,6 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       if (i == right.index) {
         textSpans.addAll(span.buildSelectingSpan(0, right.offset));
       }
-
     }
     return TextSpan(children: textSpans);
   }
@@ -66,12 +71,6 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   RichTextNode merge(EditorNode other, {String? newId}) {
     if (other is! RichTextNode) {
       throw UnableToMergeException(runtimeType, other.runtimeType);
-    }
-    if (other.spans.isEmpty) {
-      return RichTextNode._(spans, id: newId ?? id);
-    }
-    if (spans.isEmpty) {
-      return RichTextNode._(other.spans, id: newId ?? other.id);
     }
     final copySpans = List.of(spans);
     int offset = copySpans.last.endOffset;
@@ -100,17 +99,18 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   Map<String, dynamic> toJson() =>
       {'nodes': spans.map((e) => e.toJson()).toList()};
 
+  String get text => spans.map((e) => e.text).join(',');
+
   @override
   RichTextNodePosition get beginPosition => RichTextNodePosition.zero();
 
   @override
-  RichTextNodePosition get endPosition => spans.isEmpty
-      ? RichTextNodePosition.zero()
-      : RichTextNodePosition(spans.length - 1, spans.last.textLength);
+  RichTextNodePosition get endPosition =>
+      RichTextNodePosition(spans.length - 1, spans.last.textLength);
 
   @override
   Widget build(EditorContext context, int index) =>
-      RichTextWidget(context, this, index, key: ValueKey(id));
+      RichTextWidget(context, this, index);
 
   RichTextNode insert(int index, RichTextSpan span) {
     final copySpans = List.of(spans);
@@ -143,19 +143,6 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   RichTextNode replace(RichTextNodePosition begin, RichTextNodePosition end,
       List<RichTextSpan> spans,
       {String? newId}) {
-    if (this.spans.isEmpty && spans.isEmpty) {
-      return RichTextNode._(this.spans, id: newId ?? id);
-    }
-    if (this.spans.isEmpty) {
-      final copySpans = <RichTextSpan>[];
-      int offset = 0;
-      for (var span in spans) {
-        copySpans.add(span.copy(offset: to(offset)));
-        offset += copySpans.last.textLength;
-      }
-      return RichTextNode._(UnmodifiableListView(copySpans), id: newId ?? id);
-    }
-
     RichTextNodePosition left = begin.lowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.lowerThan(end) ? end : begin;
 
@@ -211,13 +198,15 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   RichTextNode getFromPosition(
       RichTextNodePosition begin, RichTextNodePosition end,
       {String? newId}) {
-    assert(begin != end);
+    if (begin == end) {
+      return RichTextNode.empty(id: newId ?? id);
+    }
     RichTextNodePosition left = begin.lowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.lowerThan(end) ? end : begin;
     if (left.sameIndex(right)) {
       final span = spans[left.index].copy(
           offset: to(0), text: (v) => v.substring(left.offset, right.offset));
-      return RichTextNode._(UnmodifiableListView([span]), id: id);
+      return RichTextNode._(UnmodifiableListView([span]), id: newId ?? id);
     } else {
       final beginIndex = left.index;
       final endIndex = right.index;

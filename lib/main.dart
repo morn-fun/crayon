@@ -8,7 +8,7 @@ void main() {
   runApp(const MyApp());
 }
 
-RichTextNode _node = RichTextNode.from([RichTextSpan(text: 'asdhjkashd啊是空间的哈瞌睡的卡还是打卡还是多看哈书')]);
+RichTextNode _node = RichTextNode.from([RichTextSpan(text: 'aaabbb')]);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

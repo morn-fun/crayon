@@ -45,8 +45,7 @@ void main() {
       assert(currentSpan.offset == node1.getSpan(i - 1).endOffset);
     }
 
-    expect(() => newNode.frontPartNode(newNode.beginPosition),
-        throwsA(const TypeMatcher<AssertionError>()));
+    assert(newNode.frontPartNode(newNode.beginPosition).spans.length == 1);
 
     final node2 = newNode.frontPartNode(RichTextNodePosition(1, 0));
     assert(node2.spans.length == 2);
@@ -73,8 +72,7 @@ void main() {
       assert(currentSpan.offset == node1.getSpan(i - 1).endOffset);
     }
 
-    expect(() => newNode.rearPartNode(newNode.endPosition),
-        throwsA(const TypeMatcher<AssertionError>()));
+    assert(newNode.rearPartNode(newNode.endPosition).spans.length == 1);
 
     final node2 =
         node1.rearPartNode(RichTextNodePosition(node1.spans.length - 1, 0));
@@ -191,7 +189,6 @@ void main() {
     const newId = '111';
     final node1 = newNode
         .replace(newNode.beginPosition, newNode.endPosition, [], newId: newId);
-    assert(node1.spans.isEmpty);
     assert(node1.id == newId);
     assert(newNode.id != newId);
     var offset = 0;
@@ -255,6 +252,6 @@ void main() {
 
     final node7 = RichTextNode.empty()
         .replace(RichTextNodePosition.zero(), RichTextNodePosition.zero(), []);
-    assert(node7.spans.isEmpty);
+    assert(node7.spans.length == 1);
   });
 }

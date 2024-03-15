@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pre_editor/editor/exception/command_exception.dart';
 
-import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
 import '../core/input_manager.dart';
@@ -21,7 +20,6 @@ class RichEditor extends StatefulWidget {
 class _RichEditorPageState extends State<RichEditor> {
   late RichEditorController controller;
   late InputManager inputManager;
-  late CommandInvoker commandInvoker;
   late EditorContext editorContext;
 
   final focusNode = FocusNode();
@@ -32,16 +30,16 @@ class _RichEditorPageState extends State<RichEditor> {
   void initState() {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
-    commandInvoker = CommandInvoker();
+
     inputManager = InputManager(controller, (c) {
       try {
-        commandInvoker.execute(c.command, controller, record: c.record);
+        controller.execute(c);
       } on PerformCommandException catch (e) {
         logger.e('$e');
       }
     });
     inputManager.startInput();
-    editorContext = EditorContext(controller, inputManager, commandInvoker, focusNode);
+    editorContext = EditorContext(controller, inputManager, focusNode);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
     controller.addNodesChangedCallback(refresh);
@@ -56,7 +54,6 @@ class _RichEditorPageState extends State<RichEditor> {
     super.dispose();
     inputManager.dispose();
     controller.dispose();
-    commandInvoker.dispose();
     focusNode.removeListener(_onFocusChanged);
   }
 
@@ -82,7 +79,9 @@ class _RichEditorPageState extends State<RichEditor> {
           child: ListView.builder(
               itemBuilder: (ctx, index) {
                 var current = nodes[index];
-                return current.build(editorContext, index);
+                return Container(
+                    key: ValueKey(current.id),
+                    child: current.build(editorContext, index));
               },
               itemCount: nodes.length),
         ),

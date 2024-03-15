@@ -11,20 +11,14 @@ class DeleteWhileEditing implements BasicCommand{
 
   DeleteWhileEditing(this.cursor);
 
-  late EditorNode _oldNode;
 
   @override
-  void execute(RichEditorController controller) {
+  void run(RichEditorController controller) {
     try {
-      _oldNode = controller.getNode(cursor.index)!;
+
     } on DeleteRequiresNewLineException{
 
     }
-  }
-
-  @override
-  void undo(RichEditorController controller) {
-    // TODO: implement undo
   }
 
 }
@@ -33,7 +27,7 @@ class Deletion implements BasicCommand{
 
 
   @override
-  void execute(RichEditorController controller) {
+  void run(RichEditorController controller) {
     // TODO: implement execute
   }
 
