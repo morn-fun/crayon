@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
 
 import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
@@ -17,12 +16,13 @@ class RichEditorController {
   final _tag = 'RichEditorController';
 
   final List<EditorNode> _nodes = [];
-  final List<UndoCommand> _undoCommands = [];
+  final List<UpdateCommand> _undoCommands = [];
   final List<UpdateCommand> _redoCommands = [];
   BasicCursor _cursor = NoneCursor();
 
   final Set<ValueChanged<BasicCursor>> _cursorChangedCallbacks = {};
   final Set<VoidCallback> _nodesChangedCallbacks = {};
+  final Set<ValueChanged<Offset>> _onPanUpdateCallbacks = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeChangedCallbacks = {};
 
   void addCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
@@ -30,14 +30,21 @@ class RichEditorController {
 
   void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) {
     _cursorChangedCallbacks.remove(callback);
-    // logger.i('$_tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
+    logger.i(
+        '$_tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
   }
 
   void addNodesChangedCallback(VoidCallback callback) =>
       _nodesChangedCallbacks.add(callback);
 
+  void addPanUpdateCallback(ValueChanged<Offset> callback) =>
+      _onPanUpdateCallbacks.add(callback);
+
+  void removePanUpdateCallback(ValueChanged<Offset> callback) =>
+      _onPanUpdateCallbacks.remove(callback);
+
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
-    // logger.i('$_tag, addNodeChangedCallback:$id');
+    logger.i('$_tag, addNodeChangedCallback:$id');
     final set = _nodeChangedCallbacks[id] ?? {};
     set.add(callback);
     _nodeChangedCallbacks[id] = set;
@@ -46,7 +53,7 @@ class RichEditorController {
   void removeNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
     final set = _nodeChangedCallbacks[id] ?? {};
     set.remove(callback);
-    // logger.i('$_tag, removeNodeChangedCallback:$id, length:${set.length}');
+    logger.i('$_tag, removeNodeChangedCallback:$id, length:${set.length}');
     if (set.isEmpty) {
       _nodeChangedCallbacks.remove(id);
     } else {
@@ -58,7 +65,7 @@ class RichEditorController {
 
   void execute(BasicCommand command) {
     try {
-      logger.i('execute 【${command.runtimeType}】');
+      logger.i('$_tag, execute 【$command】');
       command.run(this);
       _redoCommands.clear();
     } catch (e) {
@@ -71,7 +78,7 @@ class RichEditorController {
     final command = _undoCommands.removeLast();
     logger.i('undo 【${command.runtimeType}】');
     try {
-      final redoCommand = command.undo(this);
+      final redoCommand = command.update(this);
       _redoCommands.add(redoCommand);
     } catch (e) {
       throw PerformCommandException(command.runtimeType, e);
@@ -83,8 +90,7 @@ class RichEditorController {
     final command = _redoCommands.removeLast();
     logger.i('redo 【${command.runtimeType}】');
     try {
-      final undoCommand = command.update(this);
-      _undoCommands.add(undoCommand);
+      _addToUndoCommands(command.update(this));
     } catch (e) {
       throw PerformCommandException(command.runtimeType, e);
     }
@@ -98,17 +104,23 @@ class RichEditorController {
 
   void _insertUndoCommand(UpdateCommand data, bool record) {
     final command = data.update(this);
-    if (record) _undoCommands.add(command);
+    if (record) _addToUndoCommands(command);
   }
 
-  void updateCursor(BasicCursor cursor) {
-    final command = _updateCursor(cursor);
-    if (command != null) _undoCommands.add(command);
+  void updateCursor(BasicCursor cursor) =>
+      _addToUndoCommands(_updateCursor(cursor));
+
+  void _addToUndoCommands(UpdateCommand? command) {
+    if (command == null) return;
+    if (_undoCommands.length >= 100) {
+      _undoCommands.removeAt(0);
+    }
+    _undoCommands.add(command);
   }
 
-  UndoCommand? _updateCursor(BasicCursor cursor) {
+  UpdateCommand? _updateCursor(BasicCursor cursor) {
     if (_cursor == cursor) return null;
-    final command = UndoUpdateCursor(_cursor);
+    final command = UpdateCursor(_cursor);
     _cursor = cursor;
     notifyCursor(cursor);
     return command;
@@ -118,6 +130,15 @@ class RichEditorController {
     for (var c in Set.of(_cursorChangedCallbacks)) {
       c.call(cursor);
     }
+    logger.i('$_tag, notifyCursor length:${_cursorChangedCallbacks.length}');
+  }
+
+  void notifyDragUpdateDetails(Offset p) {
+    for (var c in Set.of(_onPanUpdateCallbacks)) {
+      c.call(p);
+    }
+    logger.i(
+        '$_tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
   void notifyNode(EditorNode node) {
@@ -126,10 +147,11 @@ class RichEditorController {
     }
   }
 
-  void notifyAll() {
+  void notifyNodes() {
     for (var c in Set.of(_nodesChangedCallbacks)) {
       c.call();
     }
+    logger.i('$_tag, notifyNodes length:${_nodesChangedCallbacks.length}');
   }
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
@@ -148,12 +170,8 @@ class RichEditorController {
   BasicCursor get cursor => _cursor;
 }
 
-abstract class UndoCommand {
-  UpdateCommand undo(RichEditorController controller);
-}
-
 abstract class UpdateCommand {
-  UndoCommand update(RichEditorController controller);
+  UpdateCommand update(RichEditorController controller);
 }
 
 class UpdateCursor implements UpdateCommand {
@@ -162,20 +180,7 @@ class UpdateCursor implements UpdateCommand {
   UpdateCursor(this.cursor);
 
   @override
-  UndoCommand update(RichEditorController controller) {
-    final command = UndoUpdateCursor(controller.cursor);
-    controller._updateCursor(cursor);
-    return command;
-  }
-}
-
-class UndoUpdateCursor implements UndoCommand {
-  final BasicCursor cursor;
-
-  UndoUpdateCursor(this.cursor);
-
-  @override
-  UpdateCommand undo(RichEditorController controller) {
+  UpdateCommand update(RichEditorController controller) {
     final command = UpdateCursor(controller.cursor);
     controller._updateCursor(cursor);
     return command;
@@ -190,31 +195,13 @@ class UpdateOne implements UpdateCommand {
   UpdateOne(this.node, this.cursor, this.index);
 
   @override
-  UndoCommand update(RichEditorController controller) {
+  UpdateCommand update(RichEditorController controller) {
     final nodes = controller._nodes;
-    final undoCommand = UndoUpdateOne(nodes[index], controller.cursor, index);
+    final undoCommand = UpdateOne(nodes[index], controller.cursor, index);
     nodes[index] = node;
     controller.notifyNode(node);
     controller._updateCursor(cursor);
     return undoCommand;
-  }
-}
-
-class UndoUpdateOne implements UndoCommand {
-  final EditorNode node;
-  final BasicCursor cursor;
-  final int index;
-
-  UndoUpdateOne(this.node, this.cursor, this.index);
-
-  @override
-  UpdateCommand undo(RichEditorController controller) {
-    final nodes = controller._nodes;
-    final command = UpdateOne(nodes[index], controller.cursor, index);
-    nodes[index] = node;
-    controller.notifyNode(node);
-    controller._updateCursor(cursor);
-    return command;
   }
 }
 
@@ -228,35 +215,13 @@ class Replace implements UpdateCommand {
       : newNodes = UnmodifiableListView(nodes);
 
   @override
-  UndoCommand update(RichEditorController controller) {
+  UpdateCommand update(RichEditorController controller) {
     final nodes = controller._nodes;
     final oldNodes = nodes.sublist(begin, end);
-    final command = UndoReplace(
-        begin, begin + newNodes.length, oldNodes, controller.cursor);
-    nodes.replaceRange(begin, end, List.of(newNodes));
-    controller.notifyAll();
-    controller._updateCursor(cursor);
-    return command;
-  }
-}
-
-class UndoReplace implements UndoCommand {
-  final int begin;
-  final int end;
-  final UnmodifiableListView<EditorNode> oldNodes;
-  final BasicCursor cursor;
-
-  UndoReplace(this.begin, this.end, List<EditorNode> nodes, this.cursor)
-      : oldNodes = UnmodifiableListView(nodes);
-
-  @override
-  UpdateCommand undo(RichEditorController controller) {
-    final nodes = controller._nodes;
-    final newNodes = nodes.sublist(begin, end);
     final command =
-        Replace(begin, begin + oldNodes.length, newNodes, controller.cursor);
-    nodes.replaceRange(begin, end, List.of(oldNodes));
-    controller.notifyAll();
+        Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
+    nodes.replaceRange(begin, end, List.of(newNodes));
+    controller.notifyNodes();
     controller._updateCursor(cursor);
     return command;
   }

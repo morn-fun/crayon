@@ -27,7 +27,7 @@ class RichTextNodePosition implements NodePosition{
 
   @override
   String toString() {
-    return 'RichTextNodePath{index: $index, offset: $offset}';
+    return 'RichTextNodePosition{index: $index, offset: $offset}';
   }
 
   bool lowerThan(RichTextNodePosition other) {

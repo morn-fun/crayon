@@ -43,7 +43,7 @@ class RichTextSpan extends SpanNode {
   InlineSpan buildSpan() => TextSpan(text: text, style: _buildStyle());
 
   List<InlineSpan> buildSelectingSpan(int begin, int end) {
-    assert(begin < end);
+    assert(begin <= end);
     return [
       if (begin != 0)
         TextSpan(text: text.substring(0, begin), style: _buildStyle()),

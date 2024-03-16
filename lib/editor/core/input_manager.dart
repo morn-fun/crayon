@@ -64,6 +64,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
     if (cursor is NoneCursor) return;
     final last = textEditingDeltas.last;
+    logger.i('updateEditingValueWithDeltas:$last');
     final noComposing = last.composing == TextRange.empty;
     BasicCommand? command = generateCommand(last, controller);
     if ((last is TextEditingDeltaNonTextUpdate) ||
@@ -116,7 +117,6 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       ..setComposingRect(_attribute.caretRect)
       ..setEditableSizeAndTransform(_attribute.size, _attribute.transform)
       ..show();
-    logger.i('_inputConnection:$_inputConnection');
   }
 
   void dispose() {

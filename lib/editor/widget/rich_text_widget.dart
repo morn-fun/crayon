@@ -1,3 +1,4 @@
+import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 
 import '../core/context.dart';
@@ -5,6 +6,7 @@ import '../core/controller.dart';
 import '../core/input_manager.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
+import '../cursor/cursor_generator.dart';
 import '../cursor/rich_text_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
@@ -37,24 +39,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   double recordWidth = 0;
 
-  TextSpan get textSpan {
-    final c = cursor;
-    if (c is SelectingNodeCursor<RichTextNodePosition>) {
-      if (c.index == index) {
-        return node.selectingTextSpan(c.begin, c.end);
-      }
-    } else if (c is SelectingNodesCursor) {
-      // if(c.beginIndex < index && c.endIndex < index){
-      //   return node.selectingTextSpan(node.beginPosition, node.endPosition);
-      // } else if (c.beginIndex == index) {
-      //   final position = c.beginPosition as RichTextNodePosition;
-      //   return
-      // } else if (c.endIndex == index) {
-      //
-      // }
-    }
-    return node.textSpan;
-  }
+  TextSpan get textSpan => node.buildTextSpanWithCursor(cursor, index);
 
   EditorContext get editorContext => widget.editorContext;
 
@@ -63,6 +48,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   InputManager get inputManager => editorContext.inputManager;
 
   int get index => widget.index;
+
+  Offset _panOffset = Offset.zero;
 
   @override
   void initState() {
@@ -75,8 +62,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       textAlign: TextAlign.justify,
       textDirection: TextDirection.ltr,
     );
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      tryToUpdateInputAttribute(cursor);
+    });
     controller.addCursorChangedCallback(onCursorChanged);
     controller.addNodeChangedCallback(node.id, onNodeChanged);
+    controller.addPanUpdateCallback(onPanUpdate);
   }
 
   @override
@@ -84,6 +75,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     super.dispose();
     controller.removeCursorChangedCallback(onCursorChanged);
     controller.removeNodeChangedCallback(node.id, onNodeChanged);
+    controller.removePanUpdateCallback(onPanUpdate);
     painter.dispose();
   }
 
@@ -92,26 +84,55 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void onCursorChanged(BasicCursor cursor) {
-    _updateCursor(cursor);
-    // refresh();
+    bool needRefresh = _updateCursorThenCheckRefresh(cursor);
+    _updatePainter();
+    if (needRefresh) refresh();
+  }
+
+  void onPanUpdate(Offset global) {
+    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final widgetPosition = box.localToGlobal(Offset.zero);
+    final size = box.size;
+    final localPosition =
+        global.translate(-widgetPosition.dx, -widgetPosition.dy);
+    bool contains = size.contains(localPosition);
+    if (contains) {
+      logger.i('onPanUpdate,  widget:$index, contains:$contains');
+      final textPosition = painter.getPositionForOffset(localPosition);
+      var spanIndex = node.locateSpanIndex(textPosition.offset);
+      BasicCursor? newCursor = generateSelectingCursor(controller.cursor,
+          RichTextNodePosition(spanIndex, textPosition.offset), index);
+      if (newCursor != null) controller.updateCursor(newCursor);
+    }
   }
 
   void onNodeChanged(EditorNode node) {
     if (node is! RichTextNode || node.id != this.node.id) return;
     this.node = node;
-    painter.text = textSpan;
-    painter.layout(maxWidth: recordWidth);
-    if (cursor != controller.cursor) {
-      _updateCursor(controller.cursor);
-    }
+    _updateCursorThenCheckRefresh(controller.cursor);
+    _updatePainter();
     refresh();
   }
 
-  void _updateCursor(BasicCursor cursor) {
+  void _updatePainter() {
+    painter.text = textSpan;
+    painter.layout(maxWidth: recordWidth);
+  }
+
+  bool _updateCursorThenCheckRefresh(BasicCursor cursor) {
     if (this.cursor != cursor) {
+      bool hasCursorTypeChanged = this.cursor.runtimeType != cursor.runtimeType;
       this.cursor = cursor;
-      positionNotifier.value = getNodePosition(cursor);
+      final newNodePosition = getNodePosition(cursor);
+      if (positionNotifier.value != newNodePosition) {
+        positionNotifier.value = newNodePosition;
+      }
+      bool needRefresh = tryToUpdateInputAttribute(cursor);
+      logger.i(
+          '_updateCursor,  index:$index,  needRefresh:$needRefresh,  hasCursorTypeChanged:$hasCursorTypeChanged');
+      return needRefresh || hasCursorTypeChanged;
     }
+    return false;
   }
 
   RichTextNodePosition? getNodePosition(BasicCursor cursor) {
@@ -138,11 +159,18 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       onTapDown: (detail) {
         _updatePosition(buildTextPosition(detail.globalPosition).offset);
       },
+      onPanStart: (d){
+        _panOffset = d.globalPosition;
+      },
       onPanEnd: (d) {
-        print('onPanEnd--- ${node.spans.map((e) => e.text).join(',')} $d');
+        EasyThrottle.cancel(node.id);
+        controller.notifyDragUpdateDetails(_panOffset);
       },
       onPanUpdate: (d) {
-        print('onPanUpdate---${node.spans.map((e) => e.text).join(',')}   $d');
+        _panOffset = _panOffset.translate(d.delta.dx, d.delta.dy);
+        EasyThrottle.throttle(node.id, const Duration(milliseconds: 50), (){
+          controller.notifyDragUpdateDetails(d.globalPosition);
+        });
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -192,10 +220,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   TextPosition buildTextPosition(Offset globalPosition) {
     final box = key.currentContext!.findRenderObject() as RenderBox;
     final widgetPosition = box.localToGlobal(Offset.zero);
-    final localPosition = Offset(globalPosition.dx - widgetPosition.dx,
-        globalPosition.dy - widgetPosition.dy);
-    final p = painter.getPositionForOffset(localPosition);
-    return p;
+    final localPosition =
+        globalPosition.translate(-widgetPosition.dx, -widgetPosition.dy);
+    return painter.getPositionForOffset(localPosition);
   }
 
   void _updatePosition(int off) {
@@ -203,11 +230,31 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final newCursor =
         EditingCursor(index, RichTextNodePosition(spanIndex, off));
     controller.updateCursor(newCursor);
-    updateInputAttribute(newCursor);
+    updateInputAttribute(newCursor.position);
   }
 
-  void updateInputAttribute(EditingCursor<RichTextNodePosition> cursor) {
-    final position = cursor.position;
+  bool tryToUpdateInputAttribute(BasicCursor cursor) {
+    bool needRefresh = false;
+    if (cursor is EditingCursor &&
+        cursor.position is RichTextNodePosition &&
+        cursor.index == index) {
+      updateInputAttribute(cursor.position as RichTextNodePosition);
+      needRefresh = true;
+    } else if (cursor is SelectingNodeCursor && cursor.index == index) {
+      final begin = cursor.begin;
+      if (begin is RichTextNodePosition) updateInputAttribute(begin);
+      needRefresh = true;
+    } else if (cursor is SelectingNodesCursor) {
+      final position = cursor.beginPosition;
+      if (cursor.beginIndex == index && position is RichTextNodePosition) {
+        updateInputAttribute(position);
+      }
+      needRefresh = true;
+    }
+    return needRefresh;
+  }
+
+  void updateInputAttribute(RichTextNodePosition position) {
     final textPosition = TextPosition(offset: position.offset);
     final box = key.currentContext!.findRenderObject() as RenderBox;
     Offset offset = painter.getOffsetForCaret(textPosition,

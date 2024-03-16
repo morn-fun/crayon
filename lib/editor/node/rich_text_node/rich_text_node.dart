@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:pre_editor/editor/cursor/basic_cursor.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../cursor/rich_text_cursor.dart';
@@ -57,6 +58,34 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       }
     }
     return TextSpan(children: textSpans);
+  }
+
+  TextSpan buildTextSpanWithCursor(BasicCursor c, int index) {
+    if (c is SelectingNodeCursor && c.index == index) {
+      final begin = c.begin;
+      final end = c.end;
+      if (begin is RichTextNodePosition && end is RichTextNodePosition) {
+        return selectingTextSpan(begin, end);
+      }
+    } else if (c is SelectingNodesCursor && c.contains(index)) {
+      final left = c.left;
+      final right = c.right;
+
+      if (left.index < index && right.index > index) {
+        return selectingTextSpan(beginPosition, endPosition);
+      } else if (left.index == index) {
+        final position = left.position;
+        if (position is RichTextNodePosition) {
+          return selectingTextSpan(position, endPosition);
+        }
+      } else if (right.index == index) {
+        final position = right.position;
+        if (position is RichTextNodePosition) {
+          return selectingTextSpan(beginPosition, position);
+        }
+      }
+    }
+    return textSpan;
   }
 
   @override

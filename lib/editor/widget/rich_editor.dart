@@ -30,7 +30,6 @@ class _RichEditorPageState extends State<RichEditor> {
   void initState() {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
-
     inputManager = InputManager(controller, (c) {
       try {
         controller.execute(c);

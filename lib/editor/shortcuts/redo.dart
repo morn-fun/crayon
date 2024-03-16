@@ -17,6 +17,7 @@ class RedoAction extends ContextAction<RedoIntent> {
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
+    if (editorContext.typing) return;
     try {
       editorContext.redo();
     } on NoCommandException catch (e){

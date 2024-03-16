@@ -18,6 +18,7 @@ class UndoAction extends ContextAction<UndoIntent>{
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
+    if (editorContext.typing) return;
     try {
       editorContext.undo();
     } on NoCommandException catch (e){

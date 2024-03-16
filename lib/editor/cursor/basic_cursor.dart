@@ -36,16 +36,39 @@ class SelectingNodeCursor<T extends NodePosition> extends SelectingCursor {
 }
 
 class SelectingNodesCursor<T extends NodePosition> extends SelectingCursor {
-  final int beginIndex;
-  final T beginPosition;
-  final int endIndex;
-  final T endPosition;
+  final IndexWithPosition<T> begin;
+  final IndexWithPosition<T> end;
 
-  SelectingNodesCursor(
-      this.beginIndex, this.beginPosition, this.endIndex, this.endPosition);
+  SelectingNodesCursor(this.begin, this.end);
+
+  int get beginIndex => begin.index;
+
+  T get beginPosition => begin.position;
+
+  int get endIndex => end.index;
+
+  T get endPosition => end.position;
+
+  bool contains(int index) => left.index <= index && right.index >= index;
+
+  IndexWithPosition<T> get left => begin.index < end.index ? begin : end;
+
+  IndexWithPosition<T> get right => begin.index > end.index ? begin : end;
 
   @override
   String toString() {
-    return 'SelectingNodesCursor{beginIndex: $beginIndex, beginPosition: $beginPosition, endIndex: $endIndex, endPosition: $endPosition}';
+    return 'SelectingNodesCursor{begin: $begin, end: $end}';
+  }
+}
+
+class IndexWithPosition<T extends NodePosition> {
+  final int index;
+  final T position;
+
+  IndexWithPosition(this.index, this.position);
+
+  @override
+  String toString() {
+    return 'IndexWithPosition{index: $index, position: $position}';
   }
 }

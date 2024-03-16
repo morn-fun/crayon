@@ -14,4 +14,9 @@ class ModifyNode implements BasicCommand {
   void run(RichEditorController controller) {
     controller.update(UpdateOne(node, cursor, cursor.index), record: record);
   }
+
+  @override
+  String toString() {
+    return 'ModifyNode{record: $record, cursor: $cursor, node: $node}';
+  }
 }
