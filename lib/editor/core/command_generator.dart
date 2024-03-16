@@ -15,6 +15,8 @@ BasicCommand? generateCommand(
     return _generateFromInsertion(delta, controller);
   } else if (delta is TextEditingDeltaReplacement) {
     return _generateFromReplacement(delta, controller);
+  } else if (delta is TextEditingDeltaDeletion) {
+    return _generateFromDeletion(delta, controller);
   }
   return null;
 }
@@ -36,8 +38,7 @@ BasicCommand? _generateFromInsertion(
               cursor.index,
               RichTextNodePosition(
                   position.index, position.offset + text.length)),
-          newNode,
-          record: delta.composing == TextRange.empty);
+          newNode);
     }
   } else if (cursor is SelectingNodeCursor) {
   } else if (cursor is SelectingNodesCursor) {}
@@ -67,5 +68,27 @@ BasicCommand? _generateFromReplacement(
     }
   } else if (cursor is SelectingNodeCursor) {
   } else if (cursor is SelectingNodesCursor) {}
+  return null;
+}
+
+BasicCommand? _generateFromDeletion(
+    TextEditingDeltaDeletion delta, RichEditorController controller) {
+  final cursor = controller.cursor as EditingCursor;
+  final node = controller.getNode(cursor.index)!;
+  if (node is RichTextNode) {
+    final position = cursor.position as RichTextNodePosition;
+    final index = position.index;
+    final span = node.getSpan(index);
+    final offset = position.offset - span.offset;
+    final range = delta.deletedRange;
+    final deltaPosition = range.end - range.start;
+    final correctRange = TextRange(start: offset - deltaPosition, end: offset);
+    final newNode =
+        node.update(index, span.copy(text: (v) => v.remove(correctRange)));
+    return ModifyNode(
+      EditingCursor(index, RichTextNodePosition(index, correctRange.start)),
+      newNode,
+    );
+  }
   return null;
 }

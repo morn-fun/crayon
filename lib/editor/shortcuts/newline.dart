@@ -18,10 +18,6 @@ class NewlineAction extends ContextAction<NewlineIntent> {
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    if (editorContext.typing) {
-      editorContext.restartInput();
-      return;
-    }
     try {
       final cursor = editorContext.cursor;
       if (cursor is EditingCursor) {

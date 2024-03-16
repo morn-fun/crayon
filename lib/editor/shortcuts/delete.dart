@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../core/context.dart';
 import '../core/logger.dart';
@@ -16,8 +15,5 @@ class DeleteAction extends ContextAction<DeleteIntent> {
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    if (editorContext.typing) {
-
-    }
   }
 }

@@ -30,8 +30,8 @@ class RichEditorController {
 
   void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) {
     _cursorChangedCallbacks.remove(callback);
-    logger.i(
-        '$_tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
+    // logger.i(
+    //     '$_tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
   }
 
   void addNodesChangedCallback(VoidCallback callback) =>
@@ -44,7 +44,7 @@ class RichEditorController {
       _onPanUpdateCallbacks.remove(callback);
 
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
-    logger.i('$_tag, addNodeChangedCallback:$id');
+    // logger.i('$_tag, addNodeChangedCallback:$id');
     final set = _nodeChangedCallbacks[id] ?? {};
     set.add(callback);
     _nodeChangedCallbacks[id] = set;
@@ -53,7 +53,7 @@ class RichEditorController {
   void removeNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
     final set = _nodeChangedCallbacks[id] ?? {};
     set.remove(callback);
-    logger.i('$_tag, removeNodeChangedCallback:$id, length:${set.length}');
+    // logger.i('$_tag, removeNodeChangedCallback:$id, length:${set.length}');
     if (set.isEmpty) {
       _nodeChangedCallbacks.remove(id);
     } else {
@@ -78,8 +78,7 @@ class RichEditorController {
     final command = _undoCommands.removeLast();
     logger.i('undo 【${command.runtimeType}】');
     try {
-      final redoCommand = command.update(this);
-      _redoCommands.add(redoCommand);
+      _addToRedoCommands(command.update(this));
     } catch (e) {
       throw PerformCommandException(command.runtimeType, e);
     }
@@ -107,8 +106,7 @@ class RichEditorController {
     if (record) _addToUndoCommands(command);
   }
 
-  void updateCursor(BasicCursor cursor) =>
-      _addToUndoCommands(_updateCursor(cursor));
+  void updateCursor(BasicCursor cursor) => _updateCursor(cursor);
 
   void _addToUndoCommands(UpdateCommand? command) {
     if (command == null) return;
@@ -116,6 +114,14 @@ class RichEditorController {
       _undoCommands.removeAt(0);
     }
     _undoCommands.add(command);
+  }
+
+  void _addToRedoCommands(UpdateCommand? command){
+    if (command == null) return;
+    if (_redoCommands.length >= 100) {
+      _redoCommands.removeAt(0);
+    }
+    _redoCommands.add(command);
   }
 
   UpdateCommand? _updateCursor(BasicCursor cursor) {
@@ -130,15 +136,15 @@ class RichEditorController {
     for (var c in Set.of(_cursorChangedCallbacks)) {
       c.call(cursor);
     }
-    logger.i('$_tag, notifyCursor length:${_cursorChangedCallbacks.length}');
+    // logger.i('$_tag, notifyCursor length:${_cursorChangedCallbacks.length}');
   }
 
   void notifyDragUpdateDetails(Offset p) {
     for (var c in Set.of(_onPanUpdateCallbacks)) {
       c.call(p);
     }
-    logger.i(
-        '$_tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
+    // logger.i(
+    //     '$_tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
   void notifyNode(EditorNode node) {
@@ -151,7 +157,7 @@ class RichEditorController {
     for (var c in Set.of(_nodesChangedCallbacks)) {
       c.call();
     }
-    logger.i('$_tag, notifyNodes length:${_nodesChangedCallbacks.length}');
+    // logger.i('$_tag, notifyNodes length:${_nodesChangedCallbacks.length}');
   }
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();

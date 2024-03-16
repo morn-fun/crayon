@@ -21,6 +21,7 @@ class _RichEditorPageState extends State<RichEditor> {
   late RichEditorController controller;
   late InputManager inputManager;
   late EditorContext editorContext;
+  late ShortcutManager manager;
 
   final focusNode = FocusNode();
 
@@ -30,7 +31,8 @@ class _RichEditorPageState extends State<RichEditor> {
   void initState() {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
-    inputManager = InputManager(controller, (c) {
+    manager = ShortcutManager(shortcuts: shortcuts, modal: true);
+    inputManager = InputManager(controller, manager, (c) {
       try {
         controller.execute(c);
       } on PerformCommandException catch (e) {
@@ -53,6 +55,7 @@ class _RichEditorPageState extends State<RichEditor> {
     super.dispose();
     inputManager.dispose();
     controller.dispose();
+    manager.dispose();
     focusNode.removeListener(_onFocusChanged);
   }
 
@@ -69,8 +72,8 @@ class _RichEditorPageState extends State<RichEditor> {
   @override
   Widget build(BuildContext context) {
     final nodes = controller.nodes;
-    return Shortcuts(
-      shortcuts: shortcuts,
+    return Shortcuts.manager(
+      manager: manager,
       child: Actions(
         actions: getActions(editorContext),
         child: Focus(

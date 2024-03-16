@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pre_editor/editor/shortcuts/shortcuts.dart';
 
 import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
@@ -13,12 +15,13 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   InputConnectionAttribute _attribute = InputConnectionAttribute.empty();
 
   final RichEditorController controller;
+  final ShortcutManager shortcutManager;
 
   final ValueChanged<BasicCommand> onCommand;
 
   BasicCursor get cursor => controller.cursor;
 
-  InputManager(this.controller, this.onCommand);
+  InputManager(this.controller, this.shortcutManager, this.onCommand);
 
   bool _typing = false;
 
@@ -53,6 +56,8 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   @override
   void updateEditingValue(TextEditingValue value) {
     logger.i('$_tag, updateEditingValue value: $value');
+    _inputConnection?.setEditingState(value);
+    _inputConnection?.show();
   }
 
   @override
@@ -64,21 +69,24 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
     if (cursor is NoneCursor) return;
     final last = textEditingDeltas.last;
-    logger.i('updateEditingValueWithDeltas:$last');
+    logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
     final noComposing = last.composing == TextRange.empty;
     BasicCommand? command = generateCommand(last, controller);
     if ((last is TextEditingDeltaNonTextUpdate) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing)) {
       _typing = false;
+      shortcutManager.shortcuts = shortcuts;
       restartInput();
     } else {
+      shortcutManager.shortcuts = {};
       _typing = true;
     }
     if (command != null) onCommand.call(command);
   }
 
   void restartInput() {
+    logger.i('$_tag, restartInput');
     stopInput();
     startInput();
   }
