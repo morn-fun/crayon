@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'package:flutter/material.dart';
 
 extension StringExtension on String {
   String insert(int offset, String text) {
@@ -10,4 +10,10 @@ extension StringExtension on String {
   }
 
   String remove(TextRange range) => replace(range, '');
+
+  String removeLast(){
+    final list = characters.toList();
+    list.removeLast();
+    return list.join();
+  }
 }

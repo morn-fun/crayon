@@ -20,11 +20,25 @@ class DeleteRequiresNewLineException implements EditorNodeException {
 
   DeleteRequiresNewLineException(this.type);
 
-  String get message => 'the $type node cannot be deleted anymore!';
+  String get message => 'the $type is requiring a new line';
 
   @override
   String toString() {
     return 'DeleteRequiresNewLineException{type: $type}';
+  }
+}
+
+class DeleteNotAllowedException implements EditorNodeException {
+
+  final Type type;
+
+  DeleteNotAllowedException(this.type);
+
+  String get message => 'the $type node cannot be deleted anymore!';
+
+  @override
+  String toString() {
+    return 'DeleteNotAllowedException{type: $type}';
   }
 }
 

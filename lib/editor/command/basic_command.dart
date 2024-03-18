@@ -1,5 +1,6 @@
+import '../core/command_invoker.dart';
 import '../core/controller.dart';
 
 abstract class BasicCommand {
-  void run(RichEditorController controller);
+  UpdateControllerCommand? run(RichEditorController controller);
 }

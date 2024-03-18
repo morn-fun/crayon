@@ -1,3 +1,4 @@
+import '../core/command_invoker.dart';
 import '../core/controller.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
@@ -11,8 +12,9 @@ class ModifyNode implements BasicCommand {
   ModifyNode(this.cursor, this.node, {this.record = true});
 
   @override
-  void run(RichEditorController controller) {
-    controller.update(UpdateOne(node, cursor, cursor.index), record: record);
+  UpdateControllerCommand? run(RichEditorController controller) {
+    return controller.update(UpdateOne(cursor.index, node, cursor),
+        record: record);
   }
 
   @override

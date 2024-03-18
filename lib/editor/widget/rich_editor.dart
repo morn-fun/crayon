@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pre_editor/editor/exception/command_exception.dart';
 
+import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
 import '../core/input_manager.dart';
@@ -22,6 +23,7 @@ class _RichEditorPageState extends State<RichEditor> {
   late InputManager inputManager;
   late EditorContext editorContext;
   late ShortcutManager manager;
+  final CommandInvoker invoker = CommandInvoker();
 
   final focusNode = FocusNode();
 
@@ -34,13 +36,13 @@ class _RichEditorPageState extends State<RichEditor> {
     manager = ShortcutManager(shortcuts: shortcuts, modal: true);
     inputManager = InputManager(controller, manager, (c) {
       try {
-        controller.execute(c);
+        invoker.execute(c, controller);
       } on PerformCommandException catch (e) {
         logger.e('$e');
       }
     });
     inputManager.startInput();
-    editorContext = EditorContext(controller, inputManager, focusNode);
+    editorContext = EditorContext(controller, inputManager, focusNode, invoker);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
     controller.addNodesChangedCallback(refresh);
@@ -56,6 +58,7 @@ class _RichEditorPageState extends State<RichEditor> {
     inputManager.dispose();
     controller.dispose();
     manager.dispose();
+    invoker.dispose();
     focusNode.removeListener(_onFocusChanged);
   }
 

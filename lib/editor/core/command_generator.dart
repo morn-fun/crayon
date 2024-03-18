@@ -25,7 +25,7 @@ BasicCommand? _generateFromInsertion(
     TextEditingDeltaInsertion delta, RichEditorController controller) {
   final cursor = controller.cursor;
   if (cursor is EditingCursor) {
-    final node = controller.getNode(cursor.index)!;
+    final node = controller.getNode(cursor.index);
     if (node is RichTextNode) {
       final position = cursor.position as RichTextNodePosition;
       final text = delta.textInserted;
@@ -49,7 +49,7 @@ BasicCommand? _generateFromReplacement(
     TextEditingDeltaReplacement delta, RichEditorController controller) {
   final cursor = controller.cursor;
   if (cursor is EditingCursor) {
-    final node = controller.getNode(cursor.index)!;
+    final node = controller.getNode(cursor.index);
     if (node is RichTextNode) {
       final position = cursor.position as RichTextNodePosition;
       final text = delta.replacementText;
@@ -74,7 +74,7 @@ BasicCommand? _generateFromReplacement(
 BasicCommand? _generateFromDeletion(
     TextEditingDeltaDeletion delta, RichEditorController controller) {
   final cursor = controller.cursor as EditingCursor;
-  final node = controller.getNode(cursor.index)!;
+  final node = controller.getNode(cursor.index);
   if (node is RichTextNode) {
     final position = cursor.position as RichTextNodePosition;
     final index = position.index;

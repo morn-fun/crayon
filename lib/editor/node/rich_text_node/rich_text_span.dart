@@ -68,6 +68,8 @@ class RichTextSpan extends SpanNode {
         'text': text,
         if (tags.isNotEmpty) 'tags': tags.toSet(),
       };
+
+  bool get isEmpty => text.isEmpty;
 }
 
 Map<String, TextStyle> _tag2Style = {

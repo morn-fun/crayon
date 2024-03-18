@@ -1,9 +1,9 @@
 import 'package:pre_editor/editor/core/controller.dart';
 
+import '../core/command_invoker.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
-import '../node/rich_text_node/rich_text_node.dart';
 import 'basic_command.dart';
 
 class InsertNodes implements BasicCommand {
@@ -13,7 +13,7 @@ class InsertNodes implements BasicCommand {
   InsertNodes(this.cursor, this.nodes) : assert(nodes.isNotEmpty);
 
   @override
-  void run(RichEditorController controller) {
+  UpdateControllerCommand? run(RichEditorController controller) {
     int index = cursor.index;
     final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);
@@ -36,23 +36,23 @@ class InsertNodes implements BasicCommand {
       newCursor = EditingCursor(
           index + copyNodes.length - 1, copyNodes.last.endPosition);
     }
-    controller.replace(Replace(index, index + 1, copyNodes, newCursor));
+    return controller.replace(Replace(index, index + 1, copyNodes, newCursor));
   }
 }
 
-class InsertNewline implements BasicCommand {
+class InsertNewlineWhileEditing implements BasicCommand {
   final EditingCursor cursor;
 
-  InsertNewline(this.cursor);
+  InsertNewlineWhileEditing(this.cursor);
 
   @override
-  void run(RichEditorController controller) {
+  UpdateControllerCommand? run(RichEditorController controller) {
     int index = cursor.index;
     final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position,
         newId: '${DateTime.now().millisecondsSinceEpoch}');
-    controller.replace(Replace(index, index + 1, [left, right],
+    return controller.replace(Replace(index, index + 1, [left, right],
         EditingCursor(index + 1, right.beginPosition)));
   }
 }
@@ -63,13 +63,13 @@ class InsertNewLineWhileSelectingNode implements BasicCommand {
   InsertNewLineWhileSelectingNode(this.cursor);
 
   @override
-  void run(RichEditorController controller) {
+  UpdateControllerCommand? run(RichEditorController controller) {
     int index = cursor.index;
     final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.left);
     final right = current.rearPartNode(cursor.right,
         newId: '${DateTime.now().millisecondsSinceEpoch}');
-    controller.replace(Replace(index, index + 1, [left, right],
+    return controller.replace(Replace(index, index + 1, [left, right],
         EditingCursor(index + 1, right.beginPosition)));
   }
 }
@@ -80,7 +80,7 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
   InsertNewLineWhileSelectingNodes(this.cursor);
 
   @override
-  void run(RichEditorController controller) {
+  UpdateControllerCommand? run(RichEditorController controller) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     final leftNode = controller.getNode(leftCursor.index);
@@ -88,7 +88,7 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
     final left = leftNode.frontPartNode(leftCursor.position);
     final right = rightNode.rearPartNode(rightCursor.position,
         newId: '${DateTime.now().millisecondsSinceEpoch}');
-    controller.replace(Replace(
+    return controller.replace(Replace(
         leftCursor.index,
         rightCursor.index + 1,
         [left, right],

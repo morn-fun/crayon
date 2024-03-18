@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:pre_editor/editor/cursor/basic_cursor.dart';
+import 'package:pre_editor/editor/extension/string_extension.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../cursor/rich_text_cursor.dart';
@@ -108,20 +109,6 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       offset += copySpans.last.textLength;
     }
     return RichTextNode._(UnmodifiableListView(copySpans), id: newId ?? id);
-  }
-
-  RichTextNode onDelete(RichTextNodePosition position) {
-    if (position == beginPosition) {
-      throw DeleteRequiresNewLineException(runtimeType);
-    }
-    if (position.offset == 0) {
-      final lastSpan = spans[position.index - 1];
-      return remove(
-          RichTextNodePosition(position.index - 1, lastSpan.offset - 1),
-          position);
-    }
-    return remove(
-        RichTextNodePosition(position.index, position.offset - 1), position);
   }
 
   @override
@@ -255,6 +242,24 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       }
       return RichTextNode._(UnmodifiableListView(newSpans), id: newId ?? id);
     }
+  }
+
+  @override
+  NodeWithPosition<RichTextNodePosition>? delete(
+      RichTextNodePosition position) {
+    if (position == beginPosition) {
+      throw DeleteRequiresNewLineException(runtimeType);
+    }
+    if (position.offset == 0) {
+      final lastSpan = spans[position.index - 1];
+      final newOffset = lastSpan.text.removeLast().length;
+      final newPosition = RichTextNodePosition(position.index - 1, newOffset);
+      return NodeWithPosition(remove(newPosition, position), position);
+    }
+    final newPosition =
+        RichTextNodePosition(position.index, position.offset - 1);
+
+    return NodeWithPosition(remove(newPosition, position), position);
   }
 }
 

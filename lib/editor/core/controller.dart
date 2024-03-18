@@ -1,11 +1,9 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-
-import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
-import '../exception/command_exception.dart';
 import '../node/basic_node.dart';
+import 'command_invoker.dart';
 import 'logger.dart';
 
 class RichEditorController {
@@ -16,8 +14,7 @@ class RichEditorController {
   final _tag = 'RichEditorController';
 
   final List<EditorNode> _nodes = [];
-  final List<UpdateCommand> _undoCommands = [];
-  final List<UpdateCommand> _redoCommands = [];
+
   BasicCursor _cursor = NoneCursor();
 
   final Set<ValueChanged<BasicCursor>> _cursorChangedCallbacks = {};
@@ -63,73 +60,20 @@ class RichEditorController {
 
   EditorNode getNode(int index) => _nodes[index];
 
-  void execute(BasicCommand command) {
-    try {
-      logger.i('$_tag, execute 【$command】');
-      command.run(this);
-      _redoCommands.clear();
-    } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
-    }
-  }
-
-  void undo() {
-    if (_undoCommands.isEmpty) throw NoCommandException('undo');
-    final command = _undoCommands.removeLast();
-    logger.i('undo 【${command.runtimeType}】');
-    try {
-      _addToRedoCommands(command.update(this));
-    } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
-    }
-  }
-
-  void redo() {
-    if (_redoCommands.isEmpty) throw NoCommandException('undo');
-    final command = _redoCommands.removeLast();
-    logger.i('redo 【${command.runtimeType}】');
-    try {
-      _addToUndoCommands(command.update(this));
-    } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
-    }
-  }
-
-  void update(UpdateOne data, {bool record = true}) =>
-      _insertUndoCommand(data, record);
-
-  void replace(Replace data, {bool record = true}) =>
-      _insertUndoCommand(data, record);
-
-  void _insertUndoCommand(UpdateCommand data, bool record) {
+  UpdateControllerCommand? update(UpdateOne data, {bool record = true}) {
     final command = data.update(this);
-    if (record) _addToUndoCommands(command);
+    return record ? command : null;
   }
 
-  void updateCursor(BasicCursor cursor) => _updateCursor(cursor);
-
-  void _addToUndoCommands(UpdateCommand? command) {
-    if (command == null) return;
-    if (_undoCommands.length >= 100) {
-      _undoCommands.removeAt(0);
-    }
-    _undoCommands.add(command);
+  UpdateControllerCommand? replace(Replace data, {bool record = true}){
+    final command = data.update(this);
+    return record ? command : null;
   }
 
-  void _addToRedoCommands(UpdateCommand? command){
-    if (command == null) return;
-    if (_redoCommands.length >= 100) {
-      _redoCommands.removeAt(0);
-    }
-    _redoCommands.add(command);
-  }
-
-  UpdateCommand? _updateCursor(BasicCursor cursor) {
-    if (_cursor == cursor) return null;
-    final command = UpdateCursor(_cursor);
+  void updateCursor(BasicCursor cursor){
+    if (_cursor == cursor) return;
     _cursor = cursor;
     notifyCursor(cursor);
-    return command;
   }
 
   void notifyCursor(BasicCursor cursor) {
@@ -167,8 +111,6 @@ class RichEditorController {
     _cursorChangedCallbacks.clear();
     _nodesChangedCallbacks.clear();
     _nodeChangedCallbacks.clear();
-    _undoCommands.clear();
-    _redoCommands.clear();
   }
 
   UnmodifiableListView<EditorNode> get nodes => UnmodifiableListView(_nodes);
@@ -176,42 +118,25 @@ class RichEditorController {
   BasicCursor get cursor => _cursor;
 }
 
-abstract class UpdateCommand {
-  UpdateCommand update(RichEditorController controller);
-}
-
-class UpdateCursor implements UpdateCommand {
-  final BasicCursor cursor;
-
-  UpdateCursor(this.cursor);
-
-  @override
-  UpdateCommand update(RichEditorController controller) {
-    final command = UpdateCursor(controller.cursor);
-    controller._updateCursor(cursor);
-    return command;
-  }
-}
-
-class UpdateOne implements UpdateCommand {
+class UpdateOne implements UpdateControllerCommand {
+  final int index;
   final EditorNode node;
   final BasicCursor cursor;
-  final int index;
 
-  UpdateOne(this.node, this.cursor, this.index);
+  UpdateOne(this.index, this.node, this.cursor);
 
   @override
-  UpdateCommand update(RichEditorController controller) {
+  UpdateControllerCommand update(RichEditorController controller) {
     final nodes = controller._nodes;
-    final undoCommand = UpdateOne(nodes[index], controller.cursor, index);
+    final undoCommand = UpdateOne(index, nodes[index], controller.cursor);
     nodes[index] = node;
     controller.notifyNode(node);
-    controller._updateCursor(cursor);
+    controller.updateCursor(cursor);
     return undoCommand;
   }
 }
 
-class Replace implements UpdateCommand {
+class Replace implements UpdateControllerCommand {
   final int begin;
   final int end;
   final UnmodifiableListView<EditorNode> newNodes;
@@ -221,14 +146,14 @@ class Replace implements UpdateCommand {
       : newNodes = UnmodifiableListView(nodes);
 
   @override
-  UpdateCommand update(RichEditorController controller) {
+  UpdateControllerCommand update(RichEditorController controller) {
     final nodes = controller._nodes;
     final oldNodes = nodes.sublist(begin, end);
     final command =
         Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
     nodes.replaceRange(begin, end, List.of(newNodes));
     controller.notifyNodes();
-    controller._updateCursor(cursor);
+    controller.updateCursor(cursor);
     return command;
   }
 }

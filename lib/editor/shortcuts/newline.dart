@@ -21,7 +21,7 @@ class NewlineAction extends ContextAction<NewlineIntent> {
     try {
       final cursor = editorContext.cursor;
       if (cursor is EditingCursor) {
-        editorContext.execute(InsertNewline(cursor));
+        editorContext.execute(InsertNewlineWhileEditing(cursor));
       } else if (cursor is SelectingNodeCursor) {
         editorContext.execute(InsertNewLineWhileSelectingNode(cursor));
       } else if (cursor is SelectingNodesCursor) {
