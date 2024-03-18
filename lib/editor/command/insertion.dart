@@ -3,6 +3,7 @@ import 'package:pre_editor/editor/core/controller.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
+import '../node/rich_text_node/rich_text_node.dart';
 import 'basic_command.dart';
 
 class InsertNodes implements BasicCommand {
@@ -14,7 +15,7 @@ class InsertNodes implements BasicCommand {
   @override
   void run(RichEditorController controller) {
     int index = cursor.index;
-    final current = controller.getNode(index)!;
+    final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position,
         newId: '${DateTime.now().millisecondsSinceEpoch}');
@@ -47,11 +48,50 @@ class InsertNewline implements BasicCommand {
   @override
   void run(RichEditorController controller) {
     int index = cursor.index;
-    final current = controller.getNode(index)!;
+    final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position,
         newId: '${DateTime.now().millisecondsSinceEpoch}');
     controller.replace(Replace(index, index + 1, [left, right],
         EditingCursor(index + 1, right.beginPosition)));
+  }
+}
+
+class InsertNewLineWhileSelectingNode implements BasicCommand {
+  final SelectingNodeCursor cursor;
+
+  InsertNewLineWhileSelectingNode(this.cursor);
+
+  @override
+  void run(RichEditorController controller) {
+    int index = cursor.index;
+    final current = controller.getNode(index);
+    final left = current.frontPartNode(cursor.left);
+    final right = current.rearPartNode(cursor.right,
+        newId: '${DateTime.now().millisecondsSinceEpoch}');
+    controller.replace(Replace(index, index + 1, [left, right],
+        EditingCursor(index + 1, right.beginPosition)));
+  }
+}
+
+class InsertNewLineWhileSelectingNodes implements BasicCommand {
+  final SelectingNodesCursor cursor;
+
+  InsertNewLineWhileSelectingNodes(this.cursor);
+
+  @override
+  void run(RichEditorController controller) {
+    final leftCursor = cursor.left;
+    final rightCursor = cursor.right;
+    final leftNode = controller.getNode(leftCursor.index);
+    final rightNode = controller.getNode(rightCursor.index);
+    final left = leftNode.frontPartNode(leftCursor.position);
+    final right = rightNode.rearPartNode(rightCursor.position,
+        newId: '${DateTime.now().millisecondsSinceEpoch}');
+    controller.replace(Replace(
+        leftCursor.index,
+        rightCursor.index + 1,
+        [left, right],
+        EditingCursor(leftCursor.index + 1, right.beginPosition)));
   }
 }

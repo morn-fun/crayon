@@ -2,7 +2,6 @@ import 'package:pre_editor/editor/core/controller.dart';
 
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
-import '../node/basic_node.dart';
 import 'basic_command.dart';
 
 class DeleteWhileEditing implements BasicCommand{

@@ -61,7 +61,7 @@ class RichEditorController {
     }
   }
 
-  EditorNode? getNode(int index) => _nodes[index];
+  EditorNode getNode(int index) => _nodes[index];
 
   void execute(BasicCommand command) {
     try {

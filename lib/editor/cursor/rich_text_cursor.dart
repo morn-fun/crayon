@@ -1,6 +1,7 @@
+import '../exception/editor_node_exception.dart';
 import 'basic_cursor.dart';
 
-class RichTextNodePosition implements NodePosition{
+class RichTextNodePosition implements NodePosition {
   final int index;
   final int offset;
 
@@ -17,10 +18,10 @@ class RichTextNodePosition implements NodePosition{
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is RichTextNodePosition &&
-              runtimeType == other.runtimeType &&
-              index == other.index &&
-              offset == other.offset;
+      other is RichTextNodePosition &&
+          runtimeType == other.runtimeType &&
+          index == other.index &&
+          offset == other.offset;
 
   @override
   int get hashCode => index.hashCode ^ offset.hashCode;
@@ -30,11 +31,15 @@ class RichTextNodePosition implements NodePosition{
     return 'RichTextNodePosition{index: $index, offset: $offset}';
   }
 
-  bool lowerThan(RichTextNodePosition other) {
+  bool sameIndex(RichTextNodePosition other) => index == other.index;
+
+  @override
+  bool isLowerThan(NodePosition other) {
+    if (other is! RichTextNodePosition) {
+      throw NodePositionDifferentException(runtimeType, other.runtimeType);
+    }
     if (index < other.index) return true;
     if (index > other.index) return false;
     return offset < other.offset;
   }
-
-  bool sameIndex(RichTextNodePosition other) => index == other.index;
 }

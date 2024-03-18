@@ -33,8 +33,8 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
 
   TextSpan selectingTextSpan(
       RichTextNodePosition begin, RichTextNodePosition end) {
-    RichTextNodePosition left = begin.lowerThan(end) ? begin : end;
-    RichTextNodePosition right = begin.lowerThan(end) ? end : begin;
+    RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
+    RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
     final textSpans = <InlineSpan>[];
     for (var i = 0; i < spans.length; ++i) {
       var span = spans[i];
@@ -172,8 +172,8 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   RichTextNode replace(RichTextNodePosition begin, RichTextNodePosition end,
       List<RichTextSpan> spans,
       {String? newId}) {
-    RichTextNodePosition left = begin.lowerThan(end) ? begin : end;
-    RichTextNodePosition right = begin.lowerThan(end) ? end : begin;
+    RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
+    RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
 
     final copySpans = List.of(this.spans);
     final leftIndex = left.index;
@@ -230,8 +230,8 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
     if (begin == end) {
       return RichTextNode.empty(id: newId ?? id);
     }
-    RichTextNodePosition left = begin.lowerThan(end) ? begin : end;
-    RichTextNodePosition right = begin.lowerThan(end) ? end : begin;
+    RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
+    RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
     if (left.sameIndex(right)) {
       final span = spans[left.index].copy(
           offset: to(0), text: (v) => v.substring(left.offset, right.offset));

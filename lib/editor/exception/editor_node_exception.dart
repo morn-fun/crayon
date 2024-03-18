@@ -28,3 +28,17 @@ class DeleteRequiresNewLineException implements EditorNodeException {
   }
 }
 
+class NodePositionDifferentException implements EditorNodeException {
+  final Type origin;
+  final Type other;
+
+  NodePositionDifferentException(this.origin, this.other);
+
+  String get message => 'the origin:$origin is not same as other:$other';
+
+  @override
+  String toString() {
+    return 'NodePositionDifferentException{origin: $origin, other: $other}';
+  }
+}
+

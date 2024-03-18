@@ -20,9 +20,14 @@ BasicCursor? generateSelectingCursor(
           IndexWithPosition(index, endPosition));
     }
   } else if (oldCursor is SelectingNodesCursor) {
-    newCursor = SelectingNodesCursor(
-        IndexWithPosition(oldCursor.beginIndex, oldCursor.beginPosition),
-        IndexWithPosition(index, endPosition));
+    if (oldCursor.beginIndex == index) {
+      newCursor =
+          SelectingNodeCursor(index, oldCursor.beginPosition, endPosition);
+    } else {
+      newCursor = SelectingNodesCursor(
+          IndexWithPosition(oldCursor.beginIndex, oldCursor.beginPosition),
+          IndexWithPosition(index, endPosition));
+    }
   }
   return newCursor;
 }

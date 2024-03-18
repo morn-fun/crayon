@@ -138,7 +138,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   RichTextNodePosition? getNodePosition(BasicCursor cursor) {
     if (cursor is! EditingCursor) return null;
     final theNode = controller.getNode(cursor.index);
-    if (theNode is RichTextNode? && theNode?.id == node.id) {
+    if (theNode is RichTextNode? && theNode.id == node.id) {
       return cursor.position as RichTextNodePosition;
     }
     return null;
@@ -159,7 +159,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       onTapDown: (detail) {
         _updatePosition(buildTextPosition(detail.globalPosition).offset);
       },
-      onPanStart: (d){
+      onPanStart: (d) {
         _panOffset = d.globalPosition;
       },
       onPanEnd: (d) {
@@ -168,7 +168,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       },
       onPanUpdate: (d) {
         _panOffset = _panOffset.translate(d.delta.dx, d.delta.dy);
-        EasyThrottle.throttle(node.id, const Duration(milliseconds: 50), (){
+        EasyThrottle.throttle(node.id, const Duration(milliseconds: 50), () {
           controller.notifyDragUpdateDetails(d.globalPosition);
         });
       },
@@ -188,7 +188,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                 SizedBox(
                   height: painter.height,
                   width: painter.width,
-                  child: CustomPaint(painter: _TextPainter(painter)),
+                  child: MouseRegion(
+                      cursor: SystemMouseCursors.text,
+                      child: CustomPaint(painter: _TextPainter(painter))),
                 ),
                 ValueListenableBuilder(
                     valueListenable: positionNotifier,

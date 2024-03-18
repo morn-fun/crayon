@@ -4,7 +4,10 @@ abstract class BasicCursor {
   bool get isEditing => this is EditingCursor;
 }
 
-abstract class NodePosition {}
+abstract class NodePosition {
+  ///the two compare objects must be same type, or it will throw [NodePositionDifferentException]
+  bool isLowerThan(NodePosition other);
+}
 
 class NoneCursor extends BasicCursor {}
 
@@ -28,6 +31,10 @@ class SelectingNodeCursor<T extends NodePosition> extends SelectingCursor {
   final T end;
 
   SelectingNodeCursor(this.index, this.begin, this.end);
+
+  T get left => begin.isLowerThan(end) ? begin : end;
+
+  T get right => begin.isLowerThan(end) ? end : begin;
 
   @override
   String toString() {
