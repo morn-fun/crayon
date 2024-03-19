@@ -288,6 +288,5 @@ void main() {
     final newNode = basicNode(texts: ['aaaaaa','bbbbbb','cccccc']);
     final textSpan = newNode.selectingTextSpan(RichTextNodePosition(1, 0), RichTextNodePosition(2, 0));
     print('textSpan:$textSpan');
-
   });
 }

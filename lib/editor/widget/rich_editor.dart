@@ -33,7 +33,7 @@ class _RichEditorPageState extends State<RichEditor> {
   void initState() {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
-    manager = ShortcutManager(shortcuts: shortcuts, modal: true);
+    manager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
     inputManager = InputManager(controller, manager, (c) {
       try {
         invoker.execute(c, controller);

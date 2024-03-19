@@ -3,11 +3,17 @@ import 'package:flutter/services.dart';
 
 import '../core/context.dart';
 import 'delete.dart';
+import 'arrows.dart';
 import 'newline.dart';
 import 'redo.dart';
 import 'undo.dart';
 
-Map<ShortcutActivator, Intent> shortcuts = {
+Map<ShortcutActivator, Intent> editorShortcuts = {
+  const SingleActivator(LogicalKeyboardKey.arrowLeft): const LeftArrowIntent(),
+  const SingleActivator(LogicalKeyboardKey.arrowRight):
+      const RightArrowIntent(),
+  const SingleActivator(LogicalKeyboardKey.arrowUp): const UpArrowIntent(),
+  const SingleActivator(LogicalKeyboardKey.arrowDown): const DownArrowIntent(),
   const SingleActivator(LogicalKeyboardKey.backspace): const DeleteIntent(),
   const SingleActivator(LogicalKeyboardKey.enter): const NewlineIntent(),
   LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
@@ -25,6 +31,10 @@ Map<Type, RichEditorControllerAction> _actions = {
   UndoIntent: (c) => UndoAction(c),
   RedoIntent: (c) => RedoAction(c),
   NewlineIntent: (c) => NewlineAction(c),
+  LeftArrowIntent: (c) => LeftArrowAction(c),
+  RightArrowIntent: (c) => RightArrowAction(c),
+  UpArrowIntent: (c) => UpArrowAction(c),
+  DownArrowIntent: (c) => DownArrowAction(c),
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>

@@ -27,6 +27,17 @@ class _EditingCursorWidgetState extends State<EditingCursorWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant EditingCursorWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    visible = true;
+    timer.cancel();
+    timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      visible = !visible;
+      refresh();
+    });
+  }
+
+  @override
   void dispose() {
     timer.cancel();
     super.dispose();

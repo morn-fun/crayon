@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
+import '../shortcuts/arrows.dart';
+import 'callbacks_collection.dart';
 import 'command_invoker.dart';
 import 'logger.dart';
 
@@ -14,49 +16,37 @@ class RichEditorController {
   final _tag = 'RichEditorController';
 
   final List<EditorNode> _nodes = [];
-
   BasicCursor _cursor = NoneCursor();
 
-  final Set<ValueChanged<BasicCursor>> _cursorChangedCallbacks = {};
-  final Set<VoidCallback> _nodesChangedCallbacks = {};
-  final Set<ValueChanged<Offset>> _onPanUpdateCallbacks = {};
-  final Map<String, Set<ValueChanged<EditorNode>>> _nodeChangedCallbacks = {};
+  final CallbackCollection _callbackCollection = CallbackCollection();
 
   void addCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
-      _cursorChangedCallbacks.add(callback);
+      _callbackCollection.addCursorChangedCallback(callback);
 
-  void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) {
-    _cursorChangedCallbacks.remove(callback);
-    // logger.i(
-    //     '$_tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
-  }
+  void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
+      _callbackCollection.removeCursorChangedCallback(callback);
 
   void addNodesChangedCallback(VoidCallback callback) =>
-      _nodesChangedCallbacks.add(callback);
+      _callbackCollection.addNodesChangedCallback(callback);
 
   void addPanUpdateCallback(ValueChanged<Offset> callback) =>
-      _onPanUpdateCallbacks.add(callback);
+      _callbackCollection.addPanUpdateCallback(callback);
 
   void removePanUpdateCallback(ValueChanged<Offset> callback) =>
-      _onPanUpdateCallbacks.remove(callback);
+      _callbackCollection.removePanUpdateCallback(callback);
 
-  void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
-    // logger.i('$_tag, addNodeChangedCallback:$id');
-    final set = _nodeChangedCallbacks[id] ?? {};
-    set.add(callback);
-    _nodeChangedCallbacks[id] = set;
-  }
+  void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) =>
+      _callbackCollection.addNodeChangedCallback(id, callback);
 
-  void removeNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
-    final set = _nodeChangedCallbacks[id] ?? {};
-    set.remove(callback);
-    // logger.i('$_tag, removeNodeChangedCallback:$id, length:${set.length}');
-    if (set.isEmpty) {
-      _nodeChangedCallbacks.remove(id);
-    } else {
-      _nodeChangedCallbacks[id] = set;
-    }
-  }
+  void removeNodeChangedCallback(
+          String id, ValueChanged<EditorNode> callback) =>
+      _callbackCollection.removeNodeChangedCallback(id, callback);
+
+  void addArrowDelegate(String id, ArrowDelegate callback) =>
+      _callbackCollection.addArrowDelegate(id, callback);
+
+  void removeArrowDelegate(String id, ArrowDelegate callback) =>
+      _callbackCollection.removeArrowDelegate(id, callback);
 
   EditorNode getNode(int index) => _nodes[index];
 
@@ -76,41 +66,24 @@ class RichEditorController {
     if (notify) notifyCursor(cursor);
   }
 
-  void notifyCursor(BasicCursor cursor) {
-    for (var c in Set.of(_cursorChangedCallbacks)) {
-      c.call(cursor);
-    }
-    // logger.i('$_tag, notifyCursor length:${_cursorChangedCallbacks.length}');
-  }
+  void onArrowAccept(int index, ArrowType type, NodePosition position) =>
+      _callbackCollection.onArrowAccept(_nodes[index].id, type, position);
 
-  void notifyDragUpdateDetails(Offset p) {
-    for (var c in Set.of(_onPanUpdateCallbacks)) {
-      c.call(p);
-    }
-    // logger.i(
-    //     '$_tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
-  }
+  void notifyCursor(BasicCursor cursor) =>
+      _callbackCollection.notifyCursor(cursor);
 
-  void notifyNode(EditorNode node) {
-    for (var c in Set.of(_nodeChangedCallbacks[node.id] ?? {})) {
-      c.call(node);
-    }
-  }
+  void notifyDragUpdateDetails(Offset p) =>
+      _callbackCollection.notifyDragUpdateDetails(p);
 
-  void notifyNodes() {
-    for (var c in Set.of(_nodesChangedCallbacks)) {
-      c.call();
-    }
-    // logger.i('$_tag, notifyNodes length:${_nodesChangedCallbacks.length}');
-  }
+  void notifyNode(EditorNode node) => _callbackCollection.notifyNode(node);
+
+  void notifyNodes() => _callbackCollection.notifyNodes();
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
   void dispose() {
     _nodes.clear();
-    _cursorChangedCallbacks.clear();
-    _nodesChangedCallbacks.clear();
-    _nodeChangedCallbacks.clear();
+    _callbackCollection.dispose();
   }
 
   UnmodifiableListView<EditorNode> get nodes => UnmodifiableListView(_nodes);

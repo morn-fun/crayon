@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import '../core/context.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
+import '../shortcuts/arrows.dart';
 
 @immutable
 abstract class EditorNode<T extends NodePosition> {
@@ -24,6 +25,7 @@ abstract class EditorNode<T extends NodePosition> {
   EditorNode<T> merge(EditorNode other, {String? newId});
 
   EditorNode<T> getFromPosition(T begin, T end, {String? newId});
+
 
   T get beginPosition;
 

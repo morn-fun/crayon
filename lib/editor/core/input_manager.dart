@@ -76,7 +76,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing)) {
       _typing = false;
-      shortcutManager.shortcuts = shortcuts;
+      shortcutManager.shortcuts = editorShortcuts;
       restartInput();
     } else {
       shortcutManager.shortcuts = {};

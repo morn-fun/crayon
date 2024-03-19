@@ -1,12 +1,13 @@
 import 'dart:collection';
-
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/cursor/basic_cursor.dart';
-import 'package:pre_editor/editor/extension/string_extension.dart';
+import '../../exception/string_exception.dart';
+import '../../extension/string_extension.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
+import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
+import '../../shortcuts/arrows.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import 'rich_text_span.dart';
@@ -272,6 +273,56 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
             RichTextNodePosition(lastIndex, lastSpan.textLength));
       }
       return NodeWithPosition(update(position.index, newSpan), newPosition);
+    }
+  }
+
+  RichTextNodePosition lastPosition(RichTextNodePosition position) {
+    final index = position.index;
+    final lastIndex = index - 1;
+    final offset = position.offset;
+    if (offset == 0) {
+      try {
+        final lastSpan = spans[lastIndex];
+        final newOffset = lastSpan.text.lastOffset(lastSpan.textLength);
+        return RichTextNodePosition(lastIndex, newOffset);
+      } on RangeError {
+        throw ArrowIsEndException(ArrowType.left, position);
+      } on OffsetIsEndException {
+        throw ArrowIsEndException(ArrowType.left, position);
+      }
+    } else {
+      final span = spans[index];
+      try {
+        final newOffset = span.text.lastOffset(offset);
+        return RichTextNodePosition(index, newOffset);
+      } on OffsetIsEndException {
+        throw ArrowIsEndException(ArrowType.left, position);
+      }
+    }
+  }
+
+  RichTextNodePosition nextPosition(RichTextNodePosition position) {
+    final index = position.index;
+    final nextIndex = index + 1;
+    final offset = position.offset;
+    final span = spans[index];
+    if (offset == span.textLength) {
+      try {
+        final nextSpan = spans[nextIndex];
+        final newOffset = nextSpan.text.nextOffset(0);
+        return RichTextNodePosition(nextIndex, newOffset);
+      } on RangeError {
+        throw ArrowIsEndException(ArrowType.right, position);
+      } on OffsetIsEndException {
+        throw ArrowIsEndException(ArrowType.right, position);
+      }
+    } else {
+      try {
+        final newOffset = span.text.nextOffset(position.offset);
+        return RichTextNodePosition(index, newOffset);
+      } on OffsetIsEndException {
+        throw ArrowIsEndException(ArrowType.right, position);
+      }
     }
   }
 }

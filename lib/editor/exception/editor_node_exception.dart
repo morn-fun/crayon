@@ -1,3 +1,5 @@
+import '../cursor/basic_cursor.dart';
+import '../shortcuts/arrows.dart';
 import 'basic_exception.dart';
 
 class UnableToMergeException implements EditorNodeException {
@@ -15,7 +17,6 @@ class UnableToMergeException implements EditorNodeException {
 }
 
 class DeleteRequiresNewLineException implements EditorNodeException {
-
   final Type type;
 
   DeleteRequiresNewLineException(this.type);
@@ -29,7 +30,6 @@ class DeleteRequiresNewLineException implements EditorNodeException {
 }
 
 class DeleteNotAllowedException implements EditorNodeException {
-
   final Type type;
 
   DeleteNotAllowedException(this.type);
@@ -56,3 +56,17 @@ class NodePositionDifferentException implements EditorNodeException {
   }
 }
 
+class ArrowIsEndException implements EditorNodeException {
+  final ArrowType type;
+  final NodePosition position;
+
+  ArrowIsEndException(this.type, this.position);
+
+  String get message =>
+      'the position $position with arrow $type is end in current node!';
+
+  @override
+  String toString() {
+    return 'ArrowIsEndException{type: $type, position: $position}';
+  }
+}

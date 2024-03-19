@@ -10,6 +10,7 @@ import '../cursor/cursor_generator.dart';
 import '../cursor/rich_text_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
+import '../shortcuts/arrows.dart';
 import 'editing_cursor.dart';
 
 class RichTextWidget extends StatefulWidget {
@@ -68,6 +69,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     controller.addCursorChangedCallback(onCursorChanged);
     controller.addNodeChangedCallback(node.id, onNodeChanged);
     controller.addPanUpdateCallback(onPanUpdate);
+    controller.addArrowDelegate(node.id, onArrowAccept);
   }
 
   @override
@@ -76,6 +78,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     controller.removeCursorChangedCallback(onCursorChanged);
     controller.removeNodeChangedCallback(node.id, onNodeChanged);
     controller.removePanUpdateCallback(onPanUpdate);
+    controller.removeArrowDelegate(node.id, onArrowAccept);
     painter.dispose();
   }
 
@@ -88,6 +91,33 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (needRefresh) {
       _updatePainter();
       refresh();
+    }
+  }
+
+  void onArrowAccept(ArrowType type, NodePosition position) {
+    logger.i('$tag, onArrowAccept type:$type, position:$position');
+    final p = position as RichTextNodePosition;
+    BasicCursor? newCursor;
+    RichTextNodePosition? newPosition;
+    switch (type) {
+      case ArrowType.current:
+        newPosition = position;
+        newCursor = EditingCursor(index, newPosition);
+        break;
+      case ArrowType.left:
+        newPosition = node.lastPosition(p);
+        newCursor = EditingCursor(index, newPosition);
+        break;
+      case ArrowType.right:
+        newPosition = node.nextPosition(p);
+        newCursor = EditingCursor(index, newPosition);
+        break;
+      default:
+        break;
+    }
+    if (newCursor != null) {
+      controller.updateCursor(newCursor);
+      if (newPosition != null) updateInputAttribute(newPosition);
     }
   }
 
