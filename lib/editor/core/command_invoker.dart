@@ -15,7 +15,7 @@ class CommandInvoker {
       _addToUndoCommands(command.run(controller));
       _redoCommands.clear();
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
+      throw PerformCommandException(command.runtimeType, '$_tag, execute', e);
     }
   }
 
@@ -26,7 +26,7 @@ class CommandInvoker {
     try {
       _addToRedoCommands(command.update(controller));
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
+      throw PerformCommandException(command.runtimeType, '$_tag, undo', e);
     }
   }
 
@@ -37,7 +37,7 @@ class CommandInvoker {
     try {
       _addToUndoCommands(command.update(controller));
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, e);
+      throw PerformCommandException(command.runtimeType, '$_tag, redo', e);
     }
   }
 

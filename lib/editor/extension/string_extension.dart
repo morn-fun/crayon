@@ -16,4 +16,20 @@ extension StringExtension on String {
     list.removeLast();
     return list.join();
   }
+
+  StringWithOffset removeAt(int offset){
+    final before = substring(0, offset);
+    final after = substring(offset, length);
+    final list = before.characters.toList();
+    list.removeLast();
+    final newBefore = list.join();
+    return StringWithOffset(newBefore + after, newBefore.length);
+  }
+}
+
+class StringWithOffset{
+  final String text;
+  final int offset;
+
+  StringWithOffset(this.text, this.offset);
 }

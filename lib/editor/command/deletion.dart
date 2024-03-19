@@ -36,29 +36,24 @@ class DeleteWhileEditing implements BasicCommand {
       }
     } on DeleteRequiresNewLineException catch (e) {
       logger.e('$_tag, $e');
-      return buildCommand(index, controller, node);
+      if (index == 0) return null;
+      final lastNode = controller.getNode(index - 1);
+      try {
+        final newNode = lastNode.merge(node);
+        return controller.replace(Replace(index - 1, index + 1, [newNode],
+            EditingCursor(index - 1, lastNode.endPosition)));
+      } on UnableToMergeException catch (e) {
+        logger.e('$_tag, $e');
+        return controller.update(UpdateOne(
+            index,
+            node,
+            SelectingNodeCursor(
+                index - 1, lastNode.beginPosition, lastNode.endPosition)));
+      }
     } on DeleteNotAllowedException catch (e) {
       logger.e('$_tag, $e');
     }
     return null;
-  }
-
-  UpdateControllerCommand? buildCommand(int index,
-      RichEditorController controller, EditorNode<NodePosition> node) {
-    if (index == 0) return null;
-    final lastNode = controller.getNode(index - 1);
-    try {
-      final newNode = lastNode.merge(node);
-      return controller.replace(Replace(index - 1, index + 1, [newNode],
-          EditingCursor(index - 1, lastNode.endPosition)));
-    } on UnableToMergeException catch (e) {
-      logger.e('$_tag, $e');
-      return controller.update(UpdateOne(
-          index,
-          node,
-          SelectingNodeCursor(
-              index - 1, lastNode.beginPosition, lastNode.endPosition)));
-    }
   }
 }
 
@@ -69,7 +64,13 @@ class DeletionWhileSelectingNode implements BasicCommand {
 
   @override
   UpdateControllerCommand? run(RichEditorController controller) {
-    // TODO: implement execute
+    final index = cursor.index;
+    final node = controller.getNode(index);
+    final newLeft = node.frontPartNode(cursor.left);
+    final newRight = node.rearPartNode(cursor.right);
+    final newNode = newLeft.merge(newRight);
+    return controller.update(
+        UpdateOne(index, newNode, EditingCursor(index, newLeft.endPosition)));
   }
 }
 
@@ -80,6 +81,21 @@ class DeletionWhileSelectingNodes implements BasicCommand {
 
   @override
   UpdateControllerCommand? run(RichEditorController controller) {
-    // TODO: implement execute
+    final leftCursor = cursor.left;
+    final rightCursor = cursor.right;
+    final leftNode = controller.getNode(leftCursor.index);
+    final rightNode = controller.getNode(rightCursor.index);
+    final left = leftNode.frontPartNode(leftCursor.position);
+    final right = rightNode.rearPartNode(rightCursor.position,
+        newId: '${DateTime.now().millisecondsSinceEpoch}');
+    try {
+      final newNode = left.merge(right);
+      return controller.replace(Replace(leftCursor.index, rightCursor.index + 1,
+          [newNode], EditingCursor(leftCursor.index, left.endPosition)));
+    } on UnableToMergeException catch (e) {
+      logger.e('$runtimeType error: $e');
+      return controller.replace(Replace(leftCursor.index, rightCursor.index + 1,
+          [left, right], EditingCursor(leftCursor.index, left.endPosition)));
+    }
   }
 }

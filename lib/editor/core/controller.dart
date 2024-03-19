@@ -65,15 +65,15 @@ class RichEditorController {
     return record ? command : null;
   }
 
-  UpdateControllerCommand? replace(Replace data, {bool record = true}){
+  UpdateControllerCommand? replace(Replace data, {bool record = true}) {
     final command = data.update(this);
     return record ? command : null;
   }
 
-  void updateCursor(BasicCursor cursor){
+  void updateCursor(BasicCursor cursor, {bool notify = true}) {
     if (_cursor == cursor) return;
     _cursor = cursor;
-    notifyCursor(cursor);
+    if (notify) notifyCursor(cursor);
   }
 
   void notifyCursor(BasicCursor cursor) {
@@ -130,8 +130,9 @@ class UpdateOne implements UpdateControllerCommand {
     final nodes = controller._nodes;
     final undoCommand = UpdateOne(index, nodes[index], controller.cursor);
     nodes[index] = node;
+    controller.updateCursor(cursor, notify: false);
     controller.notifyNode(node);
-    controller.updateCursor(cursor);
+    controller.notifyCursor(cursor);
     return undoCommand;
   }
 }
@@ -152,8 +153,9 @@ class Replace implements UpdateControllerCommand {
     final command =
         Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
     nodes.replaceRange(begin, end, List.of(newNodes));
+    controller.updateCursor(cursor, notify: false);
     controller.notifyNodes();
-    controller.updateCursor(cursor);
+    controller.notifyCursor(cursor);
     return command;
   }
 }

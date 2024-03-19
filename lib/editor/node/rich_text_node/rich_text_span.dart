@@ -70,6 +70,11 @@ class RichTextSpan extends SpanNode {
       };
 
   bool get isEmpty => text.isEmpty;
+
+  @override
+  String toString() {
+    return 'RichTextSpan{attributes: $attributes, text: $text, tags: $tags, offset: $offset}';
+  }
 }
 
 Map<String, TextStyle> _tag2Style = {

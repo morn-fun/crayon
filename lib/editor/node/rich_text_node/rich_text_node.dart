@@ -32,46 +32,16 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       children:
           List.generate(spans.length, (index) => spans[index].buildSpan()));
 
-  TextSpan selectingTextSpan(
-      RichTextNodePosition begin, RichTextNodePosition end) {
-    RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
-    RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
-    final textSpans = <InlineSpan>[];
-    for (var i = 0; i < spans.length; ++i) {
-      var span = spans[i];
-      if (i < left.index || i > right.index) {
-        textSpans.add(span.buildSpan());
-        continue;
-      }
-      if (i > left.index || i < right.index) {
-        textSpans.add(span.buildSpan());
-        continue;
-      }
-      if (left.index == right.index) {
-        textSpans.addAll(span.buildSelectingSpan(left.offset, right.offset));
-        continue;
-      }
-      if (i == left.index) {
-        textSpans.addAll(span.buildSelectingSpan(left.offset, span.textLength));
-      }
-      if (i == right.index) {
-        textSpans.addAll(span.buildSelectingSpan(0, right.offset));
-      }
-    }
-    return TextSpan(children: textSpans);
-  }
-
   TextSpan buildTextSpanWithCursor(BasicCursor c, int index) {
     if (c is SelectingNodeCursor && c.index == index) {
-      final begin = c.begin;
-      final end = c.end;
-      if (begin is RichTextNodePosition && end is RichTextNodePosition) {
-        return selectingTextSpan(begin, end);
+      final left = c.left;
+      final right = c.right;
+      if (left is RichTextNodePosition && right is RichTextNodePosition) {
+        return selectingTextSpan(left, right);
       }
     } else if (c is SelectingNodesCursor && c.contains(index)) {
       final left = c.left;
       final right = c.right;
-
       if (left.index < index && right.index > index) {
         return selectingTextSpan(beginPosition, endPosition);
       } else if (left.index == index) {
@@ -87,6 +57,35 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       }
     }
     return textSpan;
+  }
+
+  TextSpan selectingTextSpan(
+      RichTextNodePosition begin, RichTextNodePosition end) {
+    RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
+    RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
+    final textSpans = <InlineSpan>[];
+    for (var i = 0; i < spans.length; ++i) {
+      var span = spans[i];
+      if (i < left.index || i > right.index) {
+        textSpans.add(span.buildSpan());
+        continue;
+      }
+      if (left.index == right.index && left.index == i) {
+        textSpans.addAll(span.buildSelectingSpan(left.offset, right.offset));
+        continue;
+      }
+      if (i == left.index) {
+        textSpans.addAll(span.buildSelectingSpan(left.offset, span.textLength));
+        continue;
+      } else if (i == right.index) {
+        textSpans.addAll(span.buildSelectingSpan(0, right.offset));
+        continue;
+      }
+      if (i > left.index || i < right.index) {
+        textSpans.addAll(span.buildSelectingSpan(0, span.textLength));
+      }
+    }
+    return TextSpan(children: textSpans);
   }
 
   @override
@@ -250,16 +249,30 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
     if (position == beginPosition) {
       throw DeleteRequiresNewLineException(runtimeType);
     }
+    final index = position.index;
+    final lastIndex = index - 1;
     if (position.offset == 0) {
-      final lastSpan = spans[position.index - 1];
-      final newOffset = lastSpan.text.removeLast().length;
-      final newPosition = RichTextNodePosition(position.index - 1, newOffset);
-      return NodeWithPosition(remove(newPosition, position), position);
+      final lastSpan = spans[lastIndex];
+      final newSpan = lastSpan.copy(text: (t) => t.removeLast());
+      final newOffset = newSpan.text.length;
+      final newPosition = RichTextNodePosition(lastIndex, newOffset);
+      return NodeWithPosition(update(lastIndex, newSpan), newPosition);
+    } else {
+      final span = spans[index];
+      final text = span.text;
+      final stringWithOffset = text.removeAt(position.offset);
+      final newSpan = span.copy(text: to(stringWithOffset.text));
+      final newOffset = stringWithOffset.offset;
+      final newPosition = RichTextNodePosition(index, newOffset);
+      if (newSpan.isEmpty && index > 0) {
+        final lastSpan = spans[lastIndex];
+        return NodeWithPosition(
+            replace(RichTextNodePosition(lastIndex, 0),
+                RichTextNodePosition(index, span.textLength), [lastSpan]),
+            RichTextNodePosition(lastIndex, lastSpan.textLength));
+      }
+      return NodeWithPosition(update(position.index, newSpan), newPosition);
     }
-    final newPosition =
-        RichTextNodePosition(position.index, position.offset - 1);
-
-    return NodeWithPosition(remove(newPosition, position), position);
   }
 }
 

@@ -10,11 +10,12 @@ class NoCommandException implements CommandException {
 
 class PerformCommandException implements CommandException {
   final Type type;
+  final String reason;
   final Object e;
 
-  PerformCommandException(this.type, this.e);
+  PerformCommandException(this.type, this.reason, this.e);
 
-  String get message => 'execute command:$type error: $e';
+  String get message => '$reason, execute command:$type error: $e';
 
   @override
   String toString() {

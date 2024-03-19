@@ -85,8 +85,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   void onCursorChanged(BasicCursor cursor) {
     bool needRefresh = _updateCursorThenCheckRefresh(cursor);
-    _updatePainter();
-    if (needRefresh) refresh();
+    if (needRefresh) {
+      _updatePainter();
+      refresh();
+    }
   }
 
   void onPanUpdate(Offset global) {
@@ -97,11 +99,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     bool contains = size.contains(localPosition);
     if (contains) {
-      logger.i('onPanUpdate,  widget:$index, contains:$contains');
       final textPosition = painter.getPositionForOffset(localPosition);
       var spanIndex = node.locateSpanIndex(textPosition.offset);
-      BasicCursor? newCursor = generateSelectingCursor(controller.cursor,
-          RichTextNodePosition(spanIndex, textPosition.offset), index);
+      final span = node.spans[spanIndex];
+      logger.i(
+          'onPanUpdate,  widget:$index, contains:$contains, textPosition:$textPosition, spanIndex:$spanIndex, span:$span');
+      BasicCursor? newCursor = generateSelectingCursor(
+          controller.cursor,
+          RichTextNodePosition(spanIndex, textPosition.offset - span.offset),
+          index);
       if (newCursor != null) controller.updateCursor(newCursor);
     }
   }
@@ -120,19 +126,16 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   bool _updateCursorThenCheckRefresh(BasicCursor cursor) {
-    if (this.cursor != cursor) {
-      bool hasCursorTypeChanged = this.cursor.runtimeType != cursor.runtimeType;
-      this.cursor = cursor;
-      final newNodePosition = getNodePosition(cursor);
-      if (positionNotifier.value != newNodePosition) {
-        positionNotifier.value = newNodePosition;
-      }
-      bool needRefresh = tryToUpdateInputAttribute(cursor);
-      logger.i(
-          '_updateCursor,  index:$index,  needRefresh:$needRefresh,  hasCursorTypeChanged:$hasCursorTypeChanged');
-      return needRefresh || hasCursorTypeChanged;
+    bool hasCursorTypeChanged = this.cursor.runtimeType != cursor.runtimeType;
+    this.cursor = cursor;
+    final newNodePosition = getNodePosition(cursor);
+    if (positionNotifier.value != newNodePosition) {
+      positionNotifier.value = newNodePosition;
     }
-    return false;
+    bool needRefresh = tryToUpdateInputAttribute(cursor);
+    logger.i(
+        '_updateCursor,  index:$index,  needRefresh:$needRefresh,  hasCursorTypeChanged:$hasCursorTypeChanged, cursor:$cursor');
+    return needRefresh || hasCursorTypeChanged;
   }
 
   RichTextNodePosition? getNodePosition(BasicCursor cursor) {
@@ -196,7 +199,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                     valueListenable: positionNotifier,
                     builder: (ctx, v, c) {
                       if (v == null) return Container();
-                      final textPosition = TextPosition(offset: v.offset);
+                      final span = node.spans[v.index];
+                      final textPosition =
+                          TextPosition(offset: span.offset + v.offset);
                       final offset =
                           painter.getOffsetForCaret(textPosition, Rect.zero);
                       double cursorHeight = painter.getFullHeightForCaret(
@@ -229,8 +234,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   void _updatePosition(int off) {
     var spanIndex = node.locateSpanIndex(off);
-    final newCursor =
-        EditingCursor(index, RichTextNodePosition(spanIndex, off));
+    final span = node.spans[spanIndex];
+    logger.i('_updatePosition, off:$off, index:$spanIndex, span:$span');
+    final newCursor = EditingCursor(
+        index, RichTextNodePosition(spanIndex, off - span.offset));
     controller.updateCursor(newCursor);
     updateInputAttribute(newCursor.position);
   }
