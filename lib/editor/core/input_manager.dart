@@ -9,7 +9,7 @@ import 'controller.dart';
 import 'logger.dart';
 
 class InputManager with TextInputClient, DeltaTextInputClient {
-  final _tag = 'InputManager';
+  final tag = 'InputManager';
 
   TextInputConnection? _inputConnection;
   InputConnectionAttribute _attribute = InputConnectionAttribute.empty();
@@ -18,10 +18,11 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   final ShortcutManager shortcutManager;
 
   final ValueChanged<BasicCommand> onCommand;
+  final VoidCallback _focusCall;
 
   BasicCursor get cursor => controller.cursor;
 
-  InputManager(this.controller, this.shortcutManager, this.onCommand);
+  InputManager(this.controller, this.shortcutManager, this.onCommand, this._focusCall);
 
   bool _typing = false;
 
@@ -29,7 +30,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   @override
   void connectionClosed() {
-    logger.i('$_tag, connectionClosed');
+    logger.i('$tag, connectionClosed');
   }
 
   @override
@@ -40,29 +41,29 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   @override
   void performAction(TextInputAction action) {
-    logger.i('$_tag, performAction:$action');
+    logger.i('$tag, performAction:$action');
   }
 
   @override
   void performPrivateCommand(String action, Map<String, dynamic> data) {
-    logger.i('$_tag, performPrivateCommand  action: $action, data: $data}');
+    logger.i('$tag, performPrivateCommand  action: $action, data: $data}');
   }
 
   @override
   void showAutocorrectionPromptRect(int start, int end) {
-    logger.i('$_tag, showAutocorrectionPromptRect  start: $start, end: $end}');
+    logger.i('$tag, showAutocorrectionPromptRect  start: $start, end: $end}');
   }
 
   @override
   void updateEditingValue(TextEditingValue value) {
-    logger.i('$_tag, updateEditingValue value: $value');
+    logger.i('$tag, updateEditingValue value: $value');
     _inputConnection?.setEditingState(value);
     _inputConnection?.show();
   }
 
   @override
   void updateFloatingCursor(RawFloatingCursorPoint point) {
-    logger.i('$_tag, updateFloatingCursor point: $point');
+    logger.i('$tag, updateFloatingCursor point: $point');
   }
 
   @override
@@ -86,9 +87,14 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   }
 
   void restartInput() {
-    logger.i('$_tag, restartInput');
+    logger.i('$tag, restartInput');
     stopInput();
     startInput();
+  }
+
+  void requestFocus(){
+    logger.i('$tag, requestFocus');
+     _focusCall.call();
   }
 
   bool get attached => _inputConnection?.attached ?? false;
@@ -128,7 +134,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   }
 
   void dispose() {
-    logger.i('$_tag, dispose');
+    logger.i('$tag, dispose');
     _inputConnection?.close();
     _inputConnection = null;
     _attribute = InputConnectionAttribute.empty();

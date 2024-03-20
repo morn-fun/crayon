@@ -40,7 +40,7 @@ class _RichEditorPageState extends State<RichEditor> {
       } on PerformCommandException catch (e) {
         logger.e('$e');
       }
-    });
+    }, () => focusNode.requestFocus());
     inputManager.startInput();
     editorContext = EditorContext(controller, inputManager, focusNode, invoker);
     focusNode.requestFocus();

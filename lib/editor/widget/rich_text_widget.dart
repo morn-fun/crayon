@@ -1,5 +1,7 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
+import '../extension/offset_extension.dart';
+import '../extension/painter_extension.dart';
 
 import '../core/context.dart';
 import '../core/controller.dart';
@@ -66,19 +68,21 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       tryToUpdateInputAttribute(cursor);
     });
-    controller.addCursorChangedCallback(onCursorChanged);
+    controller.addTapDownCallback(node.id, _updatePosition);
     controller.addNodeChangedCallback(node.id, onNodeChanged);
-    controller.addPanUpdateCallback(onPanUpdate);
     controller.addArrowDelegate(node.id, onArrowAccept);
+    controller.addCursorChangedCallback(onCursorChanged);
+    controller.addPanUpdateCallback(onPanUpdate);
   }
 
   @override
   void dispose() {
     super.dispose();
-    controller.removeCursorChangedCallback(onCursorChanged);
     controller.removeNodeChangedCallback(node.id, onNodeChanged);
-    controller.removePanUpdateCallback(onPanUpdate);
+    controller.removeTapDownCallback(node.id, _updatePosition);
     controller.removeArrowDelegate(node.id, onArrowAccept);
+    controller.removeCursorChangedCallback(onCursorChanged);
+    controller.removePanUpdateCallback(onPanUpdate);
     painter.dispose();
   }
 
@@ -112,6 +116,54 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         newPosition = node.nextPosition(p);
         newCursor = EditingCursor(index, newPosition);
         break;
+      case ArrowType.up:
+        final box = key.currentContext!.findRenderObject() as RenderBox;
+        final offsetWithLineHeight = painter.getOffsetWithLineHeight(
+            TextPosition(offset: node.getOffset(position)),
+            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
+        logger.i('$tag,  array up $offsetWithLineHeight');
+        Offset offset = offsetWithLineHeight.offset;
+        final height = offsetWithLineHeight.lineHeight;
+        final globalOffset = box.localToGlobal(Offset.zero);
+        if (offset.dy - height <= 0) {
+          if (index > 0) {
+            final lastNode = controller.getNode(index - 1);
+            offset = offset.translate(0, -height).move(globalOffset);
+
+            ///TODO:这里需要减去height和间距
+            controller.notifyTapDown(lastNode.id, offset);
+          }
+        } else {
+          offset = offset.translate(0, -height).move(globalOffset);
+          controller.notifyTapDown(node.id, offset);
+        }
+        logger.i('$tag, $type,  newOffset:$offset, globalOff:$globalOffset');
+        break;
+      case ArrowType.down:
+        final box = key.currentContext!.findRenderObject() as RenderBox;
+        final offsetWithLineHeight = painter.getOffsetWithLineHeight(
+            TextPosition(offset: node.getOffset(position)),
+            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
+        Offset offset = offsetWithLineHeight.offset;
+        final height = offsetWithLineHeight.lineHeight;
+        final globalOffset = box.localToGlobal(Offset.zero);
+        final size = box.size;
+        logger.i('$tag,  array down $offsetWithLineHeight');
+        if (offset.dy + height >= size.height) {
+          if (index < controller.nodeLength - 1) {
+            final nextNode = controller.getNode(index + 1);
+            offset = offset.translate(0, height).move(globalOffset);
+
+            ///TODO:这里需要加上height和间距
+            controller.notifyTapDown(nextNode.id, offset);
+          }
+        } else {
+          offset = offset.translate(0, height).move(globalOffset);
+          controller.notifyTapDown(node.id, offset);
+        }
+        logger.i(
+            '$tag, $type,  newOffset:$offset, globalOffset:$globalOffset, size:$size');
+        break;
       default:
         break;
     }
@@ -122,6 +174,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void onPanUpdate(Offset global) {
+    if (key.currentContext == null) return;
     final box = key.currentContext!.findRenderObject() as RenderBox;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
@@ -190,7 +243,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTapDown: (detail) {
-        _updatePosition(buildTextPosition(detail.globalPosition).offset);
+        controller.notifyTapDown(node.id, detail.globalPosition);
       },
       onPanStart: (d) {
         _panOffset = d.globalPosition;
@@ -229,13 +282,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                     valueListenable: positionNotifier,
                     builder: (ctx, v, c) {
                       if (v == null) return Container();
-                      final span = node.spans[v.index];
-                      final textPosition =
-                          TextPosition(offset: span.offset + v.offset);
                       final offset =
-                          painter.getOffsetForCaret(textPosition, Rect.zero);
+                          painter.getOffsetFromTextOffset(node.getOffset(v));
                       double cursorHeight = painter.getFullHeightForCaret(
-                              textPosition, Rect.zero) ??
+                              TextPosition(offset: node.getOffset(v)),
+                              Rect.zero) ??
                           16;
                       return Positioned(
                         left: offset.dx,
@@ -262,10 +313,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     return painter.getPositionForOffset(localPosition);
   }
 
-  void _updatePosition(int off) {
+  void _updatePosition(Offset globalOffset) {
+    final off = buildTextPosition(globalOffset).offset;
     var spanIndex = node.locateSpanIndex(off);
     final span = node.spans[spanIndex];
-    logger.i('_updatePosition, off:$off, index:$spanIndex, span:$span');
+    logger.i(
+        '_updatePosition, globalOffset:$globalOffset, off:$off, index:$spanIndex, span:$span');
     final newCursor = EditingCursor(
         index, RichTextNodePosition(spanIndex, off - span.offset));
     controller.updateCursor(newCursor);
@@ -294,15 +347,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void updateInputAttribute(RichTextNodePosition position) {
-    final textPosition = TextPosition(offset: position.offset);
     final box = key.currentContext!.findRenderObject() as RenderBox;
-    Offset offset = painter.getOffsetForCaret(textPosition,
+    final offsetWithLineHeight = painter.getOffsetWithLineHeight(
+        TextPosition(offset: node.getOffset(position)),
         Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
-    final lineHeight =
-        painter.getFullHeightForCaret(textPosition, Rect.zero) ?? 16;
-    offset = offset.translate(0, lineHeight);
+    final offset = offsetWithLineHeight.offset
+        .translate(0, offsetWithLineHeight.lineHeight);
     inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
         Rect.fromPoints(offset, offset), box.getTransformTo(null), box.size));
+    inputManager.requestFocus();
   }
 }
 

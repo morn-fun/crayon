@@ -13,12 +13,14 @@ class CallbackCollection {
   final Set<ValueChanged<Offset>> _onPanUpdateCallbacks = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeChangedCallbacks = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
+  final Map<String, Set<ValueChanged<Offset>>> _onTapDownCallbacks = {};
 
   void dispose() {
     logger.i('$tag, dispose');
     _cursorChangedCallbacks.clear();
     _nodesChangedCallbacks.clear();
     _onPanUpdateCallbacks.clear();
+    _onTapDownCallbacks.clear();
     _nodeChangedCallbacks.clear();
     _arrowDelegates.clear();
   }
@@ -40,6 +42,24 @@ class CallbackCollection {
 
   void removePanUpdateCallback(ValueChanged<Offset> callback) =>
       _onPanUpdateCallbacks.remove(callback);
+
+  void addTapDownCallback(String id, ValueChanged<Offset> callback) {
+    logger.i('$tag, addTapDownCallback:$id');
+    final set = _onTapDownCallbacks[id] ?? {};
+    set.add(callback);
+    _onTapDownCallbacks[id] = set;
+  }
+
+  void removeTapDownCallback(String id, ValueChanged<Offset> callback) {
+    final set = _onTapDownCallbacks[id] ?? {};
+    set.remove(callback);
+    logger.i('$tag, removeTapDownCallback:$id, length:${set.length}');
+    if (set.isEmpty) {
+      _onTapDownCallbacks.remove(id);
+    } else {
+      _onTapDownCallbacks[id] = set;
+    }
+  }
 
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
     logger.i('$tag, addNodeChangedCallback:$id');
@@ -77,8 +97,7 @@ class CallbackCollection {
     }
   }
 
-
-  void onArrowAccept(String id, ArrowType type, NodePosition position){
+  void onArrowAccept(String id, ArrowType type, NodePosition position) {
     final set = _arrowDelegates[id] ?? {};
     logger.i('$tag, onArrowAccept, id:$id, type:$type, length:${set.length}');
     for (var c in Set.of(set)) {
@@ -101,10 +120,19 @@ class CallbackCollection {
         '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
+  void notifyTapDown(String id, Offset p) {
+    for (var c in Set.of(_onTapDownCallbacks[id] ?? {})) {
+      c.call(p);
+    }
+    logger.i('$tag, notifyTapDown length:${_onTapDownCallbacks[id]?.length}');
+  }
+
   void notifyNode(EditorNode node) {
     for (var c in Set.of(_nodeChangedCallbacks[node.id] ?? {})) {
       c.call(node);
     }
+    logger
+        .i('$tag, notifyNode length:${_nodeChangedCallbacks[node.id]?.length}');
   }
 
   void notifyNodes() {

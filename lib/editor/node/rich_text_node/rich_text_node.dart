@@ -325,6 +325,9 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
       }
     }
   }
+
+  int getOffset(RichTextNodePosition position) =>
+      spans[position.index].offset + position.offset;
 }
 
 abstract class SpanNode {

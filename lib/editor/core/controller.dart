@@ -35,6 +35,12 @@ class RichEditorController {
   void removePanUpdateCallback(ValueChanged<Offset> callback) =>
       _callbackCollection.removePanUpdateCallback(callback);
 
+  void addTapDownCallback(String id, ValueChanged<Offset> callback) =>
+      _callbackCollection.addTapDownCallback(id, callback);
+
+  void removeTapDownCallback(String id, ValueChanged<Offset> callback) =>
+      _callbackCollection.removeTapDownCallback(id, callback);
+
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) =>
       _callbackCollection.addNodeChangedCallback(id, callback);
 
@@ -75,6 +81,9 @@ class RichEditorController {
   void notifyDragUpdateDetails(Offset p) =>
       _callbackCollection.notifyDragUpdateDetails(p);
 
+  void notifyTapDown(String id, Offset p) =>
+      _callbackCollection.notifyTapDown(id, p);
+
   void notifyNode(EditorNode node) => _callbackCollection.notifyNode(node);
 
   void notifyNodes() => _callbackCollection.notifyNodes();
@@ -89,6 +98,8 @@ class RichEditorController {
   UnmodifiableListView<EditorNode> get nodes => UnmodifiableListView(_nodes);
 
   BasicCursor get cursor => _cursor;
+
+  int get nodeLength => _nodes.length;
 }
 
 class UpdateOne implements UpdateControllerCommand {

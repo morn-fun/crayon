@@ -45,8 +45,6 @@ class EditorContext {
 
   bool get typing => inputManager.typing;
 
-  void restartInput() => inputManager.restartInput();
-
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }

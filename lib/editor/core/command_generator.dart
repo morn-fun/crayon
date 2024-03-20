@@ -30,9 +30,8 @@ BasicCommand? _generateFromInsertion(
       final position = cursor.position as RichTextNodePosition;
       final text = delta.textInserted;
       final span = node.getSpan(position.index);
-      final offset = position.offset - span.offset;
-      final newNode = node.update(
-          position.index, span.copy(text: (v) => v.insert(offset, text)));
+      final newNode = node.update(position.index,
+          span.copy(text: (v) => v.insert(position.offset, text)));
       return ModifyNode(
           EditingCursor(
               cursor.index,
@@ -56,7 +55,7 @@ BasicCommand? _generateFromReplacement(
       final range = delta.replacedRange;
       final index = position.index;
       final span = node.getSpan(index);
-      final offset = position.offset - span.offset;
+      final offset = position.offset;
       final correctRange = TextRange(start: offset - range.end, end: offset);
       final newNode = node.update(
           index, span.copy(text: (v) => v.replace(correctRange, text)));
