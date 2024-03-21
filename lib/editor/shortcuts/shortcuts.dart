@@ -8,10 +8,10 @@ import 'arrows/arrows.dart';
 import 'newline.dart';
 import 'redo.dart';
 import 'select_all.dart';
+import 'styles.dart';
 import 'undo.dart';
 
 Map<ShortcutActivator, Intent> editorShortcuts = {
-
   ///single arrow
   const SingleActivator(LogicalKeyboardKey.arrowLeft): const LeftArrowIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowRight):
@@ -25,6 +25,8 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
 
   const SingleActivator(LogicalKeyboardKey.backspace): const DeleteIntent(),
   const SingleActivator(LogicalKeyboardKey.enter): const NewlineIntent(),
+
+  ///redo、undo
   LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
       const UndoIntent(),
   LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shift,
@@ -37,6 +39,12 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
       const SelectAllIntent(),
   LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyA):
       const SelectAllIntent(),
+
+  ///styles
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyB):
+      const BoldIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
+      const BoldIntent(),
 };
 
 Map<Type, RichEditorControllerAction> _actions = {
@@ -49,6 +57,7 @@ Map<Type, RichEditorControllerAction> _actions = {
   UpArrowIntent: (c) => UpArrowAction(c),
   DownArrowIntent: (c) => DownArrowAction(c),
   SelectAllIntent: (c) => SelectAllAction(c),
+  BoldIntent: (c) => BoldAction(c),
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>

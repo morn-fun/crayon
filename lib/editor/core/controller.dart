@@ -6,6 +6,7 @@ import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'callbacks_collection.dart';
 import 'command_invoker.dart';
+import 'events.dart';
 import 'logger.dart';
 
 class RichEditorController {

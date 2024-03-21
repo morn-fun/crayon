@@ -1,25 +1,25 @@
-import 'package:pre_editor/editor/core/controller.dart';
-import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
+
 
 import '../core/command_invoker.dart';
+import '../core/controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
+import '../cursor/rich_text_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/rich_text_node/rich_text_node.dart';
 import 'basic_command.dart';
-import 'package:pre_editor/editor/node/basic_node.dart';
 
-class DeleteWhileEditing implements BasicCommand {
-  final EditingCursor cursor;
+class DeleteWhileEditingRichTextNode implements BasicCommand {
+  final EditingCursor<RichTextNodePosition> cursor;
+  final RichTextNode node;
 
-  DeleteWhileEditing(this.cursor);
+  DeleteWhileEditingRichTextNode(this.cursor, this.node);
 
   final _tag = 'DeleteWhileEditing';
 
   @override
   UpdateControllerCommand? run(RichEditorController controller) {
     final index = cursor.index;
-    final node = controller.getNode(index);
     try {
       final newNodeWithPosition = node.delete(cursor.position);
       if (newNodeWithPosition == null) {

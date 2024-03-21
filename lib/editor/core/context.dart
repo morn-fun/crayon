@@ -5,6 +5,7 @@ import '../cursor/basic_cursor.dart';
 import '../exception/command_exception.dart';
 import 'command_invoker.dart';
 import 'controller.dart';
+import 'events.dart';
 import 'input_manager.dart';
 import 'logger.dart';
 
@@ -44,6 +45,14 @@ class EditorContext {
   BasicCursor get cursor => controller.cursor;
 
   bool get typing => inputManager.typing;
+
+  void handleEventWhileEditing(EditingEvent event) => controller
+      .getNode(event.cursor.index)
+      .handleEventWhileEditing(event, this);
+
+  void handleEventWhileSelectingNode(SelectingNodeEvent event) => controller
+      .getNode(event.cursor.index)
+      .handleEventWhileSelecting(event, this);
 
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();

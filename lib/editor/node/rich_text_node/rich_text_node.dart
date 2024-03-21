@@ -1,5 +1,9 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
+import 'package:pre_editor/editor/core/controller.dart';
+import 'package:pre_editor/editor/core/events.dart';
+import '../../command/deletion.dart';
+import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
 import '../../core/context.dart';
@@ -12,7 +16,7 @@ import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import 'rich_text_span.dart';
 
-class RichTextNode extends EditorNode<RichTextNodePosition> {
+class RichTextNode extends EditorNode {
   ///there must be at least one span in [spans]
   final UnmodifiableListView<RichTextSpan> spans;
 
@@ -90,11 +94,13 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   }
 
   @override
-  RichTextNode frontPartNode(RichTextNodePosition end, {String? newId}) =>
+  RichTextNode frontPartNode(covariant RichTextNodePosition end,
+          {String? newId}) =>
       getFromPosition(beginPosition, end, newId: newId);
 
   @override
-  RichTextNode rearPartNode(RichTextNodePosition begin, {String? newId}) =>
+  RichTextNode rearPartNode(covariant RichTextNodePosition begin,
+          {String? newId}) =>
       getFromPosition(begin, endPosition, newId: newId);
 
   @override
@@ -212,7 +218,7 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
 
   @override
   RichTextNode getFromPosition(
-      RichTextNodePosition begin, RichTextNodePosition end,
+      covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
       {String? newId}) {
     if (begin == end) {
       return RichTextNode.empty(id: newId ?? id);
@@ -245,8 +251,7 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
   }
 
   @override
-  NodeWithPosition<RichTextNodePosition>? delete(
-      RichTextNodePosition position) {
+  NodeWithPosition? delete(covariant RichTextNodePosition position) {
     if (position == beginPosition) {
       throw DeleteRequiresNewLineException(runtimeType);
     }
@@ -328,6 +333,26 @@ class RichTextNode extends EditorNode<RichTextNodePosition> {
 
   int getOffset(RichTextNodePosition position) =>
       spans[position.index].offset + position.offset;
+
+  @override
+  void handleEventWhileEditing(EditingEvent event, EditorContext context) {
+    logger.i('handleEventWhileEditing event 【$event】');
+    final cursor = event.cursor;
+    switch (event.type) {
+      case EventType.delete:
+        context.execute(DeleteWhileEditingRichTextNode(
+            cursor.as<RichTextNodePosition>(), this));
+        break;
+      default:
+        break;
+    }
+  }
+
+  @override
+  void handleEventWhileSelecting(
+      SelectingNodeEvent event, EditorContext context) {
+    // TODO: implement handleEventWhileSelecting
+  }
 }
 
 abstract class SpanNode {

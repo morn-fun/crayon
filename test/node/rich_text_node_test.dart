@@ -260,8 +260,8 @@ void main() {
     final newNode = basicNode(texts: ['abc','xyz','l']);
     final np1 = newNode
         .delete(RichTextNodePosition(0, newNode.spans.first.textLength))!;
-    assert(np1.position.index == 0);
-    assert(np1.position.offset == newNode.spans.first.textLength - 1);
+    assert((np1.position as RichTextNodePosition).index == 0);
+    assert((np1.position as RichTextNodePosition).offset == newNode.spans.first.textLength - 1);
     final node1 = np1.node as RichTextNode;
     assert(node1.spans.first.text == 'ab');
     expect(() => newNode.delete(RichTextNodePosition(0, 0)),
@@ -270,7 +270,7 @@ void main() {
     final np2 = newNode.delete(RichTextNodePosition(0, 1))!;
     final node2 = np2.node as RichTextNode;
     assert(node2.spans.first.text == 'bc');
-    assert(np2.position.offset == 0);
+    assert((np2.position as RichTextNodePosition).offset == 0);
 
     final np3 = newNode.delete(RichTextNodePosition(1, 0))!;
     assert(np3.position == RichTextNodePosition(0, newNode.spans.first.textLength - 1));
@@ -278,8 +278,8 @@ void main() {
     assert(node3.spans.first.text == 'ab');
 
     final np4 = newNode.delete(RichTextNodePosition(2, 1))!;
-    assert(np4.position.index == 1);
-    assert(np4.position.offset == newNode.spans[1].textLength);
+    assert((np4.position as RichTextNodePosition).index == 1);
+    assert((np4.position as RichTextNodePosition).offset == newNode.spans[1].textLength);
     final node4 = np4.node as RichTextNode;
     assert(node4.spans.length == 2);
   });
