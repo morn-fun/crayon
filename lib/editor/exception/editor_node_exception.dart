@@ -1,5 +1,5 @@
 import '../cursor/basic_cursor.dart';
-import '../shortcuts/arrows.dart';
+import '../shortcuts/arrows/arrows.dart';
 import 'basic_exception.dart';
 
 class UnableToMergeException implements EditorNodeException {

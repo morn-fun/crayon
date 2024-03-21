@@ -12,7 +12,7 @@ import '../cursor/cursor_generator.dart';
 import '../cursor/rich_text_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
-import '../shortcuts/arrows.dart';
+import '../shortcuts/arrows/arrows.dart';
 import 'editing_cursor.dart';
 
 class RichTextWidget extends StatefulWidget {
@@ -53,6 +53,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   int get index => widget.index;
 
   Offset _panOffset = Offset.zero;
+
+  RenderBox? get renderBox =>
+      key.currentContext?.findRenderObject() as RenderBox?;
 
   @override
   void initState() {
@@ -117,7 +120,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         newCursor = EditingCursor(index, newPosition);
         break;
       case ArrowType.up:
-        final box = key.currentContext!.findRenderObject() as RenderBox;
+        final box = renderBox;
+        if (box == null) return;
         final offsetWithLineHeight = painter.getOffsetWithLineHeight(
             TextPosition(offset: node.getOffset(position)),
             Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
@@ -140,7 +144,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         logger.i('$tag, $type,  newOffset:$offset, globalOff:$globalOffset');
         break;
       case ArrowType.down:
-        final box = key.currentContext!.findRenderObject() as RenderBox;
+        final box = renderBox;
+        if (box == null) return;
         final offsetWithLineHeight = painter.getOffsetWithLineHeight(
             TextPosition(offset: node.getOffset(position)),
             Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
@@ -174,8 +179,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void onPanUpdate(Offset global) {
-    if (key.currentContext == null) return;
-    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final box = renderBox;
+    if (box == null) return;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
     final localPosition =
@@ -306,7 +311,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   TextPosition buildTextPosition(Offset globalPosition) {
-    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final box = renderBox;
+    if (box == null) return const TextPosition(offset: 0);
     final widgetPosition = box.localToGlobal(Offset.zero);
     final localPosition =
         globalPosition.translate(-widgetPosition.dx, -widgetPosition.dy);
@@ -347,6 +353,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void updateInputAttribute(RichTextNodePosition position) {
+    if (key.currentContext == null) return;
     final box = key.currentContext!.findRenderObject() as RenderBox;
     final offsetWithLineHeight = painter.getOffsetWithLineHeight(
         TextPosition(offset: node.getOffset(position)),

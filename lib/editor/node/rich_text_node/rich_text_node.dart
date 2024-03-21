@@ -7,7 +7,7 @@ import '../../core/copier.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../shortcuts/arrows.dart';
+import '../../shortcuts/arrows/arrows.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import 'rich_text_span.dart';

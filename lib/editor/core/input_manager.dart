@@ -22,7 +22,8 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   BasicCursor get cursor => controller.cursor;
 
-  InputManager(this.controller, this.shortcutManager, this.onCommand, this._focusCall);
+  InputManager(
+      this.controller, this.shortcutManager, this.onCommand, this._focusCall);
 
   bool _typing = false;
 
@@ -72,10 +73,13 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final last = textEditingDeltas.last;
     logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
     final noComposing = last.composing == TextRange.empty;
+    final isEmptyComposing =
+        last.composing == const TextRange(start: 0, end: 0);
     BasicCommand? command = generateCommand(last, controller);
     if ((last is TextEditingDeltaNonTextUpdate) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
-        (last is TextEditingDeltaInsertion && noComposing)) {
+        (last is TextEditingDeltaInsertion && noComposing) ||
+        (last is TextEditingDeltaDeletion && isEmptyComposing)) {
       _typing = false;
       shortcutManager.shortcuts = editorShortcuts;
       restartInput();
@@ -92,9 +96,9 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     startInput();
   }
 
-  void requestFocus(){
+  void requestFocus() {
     logger.i('$tag, requestFocus');
-     _focusCall.call();
+    _focusCall.call();
   }
 
   bool get attached => _inputConnection?.attached ?? false;

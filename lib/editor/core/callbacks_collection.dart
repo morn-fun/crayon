@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
-import '../shortcuts/arrows.dart';
+import '../shortcuts/arrows/arrows.dart';
 import 'logger.dart';
 
 class CallbackCollection {

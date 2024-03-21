@@ -66,6 +66,17 @@ class SelectingNodesCursor<T extends NodePosition> extends SelectingCursor {
   String toString() {
     return 'SelectingNodesCursor{begin: $begin, end: $end}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SelectingNodesCursor &&
+          runtimeType == other.runtimeType &&
+          begin == other.begin &&
+          end == other.end;
+
+  @override
+  int get hashCode => begin.hashCode ^ end.hashCode;
 }
 
 class IndexWithPosition<T extends NodePosition> {

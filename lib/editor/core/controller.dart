@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
-import '../shortcuts/arrows.dart';
+import '../shortcuts/arrows/arrows.dart';
 import 'callbacks_collection.dart';
 import 'command_invoker.dart';
 import 'logger.dart';
@@ -55,6 +55,10 @@ class RichEditorController {
       _callbackCollection.removeArrowDelegate(id, callback);
 
   EditorNode getNode(int index) => _nodes[index];
+
+  EditorNode get firstNode => _nodes.first;
+
+  EditorNode get lastNode => _nodes.last;
 
   UpdateControllerCommand? update(UpdateOne data, {bool record = true}) {
     final command = data.update(this);

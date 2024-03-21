@@ -1,43 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../core/context.dart';
-import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-
-class LeftArrowIntent extends Intent {
-  const LeftArrowIntent();
-}
-
-class RightArrowIntent extends Intent {
-  const RightArrowIntent();
-}
-
-class UpArrowIntent extends Intent {
-  const UpArrowIntent();
-}
-
-class DownArrowIntent extends Intent {
-  const DownArrowIntent();
-}
-
-enum ArrowType {
-  current,
-  left,
-  right,
-  up,
-  down,
-  selectionLeft,
-  selectionRight,
-  selectionUp,
-  selectionDown,
-  moveToNextWorldLeft,
-  moveToNextWorldRight,
-  moveToNextWorldUp,
-  moveToNextWorldDown,
-}
-
-typedef ArrowDelegate = void Function(ArrowType type, NodePosition position);
+import '../../core/context.dart';
+import '../../core/logger.dart';
+import '../../cursor/basic_cursor.dart';
+import '../../exception/editor_node_exception.dart';
+import 'arrows.dart';
 
 class LeftArrowAction extends ContextAction<LeftArrowIntent> {
   final EditorContext editorContext;
@@ -87,7 +54,7 @@ class DownArrowAction extends ContextAction<DownArrowIntent> {
   }
 }
 
-void _onLeftOrUp(ArrowType type, EditorContext editorContext, Type actionType){
+void _onLeftOrUp(ArrowType type, EditorContext editorContext, Type actionType) {
   final cursor = editorContext.cursor;
   final controller = editorContext.controller;
   int index = -1;
@@ -117,7 +84,8 @@ void _onLeftOrUp(ArrowType type, EditorContext editorContext, Type actionType){
   }
 }
 
-void _onRightOrDown(ArrowType type, EditorContext editorContext, Type actionType){
+void _onRightOrDown(
+    ArrowType type, EditorContext editorContext, Type actionType) {
   final cursor = editorContext.cursor;
   final controller = editorContext.controller;
   int index = -1;
@@ -147,4 +115,3 @@ void _onRightOrDown(ArrowType type, EditorContext editorContext, Type actionType
         controller.getNode(nextIndex).beginPosition);
   }
 }
-
