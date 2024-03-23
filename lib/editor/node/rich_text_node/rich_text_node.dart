@@ -1,8 +1,12 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/core/controller.dart';
-import 'package:pre_editor/editor/core/events.dart';
-import '../../command/deletion.dart';
+import 'package:flutter/services.dart';
+import '../../command/basic_command.dart';
+import '../../command/rich_text_node/deletion.dart';
+import '../../command/rich_text_node/newline.dart';
+import '../../command/rich_text_node/select_all.dart';
+import '../../command/rich_text_node/typing.dart';
+import '../../core/events.dart';
 import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
@@ -335,25 +339,49 @@ class RichTextNode extends EditorNode {
       spans[position.index].offset + position.offset;
 
   @override
-  void handleEventWhileEditing(EditingEvent event, EditorContext context) {
+  BasicCommand? handleEventWhileEditing(EditingEvent event) {
     logger.i('handleEventWhileEditing event 【$event】');
     final cursor = event.cursor;
-    switch (event.type) {
-      case EventType.delete:
-        context.execute(DeleteWhileEditingRichTextNode(
-            cursor.as<RichTextNodePosition>(), this));
-        break;
-      default:
-        break;
-    }
+    final generator = _editingType2Command[event.type];
+    if (generator == null) return null;
+    return generator.call(
+        cursor.as<RichTextNodePosition>(), this, event.extras);
   }
 
   @override
-  void handleEventWhileSelecting(
-      SelectingNodeEvent event, EditorContext context) {
-    // TODO: implement handleEventWhileSelecting
+  BasicCommand? handleEventWhileSelecting(SelectingNodeEvent event) {
+    logger.i('handleEventWhileSelecting event 【$event】');
+    final cursor = event.cursor;
+    final generator = _selectingType2Command[event.type];
+    if (generator == null) return null;
+    return generator.call(
+        cursor.as<RichTextNodePosition>(), this, event.extras);
   }
 }
+
+final _editingType2Command = <EventType, _EditingCommandGenerator>{
+  EventType.delete: (c, n, e) => DeleteWhileEditingRichTextNode(c, n),
+  EventType.newline: (c, n, e) => InsertNewlineWhileEditingRichTextNode(c, n),
+  EventType.selectAll: (c, n, e) => SelectAllWhileEditingRichTextNode(c, n),
+  EventType.typing: (c, n, e) => generateRichTextCommandWhileEditing(c, n, e as TextEditingDelta),
+};
+
+final _selectingType2Command = <EventType, _SelectingCommandGenerator>{
+  EventType.delete: (c, n, e) => DeleteWhileSelectingRichTextNode(c, n),
+  EventType.newline: (c, n, e) => InsertNewlineWhileSelectingRichTextNode(c, n),
+  EventType.selectAll: (c, n, e) => SelectAllWhileSelectingRichTextNode(c, n),
+  EventType.typing: (c, n, e) => generateRichTextCommandWhileSelecting(c, n, e as TextEditingDelta),
+};
+
+typedef _EditingCommandGenerator = BasicCommand? Function(
+    EditingCursor<RichTextNodePosition> cursor,
+    RichTextNode node,
+    dynamic extra);
+
+typedef _SelectingCommandGenerator = BasicCommand? Function(
+    SelectingNodeCursor<RichTextNodePosition> cursor,
+    RichTextNode node,
+    dynamic extra);
 
 abstract class SpanNode {
   InlineSpan buildSpan();

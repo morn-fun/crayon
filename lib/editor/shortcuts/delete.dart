@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../command/deletion.dart';
+import '../command/selecting_nodes/deletion.dart';
 import '../core/context.dart';
 import '../core/events.dart';
 import '../core/logger.dart';
@@ -21,12 +21,12 @@ class DeleteAction extends ContextAction<DeleteIntent> {
     logger.i('$runtimeType is invoking!');
     try {
       final cursor = editorContext.cursor;
-      final controller = editorContext.controller;
       if (cursor is EditingCursor) {
         editorContext.handleEventWhileEditing(
-            EditingEvent(cursor, EventType.delete, ''));
+            EditingEvent(cursor, EventType.delete));
       } else if (cursor is SelectingNodeCursor) {
-        editorContext.execute(DeletionWhileSelectingNode(cursor));
+        editorContext.handleEventWhileSelectingNode(
+            SelectingNodeEvent(cursor, EventType.delete));
       } else if (cursor is SelectingNodesCursor) {
         editorContext.execute(DeletionWhileSelectingNodes(cursor));
       }

@@ -6,15 +6,11 @@ import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'callbacks_collection.dart';
 import 'command_invoker.dart';
-import 'events.dart';
-import 'logger.dart';
 
 class RichEditorController {
   RichEditorController.fromNodes(List<EditorNode> nodes) {
     _nodes.addAll(List.of(nodes));
   }
-
-  final _tag = 'RichEditorController';
 
   final List<EditorNode> _nodes = [];
   BasicCursor _cursor = NoneCursor();
@@ -60,6 +56,10 @@ class RichEditorController {
   EditorNode get firstNode => _nodes.first;
 
   EditorNode get lastNode => _nodes.last;
+
+  SelectingNodesCursor get selectAllCursor => SelectingNodesCursor(
+      IndexWithPosition(0, firstNode.beginPosition),
+      IndexWithPosition(nodeLength - 1, lastNode.endPosition));
 
   UpdateControllerCommand? update(UpdateOne data, {bool record = true}) {
     final command = data.update(this);

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import '../command/basic_command.dart';
 import '../core/context.dart';
-import '../core/controller.dart';
 import '../core/events.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
@@ -16,17 +16,18 @@ abstract class EditorNode {
 
   Widget build(EditorContext context, int index);
 
+  /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
   EditorNode frontPartNode(NodePosition end, {String? newId});
 
+  /// if the [begin] position is same to [endPosition], you should return a empty RichTextNode
   EditorNode rearPartNode(NodePosition begin, {String? newId});
 
   NodeWithPosition? delete(NodePosition position);
 
-  void handleEventWhileEditing(
-      EditingEvent<NodePosition> event, EditorContext context);
+  BasicCommand? handleEventWhileEditing(EditingEvent<NodePosition> event);
 
-  void handleEventWhileSelecting(
-      SelectingNodeEvent<NodePosition> event, EditorContext context);
+  BasicCommand? handleEventWhileSelecting(
+      SelectingNodeEvent<NodePosition> event);
 
   /// if cannot merge, this function will throw an exception [UnableToMergeException]
   EditorNode merge(EditorNode other, {String? newId});

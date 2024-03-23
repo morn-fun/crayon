@@ -46,13 +46,17 @@ class EditorContext {
 
   bool get typing => inputManager.typing;
 
-  void handleEventWhileEditing(EditingEvent event) => controller
-      .getNode(event.cursor.index)
-      .handleEventWhileEditing(event, this);
+  void handleEventWhileEditing(EditingEvent event) {
+    final command =
+        controller.getNode(event.cursor.index).handleEventWhileEditing(event);
+    if (command != null) invoker.execute(command, controller);
+  }
 
-  void handleEventWhileSelectingNode(SelectingNodeEvent event) => controller
-      .getNode(event.cursor.index)
-      .handleEventWhileSelecting(event, this);
+  void handleEventWhileSelectingNode(SelectingNodeEvent event) {
+    final command =
+        controller.getNode(event.cursor.index).handleEventWhileSelecting(event);
+    if (command != null) invoker.execute(command, controller);
+  }
 
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();

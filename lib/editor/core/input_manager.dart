@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:pre_editor/editor/shortcuts/shortcuts.dart';
 
 import '../command/basic_command.dart';
+import '../command/selecting_nodes/deletion.dart';
 import '../cursor/basic_cursor.dart';
-import 'command_generator.dart';
 import 'controller.dart';
+import 'events.dart';
 import 'logger.dart';
 
 class InputManager with TextInputClient, DeltaTextInputClient {
@@ -69,13 +70,23 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   @override
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
-    if (cursor is NoneCursor) return;
+    final c = cursor;
+    if (c is NoneCursor) return;
     final last = textEditingDeltas.last;
     logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
     final noComposing = last.composing == TextRange.empty;
     final isEmptyComposing =
         last.composing == const TextRange(start: 0, end: 0);
-    BasicCommand? command = generateCommand(last, controller);
+    BasicCommand? command;
+    if (c is EditingCursor) {
+      command = controller.getNode(c.index).handleEventWhileEditing(
+          EditingEvent(c, EventType.typing, extras: last));
+    } else if (c is SelectingNodeCursor) {
+      command = controller.getNode(c.index).handleEventWhileSelecting(
+          SelectingNodeEvent(c, EventType.typing, extras: last));
+    } else if (c is SelectingNodesCursor) {
+      command = DeletionWhileSelectingNodes(c);
+    }
     if ((last is TextEditingDeltaNonTextUpdate) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing) ||
@@ -88,6 +99,15 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       _typing = true;
     }
     if (command != null) onCommand.call(command);
+
+    ///TODO:these code is too ugly, try to fix them!
+    if (c is SelectingNodesCursor) {
+      final command = controller.getNode(c.left.index).handleEventWhileEditing(
+          EditingEvent(
+              EditingCursor(c.left.index, c.left.position), EventType.typing,
+              extras: last));
+      if (command != null) onCommand.call(command);
+    }
   }
 
   void restartInput() {

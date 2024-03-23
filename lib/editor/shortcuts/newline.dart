@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../command/insertion.dart';
+import '../command/selecting_nodes/newline.dart';
 import '../core/context.dart';
+import '../core/events.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/command_exception.dart';
@@ -21,9 +22,11 @@ class NewlineAction extends ContextAction<NewlineIntent> {
     try {
       final cursor = editorContext.cursor;
       if (cursor is EditingCursor) {
-        editorContext.execute(InsertNewlineWhileEditing(cursor));
+        editorContext
+            .handleEventWhileEditing(EditingEvent(cursor, EventType.newline));
       } else if (cursor is SelectingNodeCursor) {
-        editorContext.execute(InsertNewLineWhileSelectingNode(cursor));
+        editorContext.handleEventWhileSelectingNode(
+            SelectingNodeEvent(cursor, EventType.newline));
       } else if (cursor is SelectingNodesCursor) {
         editorContext.execute(InsertNewLineWhileSelectingNodes(cursor));
       }

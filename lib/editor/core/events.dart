@@ -1,11 +1,15 @@
 import '../cursor/basic_cursor.dart';
 
-class EditingEvent<T extends NodePosition>{
+class EditingEvent<T extends NodePosition> {
   final EditingCursor<T> cursor;
   final EventType type;
   final dynamic extras;
 
-  EditingEvent(this.cursor, this.type, this.extras);
+  EditingEvent(
+    this.cursor,
+    this.type, {
+    this.extras,
+  });
 
   @override
   String toString() {
@@ -13,12 +17,12 @@ class EditingEvent<T extends NodePosition>{
   }
 }
 
-class SelectingNodeEvent<T extends NodePosition>{
+class SelectingNodeEvent<T extends NodePosition> {
   final SelectingNodeCursor<T> cursor;
   final EventType type;
   final dynamic extras;
 
-  SelectingNodeEvent(this.cursor, this.type, this.extras);
+  SelectingNodeEvent(this.cursor, this.type, {this.extras});
 
   @override
   String toString() {
@@ -26,9 +30,10 @@ class SelectingNodeEvent<T extends NodePosition>{
   }
 }
 
-enum EventType{
+enum EventType {
   typing,
   delete,
   enter,
   selectAll,
+  newline,
 }

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/context.dart';
-import '../core/controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
-import '../node/rich_text_node/rich_text_node.dart';
 
 class BoldIntent extends Intent {
   const BoldIntent();
