@@ -188,14 +188,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     bool contains = size.contains(localPosition);
     if (contains) {
       final textPosition = painter.getPositionForOffset(localPosition);
-      var spanIndex = node.locateSpanIndex(textPosition.offset);
-      final span = node.spans[spanIndex];
-      logger.i(
-          'onPanUpdate,  widget:$index, contains:$contains, textPosition:$textPosition, spanIndex:$spanIndex, span:$span');
-      BasicCursor? newCursor = generateSelectingCursor(
-          controller.cursor,
-          RichTextNodePosition(spanIndex, textPosition.offset - span.offset),
-          index);
+      final richPosition = node.getPositionByOffset(textPosition.offset);
+      // logger.i(
+      //     'onPanUpdate,  widget:$index, contains:$contains, textPosition:$textPosition, spanIndex:$spanIndex, span:$span');
+      BasicCursor? newCursor =
+          generateSelectingCursor(controller.cursor, richPosition, index);
       if (newCursor != null) controller.updateCursor(newCursor);
     }
   }
@@ -221,8 +218,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       positionNotifier.value = newNodePosition;
     }
     bool needRefresh = tryToUpdateInputAttribute(cursor);
-    logger.i(
-        '_updateCursor,  index:$index,  needRefresh:$needRefresh,  hasCursorTypeChanged:$hasCursorTypeChanged, cursor:$cursor');
+    // logger.i(
+    //     '_updateCursor,  index:$index,  needRefresh:$needRefresh,  hasCursorTypeChanged:$hasCursorTypeChanged, cursor:$cursor');
     return needRefresh || hasCursorTypeChanged;
   }
 
@@ -321,12 +318,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   void _updatePosition(Offset globalOffset) {
     final off = buildTextPosition(globalOffset).offset;
-    var spanIndex = node.locateSpanIndex(off);
-    final span = node.spans[spanIndex];
-    logger.i(
-        '_updatePosition, globalOffset:$globalOffset, off:$off, index:$spanIndex, span:$span');
-    final newCursor = EditingCursor(
-        index, RichTextNodePosition(spanIndex, off - span.offset));
+    final richPosition = node.getPositionByOffset(off);
+    // logger.i(
+    //     '_updatePosition, globalOffset:$globalOffset, off:$off, index:$spanIndex, span:$span');
+    final newCursor = EditingCursor(index, richPosition);
     controller.updateCursor(newCursor);
     updateInputAttribute(newCursor.position);
   }

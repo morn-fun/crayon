@@ -36,4 +36,5 @@ enum EventType {
   enter,
   selectAll,
   newline,
+  bold,
 }

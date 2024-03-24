@@ -3,16 +3,16 @@ import '../shortcuts/arrows/arrows.dart';
 import 'basic_exception.dart';
 
 class UnableToMergeException implements EditorNodeException {
-  final Type origin;
-  final Type other;
+  final String origin;
+  final String other;
 
   UnableToMergeException(this.origin, this.other);
 
-  String get message => 'type:$origin cannot match type:$other!';
+  String get message => 'origin:$origin cannot match other:$other!';
 
   @override
   String toString() {
-    return 'DisableToMergeException{origin: $origin, other: $other}';
+    return 'UnableToMergeException{origin: $origin, other: $other}';
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../command/basic_command.dart';
+import '../../command/rich_text_node/bold.dart';
 import '../../command/rich_text_node/deletion.dart';
 import '../../command/rich_text_node/newline.dart';
 import '../../command/rich_text_node/select_all.dart';
@@ -10,6 +11,7 @@ import '../../core/events.dart';
 import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
+import '../../extension/collection_extension.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../cursor/basic_cursor.dart';
@@ -110,15 +112,14 @@ class RichTextNode extends EditorNode {
   @override
   RichTextNode merge(EditorNode other, {String? newId}) {
     if (other is! RichTextNode) {
-      throw UnableToMergeException(runtimeType, other.runtimeType);
+      throw UnableToMergeException(
+          runtimeType.toString(), other.runtimeType.toString());
     }
     final copySpans = List.of(spans);
-    int offset = copySpans.last.endOffset;
-    for (var span in other.spans) {
-      copySpans.add(span.copy(offset: to(offset)));
-      offset += copySpans.last.textLength;
-    }
-    return RichTextNode._(UnmodifiableListView(copySpans), id: newId ?? id);
+    copySpans.addAll(other.spans);
+    return RichTextNode._(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
+        id: newId ?? id);
   }
 
   @override
@@ -138,16 +139,25 @@ class RichTextNode extends EditorNode {
   Widget build(EditorContext context, int index) =>
       RichTextWidget(context, this, index);
 
-  RichTextNode insert(int index, RichTextSpan span) {
+  RichTextNode insert(int index, RichTextSpan span, {bool trim = false}) {
     final copySpans = List.of(spans);
     copySpans.insert(index, span);
-    int offset = index == 0 ? 0 : copySpans[index - 1].endOffset;
-    for (var i = index; i < copySpans.length; ++i) {
-      var n = copySpans[i];
-      copySpans[i] = n.copy(offset: to(offset));
-      offset += n.textLength;
-    }
-    return RichTextNode._(UnmodifiableListView(copySpans), id: id);
+    return RichTextNode._(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+        id: id);
+  }
+
+  RichTextNode insertByPosition(
+      RichTextNodePosition position, RichTextSpan span,
+      {bool trim = false}) {
+    final index = position.index;
+    final currentSpan = spans[index];
+    final copySpans = List.of(spans);
+    copySpans.replaceRange(index, index + 1,
+        currentSpan.insert(position.offset, span, trim: trim));
+    return RichTextNode._(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+        id: id);
   }
 
   RichTextNode update(int index, RichTextSpan span) {
@@ -175,32 +185,28 @@ class RichTextNode extends EditorNode {
     final copySpans = List.of(this.spans);
     final leftIndex = left.index;
     final rightIndex = right.index;
-    int offset = copySpans[leftIndex].offset;
-    var leftNode = copySpans[leftIndex];
-    var rightNode = copySpans[right.index];
+    var leftSpan = copySpans[leftIndex];
+    var rightSpan = copySpans[rightIndex];
     if (leftIndex == rightIndex) {
       copySpans.removeAt(leftIndex);
     } else {
       copySpans.removeRange(leftIndex, rightIndex + 1);
     }
-    leftNode = leftNode.copy(text: (t) => t.substring(0, left.offset));
-    rightNode =
-        rightNode.copy(text: (t) => t.substring(right.offset, t.length));
-    if (rightNode.text.isNotEmpty) copySpans.insert(leftIndex, rightNode);
-    copySpans.insertAll(leftIndex, spans);
-    if (leftNode.text.isNotEmpty) copySpans.insert(leftIndex, leftNode);
-    int i = leftIndex;
-    while (i < copySpans.length) {
-      copySpans[i] = copySpans[i].copy(offset: to(offset));
-      offset += copySpans[i].textLength;
-      i++;
-    }
-    return RichTextNode._(UnmodifiableListView(copySpans), id: newId ?? id);
+    leftSpan = leftSpan.copy(text: (t) => t.substring(0, left.offset));
+    rightSpan =
+        rightSpan.copy(text: (t) => t.substring(right.offset, t.length));
+    final newSpans = List.of(spans);
+    if (rightSpan.text.isNotEmpty) newSpans.add(rightSpan);
+    if (leftSpan.text.isNotEmpty) newSpans.insert(0, leftSpan);
+    copySpans.insertAll(leftIndex, newSpans);
+    return RichTextNode._(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
+        id: newId ?? id);
   }
 
   int locateSpanIndex(int offset) {
     if (spans.length <= 1 || offset <= 0) return 0;
-    if (offset >= spans.last.offset) return spans.length - 1;
+    if (offset >= spans.last.endOffset) return spans.length - 1;
     int left = 0;
     int right = spans.length - 1;
     while (left < right) {
@@ -218,12 +224,29 @@ class RichTextNode extends EditorNode {
     return left;
   }
 
+  RichTextNodePosition getPositionByOffset(int offset, {bool trim = true}) {
+    int index = locateSpanIndex(offset);
+    final span = spans[index];
+    if (trim) {
+      if (span.isEmpty && index - 1 >= 0) {
+        return RichTextNodePosition(index - 1, spans[index - 1].textLength);
+      }
+    }
+    return RichTextNodePosition(index, offset - span.offset);
+  }
+
   RichTextSpan getSpan(int index) => spans[index];
+
+  List<RichTextSpan> buildSpansByAddingTag(String tag) =>
+      spans.map((e) => e.copy(tags: (tags) => tags.addOne(tag))).toList();
+
+  List<RichTextSpan> buildSpansByRemovingTag(String tag) =>
+      spans.map((e) => e.copy(tags: (tags) => tags.removeOne(tag))).toList();
 
   @override
   RichTextNode getFromPosition(
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
-      {String? newId}) {
+      {String? newId, bool trim = false}) {
     if (begin == end) {
       return RichTextNode.empty(id: newId ?? id);
     }
@@ -248,7 +271,7 @@ class RichTextNode extends EditorNode {
         } else {
           span = span.copy(offset: to(newSpans.last.endOffset));
         }
-        newSpans.add(span);
+        if (!trim || !span.isEmpty) newSpans.add(span);
       }
       return RichTextNode._(UnmodifiableListView(newSpans), id: newId ?? id);
     }
@@ -310,6 +333,23 @@ class RichTextNode extends EditorNode {
     }
   }
 
+  RichTextNodePosition nextPositionByLength(
+      RichTextNodePosition position, int l) {
+    int index = position.index;
+    int offset = position.offset;
+    int restLength = l + offset;
+    while (index < spans.length && restLength > 0) {
+      final span = spans[index];
+      if (restLength < span.textLength) {
+        return RichTextNodePosition(index, offset);
+      }
+      restLength = restLength - span.textLength;
+      offset = span.offset;
+      index++;
+    }
+    return RichTextNodePosition(index, offset);
+  }
+
   RichTextNodePosition nextPosition(RichTextNodePosition position) {
     final index = position.index;
     final nextIndex = index + 1;
@@ -363,14 +403,18 @@ final _editingType2Command = <EventType, _EditingCommandGenerator>{
   EventType.delete: (c, n, e) => DeleteWhileEditingRichTextNode(c, n),
   EventType.newline: (c, n, e) => InsertNewlineWhileEditingRichTextNode(c, n),
   EventType.selectAll: (c, n, e) => SelectAllWhileEditingRichTextNode(c, n),
-  EventType.typing: (c, n, e) => generateRichTextCommandWhileEditing(c, n, e as TextEditingDelta),
+  EventType.typing: (c, n, e) =>
+      generateRichTextCommandWhileEditing(c, n, e as TextEditingDelta),
+  EventType.bold: (c, n, e) => BoldWhileEditingRichTextNode(c, n),
 };
 
 final _selectingType2Command = <EventType, _SelectingCommandGenerator>{
   EventType.delete: (c, n, e) => DeleteWhileSelectingRichTextNode(c, n),
   EventType.newline: (c, n, e) => InsertNewlineWhileSelectingRichTextNode(c, n),
   EventType.selectAll: (c, n, e) => SelectAllWhileSelectingRichTextNode(c, n),
-  EventType.typing: (c, n, e) => generateRichTextCommandWhileSelecting(c, n, e as TextEditingDelta),
+  EventType.typing: (c, n, e) =>
+      generateRichTextCommandWhileSelecting(c, n, e as TextEditingDelta),
+  EventType.bold: (c, n, e) => BoldWhileSelectingRichTextNode(c, n),
 };
 
 typedef _EditingCommandGenerator = BasicCommand? Function(

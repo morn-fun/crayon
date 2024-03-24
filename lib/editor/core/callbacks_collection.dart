@@ -71,7 +71,7 @@ class CallbackCollection {
   void removeNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
     final set = _nodeChangedCallbacks[id] ?? {};
     set.remove(callback);
-    logger.i('$tag, removeNodeChangedCallback:$id, length:${set.length}');
+    // logger.i('$tag, removeNodeChangedCallback:$id, length:${set.length}');
     if (set.isEmpty) {
       _nodeChangedCallbacks.remove(id);
     } else {
@@ -109,36 +109,36 @@ class CallbackCollection {
     for (var c in Set.of(_cursorChangedCallbacks)) {
       c.call(cursor);
     }
-    logger.i('$tag, notifyCursor length:${_cursorChangedCallbacks.length}');
+    // logger.i('$tag, notifyCursor length:${_cursorChangedCallbacks.length}');
   }
 
   void notifyDragUpdateDetails(Offset p) {
     for (var c in Set.of(_onPanUpdateCallbacks)) {
       c.call(p);
     }
-    logger.i(
-        '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
+    // logger.i(
+    //     '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
   void notifyTapDown(String id, Offset p) {
     for (var c in Set.of(_onTapDownCallbacks[id] ?? {})) {
       c.call(p);
     }
-    logger.i('$tag, notifyTapDown length:${_onTapDownCallbacks[id]?.length}');
+    // logger.i('$tag, notifyTapDown length:${_onTapDownCallbacks[id]?.length}');
   }
 
   void notifyNode(EditorNode node) {
     for (var c in Set.of(_nodeChangedCallbacks[node.id] ?? {})) {
       c.call(node);
     }
-    logger
-        .i('$tag, notifyNode length:${_nodeChangedCallbacks[node.id]?.length}');
+    // logger
+    //     .i('$tag, notifyNode length:${_nodeChangedCallbacks[node.id]?.length}');
   }
 
   void notifyNodes() {
     for (var c in Set.of(_nodesChangedCallbacks)) {
       c.call();
     }
-    logger.i('$tag, notifyNodes length:${_nodesChangedCallbacks.length}');
+    // logger.i('$tag, notifyNodes length:${_nodesChangedCallbacks.length}');
   }
 }

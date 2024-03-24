@@ -1,3 +1,4 @@
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
 import 'package:pre_editor/editor/exception/editor_node_exception.dart';
@@ -116,8 +117,7 @@ void main() {
   test('insert', () {
     final newNode = basicNode();
     final node1 = newNode.insert(0, RichTextSpan(text: 'a' * 5));
-    assert(node1.spans.length == newNode.spans.length + 1);
-    assert(node1.spans.first.text == 'a' * 5);
+    assert(node1.spans.length == 1);
     int offset = 0;
     for (var span in node1.spans) {
       assert(span.offset == offset);
@@ -125,8 +125,7 @@ void main() {
     }
 
     final node2 = newNode.insert(5, RichTextSpan(text: 'a' * 5));
-    assert(node2.spans.length == newNode.spans.length + 1);
-    assert(node2.spans[5].text == 'a' * 5);
+    assert(node2.spans.length == 1);
 
     offset = 0;
     for (var span in node2.spans) {
@@ -138,7 +137,7 @@ void main() {
   test('merge', () {
     final newNode = basicNode();
     final node1 = newNode.merge(basicNode());
-    assert(node1.spans.length == newNode.spans.length * 2);
+    assert(node1.spans.length == 1);
     int offset = 0;
     for (var span in node1.spans) {
       assert(span.offset == offset);
@@ -146,7 +145,7 @@ void main() {
     }
 
     final node2 = node1.merge(newNode);
-    assert(node2.spans.length == newNode.spans.length * 3);
+    assert(node2.spans.length == 1);
     offset = 0;
     for (var span in node1.spans) {
       assert(span.offset == offset);
@@ -209,7 +208,7 @@ void main() {
 
     final node3 = newNode
         .replace(RichTextNodePosition(3, 0), RichTextNodePosition(5, 0), []);
-    assert(node3.spans.length == newNode.spans.length - 2);
+    assert(node3.spans.length == 1);
     offset = 0;
     for (var span in node3.spans) {
       assert(span.offset == offset);
@@ -218,7 +217,7 @@ void main() {
 
     final node4 = newNode.replace(RichTextNodePosition(3, 0),
         RichTextNodePosition(5, 0), [RichTextSpan(text: 'x')]);
-    assert(node4.spans.length == newNode.spans.length - 1);
+    assert(node4.spans.length == 1);
     offset = 0;
     for (var span in node4.spans) {
       assert(span.offset == offset);
@@ -227,11 +226,11 @@ void main() {
 
     final node5 = newNode
         .replace(RichTextNodePosition(3, 5), RichTextNodePosition(7, 9), [
-      RichTextSpan(text: 'abc'),
-      RichTextSpan(text: '123'),
+      RichTextSpan(text: 'abc', tags: {'a'}),
+      RichTextSpan(text: '123', tags: {'b'}),
       RichTextSpan(text: 'xyz'),
     ]);
-    assert(node5.spans.length == newNode.spans.length);
+    assert(node5.spans.length == 4);
     offset = 0;
     for (var span in node5.spans) {
       assert(span.offset == offset);
@@ -244,7 +243,7 @@ void main() {
       RichTextSpan(text: '123'),
       RichTextSpan(text: 'xyz'),
     ]);
-    assert(node6.spans.length == newNode.spans.length + 4);
+    assert(node6.spans.length == 1);
     offset = 0;
     for (var span in node6.spans) {
       assert(span.offset == offset);
@@ -257,11 +256,12 @@ void main() {
   });
 
   test('delete', () {
-    final newNode = basicNode(texts: ['abc','xyz','l']);
+    final newNode = basicNode(texts: ['abc', 'xyz', 'l']);
     final np1 = newNode
         .delete(RichTextNodePosition(0, newNode.spans.first.textLength))!;
     assert((np1.position as RichTextNodePosition).index == 0);
-    assert((np1.position as RichTextNodePosition).offset == newNode.spans.first.textLength - 1);
+    assert((np1.position as RichTextNodePosition).offset ==
+        newNode.spans.first.textLength - 1);
     final node1 = np1.node as RichTextNode;
     assert(node1.spans.first.text == 'ab');
     expect(() => newNode.delete(RichTextNodePosition(0, 0)),
@@ -273,20 +273,23 @@ void main() {
     assert((np2.position as RichTextNodePosition).offset == 0);
 
     final np3 = newNode.delete(RichTextNodePosition(1, 0))!;
-    assert(np3.position == RichTextNodePosition(0, newNode.spans.first.textLength - 1));
+    assert(np3.position ==
+        RichTextNodePosition(0, newNode.spans.first.textLength - 1));
     final node3 = np3.node as RichTextNode;
     assert(node3.spans.first.text == 'ab');
 
     final np4 = newNode.delete(RichTextNodePosition(2, 1))!;
     assert((np4.position as RichTextNodePosition).index == 1);
-    assert((np4.position as RichTextNodePosition).offset == newNode.spans[1].textLength);
+    assert((np4.position as RichTextNodePosition).offset ==
+        newNode.spans[1].textLength);
     final node4 = np4.node as RichTextNode;
-    assert(node4.spans.length == 2);
+    assert(node4.spans.length == 1);
   });
 
-  test('selectingTextSpan', (){
-    final newNode = basicNode(texts: ['aaaaaa','bbbbbb','cccccc']);
-    final textSpan = newNode.selectingTextSpan(RichTextNodePosition(1, 0), RichTextNodePosition(2, 0));
+  test('selectingTextSpan', () {
+    final newNode = basicNode(texts: ['aaaaaa', 'bbbbbb', 'cccccc']);
+    final textSpan = newNode.selectingTextSpan(
+        RichTextNodePosition(1, 0), RichTextNodePosition(2, 0));
     print('textSpan:$textSpan');
   });
 }
