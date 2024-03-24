@@ -5,7 +5,7 @@ import '../node/basic_node.dart';
 import 'basic_command.dart';
 
 class ModifyNode implements BasicCommand {
-  final EditingCursor cursor;
+  final SingleNodeCursor cursor;
   final EditorNode node;
   final bool record;
 

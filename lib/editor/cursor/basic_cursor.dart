@@ -8,9 +8,12 @@ abstract class NodePosition {
 class NoneCursor extends BasicCursor {}
 
 abstract class SingleNodeCursor<T extends NodePosition>
-    extends BasicCursor<T> {}
+    extends BasicCursor<T> {
+  int get index;
+}
 
 class EditingCursor<T extends NodePosition> extends SingleNodeCursor<T> {
+  @override
   final int index;
   final T position;
 
@@ -26,6 +29,7 @@ class EditingCursor<T extends NodePosition> extends SingleNodeCursor<T> {
 }
 
 class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
+  @override
   final int index;
   final T begin;
   final T end;

@@ -1,7 +1,7 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
 import 'package:pre_editor/editor/exception/editor_node_exception.dart';
+import 'package:pre_editor/editor/node/position_data.dart';
 import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
 import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
 
@@ -33,28 +33,60 @@ void main() {
   test('frontPartNode', () {
     final newNode = basicNode();
     final node1 = newNode.frontPartNode(RichTextNodePosition(4, 5));
-    assert(node1.getSpan(0).text == constTexts[0]);
-    assert(node1.getSpan(1).text == constTexts[1]);
-    assert(node1.getSpan(2).text == constTexts[2]);
-    assert(node1.getSpan(3).text == constTexts[3]);
-    assert(node1.getSpan(4).text != constTexts[4]);
-    assert(node1.getSpan(0).offset == newNode.getSpan(0).offset);
-    assert(node1.getSpan(1).offset == newNode.getSpan(1).offset);
-    assert(node1.getSpan(2).offset == newNode.getSpan(2).offset);
-    assert(node1.getSpan(3).offset == newNode.getSpan(3).offset);
+    assert(node1
+        .getSpan(0)
+        .text == constTexts[0]);
+    assert(node1
+        .getSpan(1)
+        .text == constTexts[1]);
+    assert(node1
+        .getSpan(2)
+        .text == constTexts[2]);
+    assert(node1
+        .getSpan(3)
+        .text == constTexts[3]);
+    assert(node1
+        .getSpan(4)
+        .text != constTexts[4]);
+    assert(node1
+        .getSpan(0)
+        .offset == newNode
+        .getSpan(0)
+        .offset);
+    assert(node1
+        .getSpan(1)
+        .offset == newNode
+        .getSpan(1)
+        .offset);
+    assert(node1
+        .getSpan(2)
+        .offset == newNode
+        .getSpan(2)
+        .offset);
+    assert(node1
+        .getSpan(3)
+        .offset == newNode
+        .getSpan(3)
+        .offset);
     for (var i = 1; i < node1.spans.length; ++i) {
       var currentSpan = node1.getSpan(i);
-      assert(currentSpan.offset == node1.getSpan(i - 1).endOffset);
+      assert(currentSpan.offset == node1
+          .getSpan(i - 1)
+          .endOffset);
     }
 
-    assert(newNode.frontPartNode(newNode.beginPosition).spans.length == 1);
+    assert(newNode
+        .frontPartNode(newNode.beginPosition)
+        .spans
+        .length == 1);
 
-    final node2 = newNode.frontPartNode(RichTextNodePosition(1, 0));
+    final node2 =
+    newNode.frontPartNode(RichTextNodePosition(1, 0), trim: false);
     assert(node2.spans.length == 2);
     assert(node2.spans.last.textLength == 0);
 
     final node3 =
-        newNode.frontPartNode(RichTextNodePosition(0, constTexts[0].length));
+    newNode.frontPartNode(RichTextNodePosition(0, constTexts[0].length));
     assert(node3.spans.length == 1);
     assert(node3.spans.last.text == constTexts[0]);
   });
@@ -62,28 +94,50 @@ void main() {
   test('rearPartNode', () {
     final newNode = basicNode();
     final node1 = newNode.rearPartNode(RichTextNodePosition(4, 5));
-    assert(node1.getSpan(0).text == constTexts[4].substring(5));
-    assert(node1.getSpan(0).text != constTexts[4]);
-    assert(node1.getSpan(1).text == constTexts[5]);
-    assert(node1.getSpan(2).text == constTexts[6]);
-    assert(node1.getSpan(3).text == constTexts[7]);
-    assert(node1.getSpan(4).text == constTexts[8]);
-    assert(node1.getSpan(5).text == constTexts[9]);
+    assert(node1
+        .getSpan(0)
+        .text == constTexts[4].substring(5));
+    assert(node1
+        .getSpan(0)
+        .text != constTexts[4]);
+    assert(node1
+        .getSpan(1)
+        .text == constTexts[5]);
+    assert(node1
+        .getSpan(2)
+        .text == constTexts[6]);
+    assert(node1
+        .getSpan(3)
+        .text == constTexts[7]);
+    assert(node1
+        .getSpan(4)
+        .text == constTexts[8]);
+    assert(node1
+        .getSpan(5)
+        .text == constTexts[9]);
     for (var i = 1; i < node1.spans.length; ++i) {
       var currentSpan = node1.getSpan(i);
-      assert(currentSpan.offset == node1.getSpan(i - 1).endOffset);
+      assert(currentSpan.offset == node1
+          .getSpan(i - 1)
+          .endOffset);
     }
 
-    assert(newNode.rearPartNode(newNode.endPosition).spans.length == 1);
+    assert(newNode
+        .rearPartNode(newNode.endPosition)
+        .spans
+        .length == 1);
 
     final node2 =
-        node1.rearPartNode(RichTextNodePosition(node1.spans.length - 1, 0));
+    node1.rearPartNode(RichTextNodePosition(node1.spans.length - 1, 0));
     assert(node2.spans.length == 1);
     assert(node2.spans.last.text == node1.spans.last.text);
 
-    final node3 = node1.rearPartNode(RichTextNodePosition(
-        node1.spans.length - 2,
-        node1.getSpan(node1.spans.length - 2).textLength));
+    final node3 = node1.rearPartNode(
+        RichTextNodePosition(node1.spans.length - 2,
+            node1
+                .getSpan(node1.spans.length - 2)
+                .textLength),
+        trim: false);
     assert(node3.spans.length == 2);
     assert(node3.spans.first.textLength == 0);
     assert(node3.spans.last.text == node1.spans.last.text);
@@ -174,7 +228,7 @@ void main() {
     }
 
     final node3 =
-        newNode.update(newNode.spans.length - 1, RichTextSpan(text: 'a' * 5));
+    newNode.update(newNode.spans.length - 1, RichTextSpan(text: 'a' * 5));
     assert(node3.spans.length == constTexts.length);
     assert(node3.spans.last.textLength == 5);
     offset = 0;
@@ -257,30 +311,29 @@ void main() {
 
   test('delete', () {
     final newNode = basicNode(texts: ['abc', 'xyz', 'l']);
-    final np1 = newNode
-        .delete(RichTextNodePosition(0, newNode.spans.first.textLength))!;
-    assert((np1.position as RichTextNodePosition).index == 0);
-    assert((np1.position as RichTextNodePosition).offset ==
-        newNode.spans.first.textLength - 1);
+    final np1 =
+    newNode.delete(RichTextNodePosition(0, newNode.spans.first.textLength));
+    assert((np1.position as EditingPosition).position is RichTextNodePosition);
+    assert(((np1.position as EditingPosition).position as RichTextNodePosition)
+        .offset == newNode.spans.first.textLength - 1);
     final node1 = np1.node as RichTextNode;
     assert(node1.spans.first.text == 'ab');
     expect(() => newNode.delete(RichTextNodePosition(0, 0)),
         throwsA(const TypeMatcher<DeleteRequiresNewLineException>()));
 
-    final np2 = newNode.delete(RichTextNodePosition(0, 1))!;
+    final np2 = newNode.delete(RichTextNodePosition(0, 1));
     final node2 = np2.node as RichTextNode;
     assert(node2.spans.first.text == 'bc');
-    assert((np2.position as RichTextNodePosition).offset == 0);
+    assert(np2.position is EditingPosition);
 
-    final np3 = newNode.delete(RichTextNodePosition(1, 0))!;
-    assert(np3.position ==
-        RichTextNodePosition(0, newNode.spans.first.textLength - 1));
+    final np3 = newNode.delete(RichTextNodePosition(1, 0));
+    assert(np3.position is EditingPosition);
     final node3 = np3.node as RichTextNode;
     assert(node3.spans.first.text == 'ab');
 
-    final np4 = newNode.delete(RichTextNodePosition(2, 1))!;
-    assert((np4.position as RichTextNodePosition).index == 1);
-    assert((np4.position as RichTextNodePosition).offset ==
+    final np4 = newNode.delete(RichTextNodePosition(2, 1));
+    assert(np4.position is EditingPosition);
+    assert(((np4.position as EditingPosition).position as RichTextNodePosition).offset ==
         newNode.spans[1].textLength);
     final node4 = np4.node as RichTextNode;
     assert(node4.spans.length == 1);

@@ -29,6 +29,19 @@ class DeleteRequiresNewLineException implements EditorNodeException {
   }
 }
 
+class NewlineRequiresNewNode implements EditorNodeException {
+  final Type type;
+
+  NewlineRequiresNewNode(this.type);
+
+  String get message => 'the $type is requiring insert a new node';
+
+  @override
+  String toString() {
+    return 'NewlineRequiresNewNode{type: $type}';
+  }
+}
+
 class DeleteNotAllowedException implements EditorNodeException {
   final Type type;
 
@@ -53,6 +66,19 @@ class NodePositionDifferentException implements EditorNodeException {
   @override
   String toString() {
     return 'NodePositionDifferentException{origin: $origin, other: $other}';
+  }
+}
+
+class NodePositionInvalidException implements EditorNodeException {
+  final String reason;
+
+  NodePositionInvalidException(this.reason);
+
+  String get message => 'the node position is invalid, $reason';
+
+  @override
+  String toString() {
+    return 'NodePositionInvalidException{reason: $reason}';
   }
 }
 

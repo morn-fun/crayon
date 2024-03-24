@@ -1,13 +1,5 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../command/basic_command.dart';
-import '../../command/rich_text_node/bold.dart';
-import '../../command/rich_text_node/deletion.dart';
-import '../../command/rich_text_node/newline.dart';
-import '../../command/rich_text_node/select_all.dart';
-import '../../command/rich_text_node/typing.dart';
-import '../../core/events.dart';
 import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
@@ -20,6 +12,11 @@ import '../../exception/editor_node_exception.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
+import '../position_data.dart';
+import 'generator/bold.dart';
+import 'generator/deletion.dart';
+import 'generator/selectall.dart';
+import 'generator/typing.dart';
 import 'rich_text_span.dart';
 
 class RichTextNode extends EditorNode {
@@ -101,13 +98,13 @@ class RichTextNode extends EditorNode {
 
   @override
   RichTextNode frontPartNode(covariant RichTextNodePosition end,
-          {String? newId}) =>
-      getFromPosition(beginPosition, end, newId: newId);
+          {String? newId, bool trim = true}) =>
+      getFromPosition(beginPosition, end, newId: newId, trim: trim);
 
   @override
   RichTextNode rearPartNode(covariant RichTextNodePosition begin,
-          {String? newId}) =>
-      getFromPosition(begin, endPosition, newId: newId);
+          {String? newId, bool trim = true}) =>
+      getFromPosition(begin, endPosition, newId: newId, trim: trim);
 
   @override
   RichTextNode merge(EditorNode other, {String? newId}) {
@@ -260,25 +257,29 @@ class RichTextNode extends EditorNode {
       final beginIndex = left.index;
       final endIndex = right.index;
       final newSpans = <RichTextSpan>[];
+      int offset = 0;
       for (var i = beginIndex; i < endIndex + 1; ++i) {
         var span = spans[i];
         if (i == beginIndex) {
           span = span.copy(
-              offset: to(0), text: (v) => v.substring(left.offset, v.length));
+              offset: to(offset),
+              text: (v) => v.substring(left.offset, v.length));
         } else if (i == endIndex) {
           final text = span.text.substring(0, right.offset);
-          span = span.copy(offset: to(newSpans.last.endOffset), text: to(text));
+          span = span.copy(offset: to(offset), text: to(text));
         } else {
-          span = span.copy(offset: to(newSpans.last.endOffset));
+          span = span.copy(offset: to(offset));
         }
-        if (!trim || !span.isEmpty) newSpans.add(span);
+        if (!trim || !span.isEmpty) {
+          offset += span.textLength;
+          newSpans.add(span);
+        }
       }
       return RichTextNode._(UnmodifiableListView(newSpans), id: newId ?? id);
     }
   }
 
-  @override
-  NodeWithPosition? delete(covariant RichTextNodePosition position) {
+  NodeWithPosition delete(covariant RichTextNodePosition position) {
     if (position == beginPosition) {
       throw DeleteRequiresNewLineException(runtimeType);
     }
@@ -289,7 +290,8 @@ class RichTextNode extends EditorNode {
       final newSpan = lastSpan.copy(text: (t) => t.removeLast());
       final newOffset = newSpan.text.length;
       final newPosition = RichTextNodePosition(lastIndex, newOffset);
-      return NodeWithPosition(update(lastIndex, newSpan), newPosition);
+      return NodeWithPosition(
+          update(lastIndex, newSpan), EditingPosition(newPosition));
     } else {
       final span = spans[index];
       final text = span.text;
@@ -302,9 +304,11 @@ class RichTextNode extends EditorNode {
         return NodeWithPosition(
             replace(RichTextNodePosition(lastIndex, 0),
                 RichTextNodePosition(index, span.textLength), [lastSpan]),
-            RichTextNodePosition(lastIndex, lastSpan.textLength));
+            EditingPosition(
+                RichTextNodePosition(lastIndex, lastSpan.textLength)));
       }
-      return NodeWithPosition(update(position.index, newSpan), newPosition);
+      return NodeWithPosition(
+          update(position.index, newSpan), EditingPosition(newPosition));
     }
   }
 
@@ -379,53 +383,47 @@ class RichTextNode extends EditorNode {
       spans[position.index].offset + position.offset;
 
   @override
-  BasicCommand? handleEventWhileEditing(EditingEvent event) {
-    logger.i('handleEventWhileEditing event 【$event】');
-    final cursor = event.cursor;
-    final generator = _editingType2Command[event.type];
-    if (generator == null) return null;
-    return generator.call(
-        cursor.as<RichTextNodePosition>(), this, event.extras);
+  NodeWithPosition onEdit(EditingData data) {
+    logger.i('onEdit $data');
+    final generator = _editingGenerator[data.type];
+    if (generator == null) {
+      return NodeWithPosition(this, EditingPosition(data.position));
+    }
+    return generator.call(data.as<RichTextNodePosition>(), this);
   }
 
   @override
-  BasicCommand? handleEventWhileSelecting(SelectingNodeEvent event) {
-    logger.i('handleEventWhileSelecting event 【$event】');
-    final cursor = event.cursor;
-    final generator = _selectingType2Command[event.type];
-    if (generator == null) return null;
-    return generator.call(
-        cursor.as<RichTextNodePosition>(), this, event.extras);
+  NodeWithPosition onSelect(SelectingData data) {
+    logger.i('onSelect $data');
+    final generator = _selectingGenerator[data.type];
+    if (generator == null) {
+      return NodeWithPosition(this, data.position);
+    }
+    return generator.call(data.as<RichTextNodePosition>(), this);
   }
 }
 
-final _editingType2Command = <EventType, _EditingCommandGenerator>{
-  EventType.delete: (c, n, e) => DeleteWhileEditingRichTextNode(c, n),
-  EventType.newline: (c, n, e) => InsertNewlineWhileEditingRichTextNode(c, n),
-  EventType.selectAll: (c, n, e) => SelectAllWhileEditingRichTextNode(c, n),
-  EventType.typing: (c, n, e) =>
-      generateRichTextCommandWhileEditing(c, n, e as TextEditingDelta),
-  EventType.bold: (c, n, e) => BoldWhileEditingRichTextNode(c, n),
+final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
+  EventType.delete: (d, n) => n.delete(d.position),
+  EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
+  EventType.selectAll: (d, n) => selectAllRichTextNodeWhileEditing(d, n),
+  EventType.typing: (d, n) => typingRichTextNodeWhileEditing(d, n),
+  EventType.bold: (d, n) => boldRichTextNodeWhileEditing(d, n),
 };
 
-final _selectingType2Command = <EventType, _SelectingCommandGenerator>{
-  EventType.delete: (c, n, e) => DeleteWhileSelectingRichTextNode(c, n),
-  EventType.newline: (c, n, e) => InsertNewlineWhileSelectingRichTextNode(c, n),
-  EventType.selectAll: (c, n, e) => SelectAllWhileSelectingRichTextNode(c, n),
-  EventType.typing: (c, n, e) =>
-      generateRichTextCommandWhileSelecting(c, n, e as TextEditingDelta),
-  EventType.bold: (c, n, e) => BoldWhileSelectingRichTextNode(c, n),
+final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
+  EventType.delete: (d, n) => deleteRichTextNodeWhileSelecting(d, n),
+  EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
+  EventType.selectAll: (d, n) => selectAllRichTextNodeWhileSelecting(d, n),
+  EventType.typing: (d, n) => typingRichTextNodeWhileSelecting(d, n),
+  EventType.bold: (d, n) => boldRichTextNodeWhileSelecting(d, n),
 };
 
-typedef _EditingCommandGenerator = BasicCommand? Function(
-    EditingCursor<RichTextNodePosition> cursor,
-    RichTextNode node,
-    dynamic extra);
+typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
+    EditingData<RichTextNodePosition> data, RichTextNode node);
 
-typedef _SelectingCommandGenerator = BasicCommand? Function(
-    SelectingNodeCursor<RichTextNodePosition> cursor,
-    RichTextNode node,
-    dynamic extra);
+typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
+    SelectingData<RichTextNodePosition> data, RichTextNode node);
 
 abstract class SpanNode {
   InlineSpan buildSpan();

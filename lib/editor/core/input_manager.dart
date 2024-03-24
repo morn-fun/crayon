@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pre_editor/editor/shortcuts/shortcuts.dart';
+import 'package:pre_editor/editor/node/position_data.dart';
 
 import '../command/basic_command.dart';
-import '../command/selecting_nodes/deletion.dart';
+import '../command/modification.dart';
+import '../command/selecting_nodes/replace.dart';
 import '../cursor/basic_cursor.dart';
+import '../node/basic_node.dart';
+import '../shortcuts/shortcuts.dart';
 import 'controller.dart';
-import 'events.dart';
 import 'logger.dart';
 
 class InputManager with TextInputClient, DeltaTextInputClient {
@@ -77,16 +79,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final noComposing = last.composing == TextRange.empty;
     final isEmptyComposing =
         last.composing == const TextRange(start: 0, end: 0);
-    BasicCommand? command;
-    if (c is EditingCursor) {
-      command = controller.getNode(c.index).handleEventWhileEditing(
-          EditingEvent(c, EventType.typing, extras: last));
-    } else if (c is SelectingNodeCursor) {
-      command = controller.getNode(c.index).handleEventWhileSelecting(
-          SelectingNodeEvent(c, EventType.typing, extras: last));
-    } else if (c is SelectingNodesCursor) {
-      command = DeletionWhileSelectingNodes(c);
-    }
+    BasicCommand? command = _buildCommand(last);
     if ((last is TextEditingDeltaNonTextUpdate) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing) ||
@@ -99,15 +92,25 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       _typing = true;
     }
     if (command != null) onCommand.call(command);
+  }
 
-    ///TODO:these code is too ugly, try to fix them!
-    if (c is SelectingNodesCursor) {
-      final command = controller.getNode(c.left.index).handleEventWhileEditing(
-          EditingEvent(
-              EditingCursor(c.left.index, c.left.position), EventType.typing,
-              extras: last));
-      if (command != null) onCommand.call(command);
+  BasicCommand? _buildCommand(TextEditingDelta delta) {
+    final c = cursor;
+    if (c is EditingCursor) {
+      final node = controller.getNode(c.index);
+      final newOne =
+          node.onEdit(EditingData(c.position, EventType.typing, extras: delta));
+      return ModifyNode(newOne.toCursor(c.index), newOne.node);
+    } else if (c is SelectingNodeCursor) {
+      final node = controller.getNode(c.index);
+      final newOne = node.onSelect(SelectingData(
+          SelectingPosition(c.begin, c.end), EventType.typing,
+          extras: delta));
+      return ModifyNode(newOne.toCursor(c.index), newOne.node);
+    } else if (c is SelectingNodesCursor) {
+      return ReplaceSelectingNodes(c, EventType.typing, delta);
     }
+    return null;
   }
 
   void restartInput() {
