@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
@@ -13,7 +14,7 @@ import '../../shortcuts/arrows/arrows.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
-import 'generator/bold.dart';
+import 'generator/styles.dart';
 import 'generator/deletion.dart';
 import 'generator/selectall.dart';
 import 'generator/typing.dart';
@@ -157,7 +158,7 @@ class RichTextNode extends EditorNode {
         id: id);
   }
 
-  RichTextNode update(int index, RichTextSpan span) {
+  RichTextNode update(int index, RichTextSpan span, {bool trim = true}) {
     final copySpans = List.of(spans);
     copySpans[index] = span;
     int offset = index == 0 ? 0 : copySpans[index - 1].endOffset;
@@ -166,7 +167,9 @@ class RichTextNode extends EditorNode {
       copySpans[i] = n.copy(offset: to(offset));
       offset += n.textLength;
     }
-    return RichTextNode._(UnmodifiableListView(copySpans), id: id);
+    return RichTextNode._(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+        id: id);
   }
 
   RichTextNode remove(RichTextNodePosition begin, RichTextNodePosition end) {
@@ -218,17 +221,12 @@ class RichTextNode extends EditorNode {
         return mid;
       }
     }
-    return left;
+    return min(left, right);
   }
 
-  RichTextNodePosition getPositionByOffset(int offset, {bool trim = true}) {
+  RichTextNodePosition getPositionByOffset(int offset) {
     int index = locateSpanIndex(offset);
     final span = spans[index];
-    if (trim) {
-      if (span.isEmpty && index - 1 >= 0) {
-        return RichTextNodePosition(index - 1, spans[index - 1].textLength);
-      }
-    }
     return RichTextNodePosition(index, offset - span.offset);
   }
 
@@ -254,28 +252,20 @@ class RichTextNode extends EditorNode {
           offset: to(0), text: (v) => v.substring(left.offset, right.offset));
       return RichTextNode._(UnmodifiableListView([span]), id: newId ?? id);
     } else {
-      final beginIndex = left.index;
-      final endIndex = right.index;
-      final newSpans = <RichTextSpan>[];
-      int offset = 0;
-      for (var i = beginIndex; i < endIndex + 1; ++i) {
-        var span = spans[i];
-        if (i == beginIndex) {
-          span = span.copy(
-              offset: to(offset),
-              text: (v) => v.substring(left.offset, v.length));
-        } else if (i == endIndex) {
-          final text = span.text.substring(0, right.offset);
-          span = span.copy(offset: to(offset), text: to(text));
-        } else {
-          span = span.copy(offset: to(offset));
-        }
-        if (!trim || !span.isEmpty) {
-          offset += span.textLength;
-          newSpans.add(span);
-        }
-      }
-      return RichTextNode._(UnmodifiableListView(newSpans), id: newId ?? id);
+      final leftIndex = left.index;
+      final rightIndex = right.index;
+      var leftSpan = spans[leftIndex];
+      var rightSpan = spans[rightIndex];
+      leftSpan = leftSpan.copy(text: (t) => t.substring(left.offset, t.length));
+      rightSpan = rightSpan.copy(text: (t) => t.substring(0, right.offset));
+      final newSpans = List.of(spans.getRange(leftIndex, rightIndex + 1));
+      newSpans.removeAt(0);
+      newSpans.removeLast();
+      newSpans.insert(0, leftSpan);
+      newSpans.add(rightSpan);
+      return RichTextNode._(
+          UnmodifiableListView(RichTextSpan.mergeList(newSpans, trim: trim)),
+          id: newId ?? id);
     }
   }
 
@@ -408,7 +398,14 @@ final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
   EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
   EventType.selectAll: (d, n) => selectAllRichTextNodeWhileEditing(d, n),
   EventType.typing: (d, n) => typingRichTextNodeWhileEditing(d, n),
-  EventType.bold: (d, n) => boldRichTextNodeWhileEditing(d, n),
+  EventType.underline: (d, n) =>
+      styleRichTextNodeWhileEditing(d, n, RichTextTag.underline.name),
+  EventType.bold: (d, n) =>
+      styleRichTextNodeWhileEditing(d, n, RichTextTag.bold.name),
+  EventType.italic: (d, n) =>
+      styleRichTextNodeWhileEditing(d, n, RichTextTag.italic.name),
+  EventType.lineThrough: (d, n) =>
+      styleRichTextNodeWhileEditing(d, n, RichTextTag.lineThrough.name),
 };
 
 final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
@@ -416,7 +413,14 @@ final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
   EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
   EventType.selectAll: (d, n) => selectAllRichTextNodeWhileSelecting(d, n),
   EventType.typing: (d, n) => typingRichTextNodeWhileSelecting(d, n),
-  EventType.bold: (d, n) => boldRichTextNodeWhileSelecting(d, n),
+  EventType.underline: (d, n) =>
+      styleRichTextNodeWhileSelecting(d, n, RichTextTag.underline.name),
+  EventType.bold: (d, n) =>
+      styleRichTextNodeWhileSelecting(d, n, RichTextTag.bold.name),
+  EventType.italic: (d, n) =>
+      styleRichTextNodeWhileSelecting(d, n, RichTextTag.italic.name),
+  EventType.lineThrough: (d, n) =>
+      styleRichTextNodeWhileSelecting(d, n, RichTextTag.lineThrough.name),
 };
 
 typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(

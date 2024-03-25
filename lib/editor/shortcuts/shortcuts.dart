@@ -41,10 +41,22 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
       const SelectAllIntent(),
 
   ///styles
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyU):
+      const UnderlineIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyU):
+      const UnderlineIntent(),
   LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyB):
       const BoldIntent(),
   LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
       const BoldIntent(),
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyI):
+      const ItalicIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
+      const ItalicIntent(),
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyL):
+      const LineThroughIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
+      const LineThroughIntent(),
 };
 
 Map<Type, RichEditorControllerAction> _actions = {
@@ -57,7 +69,10 @@ Map<Type, RichEditorControllerAction> _actions = {
   UpArrowIntent: (c) => UpArrowAction(c),
   DownArrowIntent: (c) => DownArrowAction(c),
   SelectAllIntent: (c) => SelectAllAction(c),
+  UnderlineIntent: (c) => UnderlineAction(c),
   BoldIntent: (c) => BoldAction(c),
+  ItalicIntent: (c) => ItalicAction(c),
+  LineThroughIntent: (c) => LineThroughAction(c),
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>

@@ -89,5 +89,8 @@ enum EventType {
   enter,
   selectAll,
   newline,
+  underline,
   bold,
+  italic,
+  lineThrough,
 }

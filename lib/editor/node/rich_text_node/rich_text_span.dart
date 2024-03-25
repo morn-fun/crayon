@@ -65,7 +65,8 @@ class RichTextSpan extends SpanNode {
     return copy(text: (t) => t + other.text);
   }
 
-  static List<RichTextSpan> mergeList(List<RichTextSpan> list, {bool trim = true}) {
+  static List<RichTextSpan> mergeList(List<RichTextSpan> list,
+      {bool trim = true}) {
     if (list.length < 2) return List.of(list);
     List<RichTextSpan> result = [];
     var lastSpan = list.first;
@@ -95,10 +96,17 @@ class RichTextSpan extends SpanNode {
 
   TextStyle _buildStyle() {
     var style = const TextStyle();
+    Set<TextDecoration> decorations = {};
     for (final tag in tags) {
-      style = style.merge(_tag2Style[tag]);
+      final s = _tag2Style[tag];
+      final decoration = s?.decoration;
+      if (decoration != null) {
+        decorations.add(decoration);
+      }
+      style = style.merge(s);
     }
-    return style;
+    return style.copyWith(
+        decoration: TextDecoration.combine(decorations.toList()));
   }
 
   Map<String, dynamic> toJson() => {
@@ -116,10 +124,13 @@ class RichTextSpan extends SpanNode {
 }
 
 Map<String, TextStyle> _tag2Style = {
-  RichTextTag.del.name: const TextStyle(decoration: TextDecoration.lineThrough),
-  RichTextTag.strong.name: const TextStyle(fontWeight: FontWeight.bold),
-  RichTextTag.em.name: const TextStyle(fontStyle: FontStyle.italic),
-  RichTextTag.a.name: const TextStyle(color: Color(0xff0969da)),
+  RichTextTag.lineThrough.name:
+      const TextStyle(decoration: TextDecoration.lineThrough),
+  RichTextTag.bold.name: const TextStyle(fontWeight: FontWeight.bold),
+  RichTextTag.italic.name: const TextStyle(fontStyle: FontStyle.italic),
+  RichTextTag.underline.name:
+      const TextStyle(decoration: TextDecoration.underline),
+  RichTextTag.link.name: const TextStyle(color: Color(0xff0969da)),
 };
 
-enum RichTextTag { a, del, strong, em }
+enum RichTextTag { link, underline, bold, italic, lineThrough }
