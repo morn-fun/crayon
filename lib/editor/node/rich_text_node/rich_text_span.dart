@@ -35,7 +35,7 @@ class RichTextSpan extends SpanNode {
     );
   }
 
-  bool inRange(int off) => off >= offset && off <= endOffset;
+  bool inRange(int off) => off >= offset && off < endOffset;
 
   int get textLength => text.length;
 
