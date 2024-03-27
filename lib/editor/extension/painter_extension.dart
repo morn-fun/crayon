@@ -9,7 +9,7 @@ extension PainterExtension on TextPainter {
   OffsetWithLineHeight getOffsetWithLineHeight(
       TextPosition textPosition, Rect rect,
       {double lineHeight = 16}) {
-    final off = getOffsetForCaret(textPosition, rect);
+    var off = getOffsetForCaret(textPosition, rect);
     final lh = getFullHeightForCaret(textPosition, Rect.zero) ?? lineHeight;
     return OffsetWithLineHeight(off, lh);
   }

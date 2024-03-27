@@ -7,18 +7,16 @@ import 'basic_command.dart';
 class ModifyNode implements BasicCommand {
   final SingleNodeCursor cursor;
   final EditorNode node;
-  final bool record;
 
-  ModifyNode(this.cursor, this.node, {this.record = true});
+  ModifyNode(this.cursor, this.node);
 
   @override
   UpdateControllerCommand? run(RichEditorController controller) {
-    return controller.update(UpdateOne(cursor.index, node, cursor),
-        record: record);
+    return controller.update(UpdateOne(cursor.index, node, cursor));
   }
 
   @override
   String toString() {
-    return 'ModifyNode{record: $record, cursor: $cursor, node: $node}';
+    return 'ModifyNode{cursor: $cursor, node: $node}';
   }
 }

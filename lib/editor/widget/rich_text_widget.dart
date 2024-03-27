@@ -153,7 +153,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final height = offsetWithLineHeight.lineHeight;
         final globalOffset = box.localToGlobal(Offset.zero);
         final size = box.size;
-        logger.i('$tag,  array down $offsetWithLineHeight');
+        logger.i(
+            '$tag,  array down $offsetWithLineHeight, globalOffset:$globalOffset');
         if (offset.dy + height >= size.height) {
           if (index < controller.nodeLength - 1) {
             final nextNode = controller.getNode(index + 1);
@@ -261,7 +262,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
         child: LayoutBuilder(builder: (context, constrains) {
           if (recordWidth != constrains.maxWidth) {
             recordWidth = constrains.maxWidth;
@@ -319,8 +319,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   void _updatePosition(Offset globalOffset) {
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
-    // logger.i(
-    //     '_updatePosition, globalOffset:$globalOffset, off:$off, index:$spanIndex, span:$span');
+    logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     final newCursor = EditingCursor(index, richPosition);
     controller.updateCursor(newCursor);
     updateInputAttribute(newCursor.position);
@@ -369,7 +368,7 @@ class _TextPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
-    Paint backgroundPaint = Paint()..color = const Color(0xFF8BC34A);
+    Paint backgroundPaint = Paint()..color = Colors.transparent;
     canvas.drawRect(background, backgroundPaint);
     _painter.paint(canvas, Offset.zero);
   }

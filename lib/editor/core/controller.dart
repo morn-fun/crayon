@@ -107,7 +107,7 @@ class RichEditorController {
   int get nodeLength => _nodes.length;
 }
 
-class UpdateOne implements UpdateControllerCommand {
+class UpdateOne extends UpdateControllerCommand {
   final int index;
   final EditorNode node;
   final BasicCursor cursor;
@@ -126,7 +126,7 @@ class UpdateOne implements UpdateControllerCommand {
   }
 }
 
-class Replace implements UpdateControllerCommand {
+class Replace extends UpdateControllerCommand {
   final int begin;
   final int end;
   final UnmodifiableListView<EditorNode> newNodes;
@@ -147,4 +147,7 @@ class Replace implements UpdateControllerCommand {
     controller.notifyCursor(cursor);
     return command;
   }
+
+  @override
+  bool get enableThrottle => false;
 }

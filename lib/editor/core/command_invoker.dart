@@ -2,6 +2,7 @@ import '../command/basic_command.dart';
 import '../exception/command_exception.dart';
 import 'controller.dart';
 import 'logger.dart';
+import 'throttle.dart';
 
 class CommandInvoker {
   final List<UpdateControllerCommand> _undoCommands = [];
@@ -9,10 +10,19 @@ class CommandInvoker {
 
   final _tag = 'RichEditorController';
 
-  void execute(BasicCommand command, RichEditorController controller) {
+  void execute(BasicCommand command, RichEditorController controller,
+      {bool noThrottle = false}) {
     try {
       logger.i('$_tag, execute 【$command】');
-      _addToUndoCommands(command.run(controller));
+      final c = command.run(controller);
+      final enableThrottle = c?.enableThrottle ?? true;
+      if (noThrottle || !enableThrottle) {
+        _addToUndoCommands(c);
+      } else {
+        Throttle.execute(() {
+          _addToUndoCommands(c);
+        }, tag: _tag);
+      }
       _redoCommands.clear();
     } catch (e) {
       throw PerformCommandException(command.runtimeType, '$_tag, execute', e);
@@ -71,4 +81,6 @@ class CommandInvoker {
 
 abstract class UpdateControllerCommand {
   UpdateControllerCommand update(RichEditorController controller);
+
+  bool get enableThrottle => true;
 }

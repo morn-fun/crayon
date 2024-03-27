@@ -106,7 +106,8 @@ class RichTextSpan extends SpanNode {
       style = style.merge(s);
     }
     return style.copyWith(
-        decoration: TextDecoration.combine(decorations.toList()));
+        decoration: TextDecoration.combine(decorations.toList()),
+        color: Colors.black);
   }
 
   Map<String, dynamic> toJson() => {
