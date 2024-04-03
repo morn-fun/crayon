@@ -1,5 +1,6 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
+import '../exception/editor_node_exception.dart';
 import '../extension/offset_extension.dart';
 import '../extension/painter_extension.dart';
 
@@ -101,15 +102,39 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     }
   }
 
-  void onArrowAccept(ArrowType type, NodePosition position) {
-    logger.i('$tag, onArrowAccept type:$type, position:$position');
+  void onArrowAccept(AcceptArrowData data) {
+    final type = data.type;
+    final position = data.position;
+    logger.i('$tag, onArrowAccept $data');
     final p = position as RichTextNodePosition;
     BasicCursor? newCursor;
     RichTextNodePosition? newPosition;
     switch (type) {
       case ArrowType.current:
-        newPosition = position;
-        newCursor = EditingCursor(index, newPosition);
+        final extra = data.extras;
+        if (extra is Offset) {
+          final box = renderBox;
+          if (box == null) return;
+          final rect =
+              Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
+          final textPosition = TextPosition(offset: node.getOffset(position));
+          final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+          final offset =
+              painter.getOffsetFromTextOffset(node.getOffset(position));
+          Offset? tapOffset;
+          if (position == node.endPosition) {
+            tapOffset = Offset(extra.dx, offset.dy - h / 2);
+          } else if (position == node.beginPosition) {
+            tapOffset = Offset(extra.dx, offset.dy + h / 2);
+          }
+          if (tapOffset == null) return;
+          final globalOffset = box.localToGlobal(Offset.zero);
+          final newTapOffset = tapOffset.move(globalOffset);
+          controller.notifyTapDown(node.id, newTapOffset);
+        } else {
+          newPosition = position;
+          newCursor = EditingCursor(index, newPosition);
+        }
         break;
       case ArrowType.left:
         newPosition = node.lastPosition(p);
@@ -122,53 +147,40 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       case ArrowType.up:
         final box = renderBox;
         if (box == null) return;
-        final offsetWithLineHeight = painter.getOffsetWithLineHeight(
-            TextPosition(offset: node.getOffset(position)),
-            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
-        logger.i('$tag,  array up $offsetWithLineHeight');
-        Offset offset = offsetWithLineHeight.offset;
-        final height = offsetWithLineHeight.lineHeight;
-        final globalOffset = box.localToGlobal(Offset.zero);
-        if (offset.dy - height <= 0) {
-          if (index > 0) {
-            final lastNode = controller.getNode(index - 1);
-            offset = offset.translate(0, -height).move(globalOffset);
-
-            ///TODO:这里需要减去height和间距
-            controller.notifyTapDown(lastNode.id, offset);
-          }
-        } else {
-          offset = offset.translate(0, -height).move(globalOffset);
-          controller.notifyTapDown(node.id, offset);
+        final rect =
+            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
+        final textPosition = TextPosition(offset: node.getOffset(position));
+        final offset = painter.getOffsetFromTextOffset(node.getOffset(position),
+            rect: rect);
+        final lineRange = painter.getLineBoundary(textPosition);
+        final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+        if (lineRange.start == 0) {
+          throw ArrowUpTopException(position, offset);
         }
-        logger.i('$tag, $type,  newOffset:$offset, globalOff:$globalOffset');
+        final newOffset = painter.getOffsetFromTextOffset(lineRange.start);
+        final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
+        final globalOffset = box.localToGlobal(Offset.zero);
+        final newTapOffset = tapOffset.move(globalOffset);
+        controller.notifyTapDown(node.id, newTapOffset);
         break;
       case ArrowType.down:
         final box = renderBox;
         if (box == null) return;
-        final offsetWithLineHeight = painter.getOffsetWithLineHeight(
-            TextPosition(offset: node.getOffset(position)),
-            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
-        Offset offset = offsetWithLineHeight.offset;
-        final height = offsetWithLineHeight.lineHeight;
-        final globalOffset = box.localToGlobal(Offset.zero);
-        final size = box.size;
-        logger.i(
-            '$tag,  array down $offsetWithLineHeight, globalOffset:$globalOffset');
-        if (offset.dy + height >= size.height) {
-          if (index < controller.nodeLength - 1) {
-            final nextNode = controller.getNode(index + 1);
-            offset = offset.translate(0, height).move(globalOffset);
-
-            ///TODO:这里需要加上height和间距
-            controller.notifyTapDown(nextNode.id, offset);
-          }
-        } else {
-          offset = offset.translate(0, height).move(globalOffset);
-          controller.notifyTapDown(node.id, offset);
+        final rect =
+            Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
+        final textPosition = TextPosition(offset: node.getOffset(position));
+        final offset = painter.getOffsetFromTextOffset(node.getOffset(position),
+            rect: rect);
+        final lineRange = painter.getLineBoundary(textPosition);
+        if (lineRange.end == node.spans.last.endOffset) {
+          throw ArrowDownBottomException(position, offset);
         }
-        logger.i(
-            '$tag, $type,  newOffset:$offset, globalOffset:$globalOffset, size:$size');
+        final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+        final newOffset = painter.getOffsetFromTextOffset(lineRange.end);
+        final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
+        final globalOffset = box.localToGlobal(Offset.zero);
+        final newTapOffset = tapOffset.move(globalOffset);
+        controller.notifyTapDown(node.id, newTapOffset);
         break;
       default:
         break;
@@ -190,8 +202,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (contains) {
       final textPosition = painter.getPositionForOffset(localPosition);
       final richPosition = node.getPositionByOffset(textPosition.offset);
-      // logger.i(
-      //     'onPanUpdate,  widget:$index, contains:$contains, textPosition:$textPosition, spanIndex:$spanIndex, span:$span');
       BasicCursor? newCursor =
           generateSelectingCursor(controller.cursor, richPosition, index);
       if (newCursor != null) controller.updateCursor(newCursor);
@@ -313,6 +323,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final widgetPosition = box.localToGlobal(Offset.zero);
     final localPosition =
         globalPosition.translate(-widgetPosition.dx, -widgetPosition.dy);
+    logger.i('$tag, buildTextPosition, localPosition:$localPosition');
     return painter.getPositionForOffset(localPosition);
   }
 

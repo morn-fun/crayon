@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import '../cursor/basic_cursor.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'basic_exception.dart';
@@ -95,4 +97,42 @@ class ArrowIsEndException implements EditorNodeException {
   String toString() {
     return 'ArrowIsEndException{type: $type, position: $position}';
   }
+}
+
+class ArrowLeftBeginException implements EditorNodeException {
+  final NodePosition position;
+
+  ArrowLeftBeginException(this.position);
+
+  String get message =>
+      'the position $position is in begin, cannot move to left any more!';
+}
+
+class ArrowRightEndException implements EditorNodeException {
+  final NodePosition position;
+
+  ArrowRightEndException(this.position);
+
+  String get message =>
+      'the position $position is in end, cannot move to right any more!';
+}
+
+class ArrowUpTopException implements EditorNodeException {
+  final NodePosition position;
+  final Offset offset;
+
+  ArrowUpTopException(this.position, this.offset);
+
+  String get message =>
+      'the position $position with $offset is in top, cannot move up any more!';
+}
+
+class ArrowDownBottomException implements EditorNodeException {
+  final NodePosition position;
+  final Offset offset;
+
+  ArrowDownBottomException(this.position, this.offset);
+
+  String get message =>
+      'the position $position with $offset is in bottom, cannot move down any more!';
 }

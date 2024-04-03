@@ -22,7 +22,21 @@ enum ArrowType {
   nextWordSelectionDown,
 }
 
-typedef ArrowDelegate = void Function(ArrowType type, NodePosition position);
+class AcceptArrowData {
+  final String id;
+  final ArrowType type;
+  final NodePosition position;
+  final dynamic extras;
+
+  AcceptArrowData(this.id, this.type, this.position, {this.extras});
+
+  @override
+  String toString() {
+    return 'AcceptArrowData{id: $id, type: $type, position: $position, extras: $extras}';
+  }
+}
+
+typedef ArrowDelegate = void Function(AcceptArrowData arrowData);
 
 class LeftArrowIntent extends Intent {
   const LeftArrowIntent();

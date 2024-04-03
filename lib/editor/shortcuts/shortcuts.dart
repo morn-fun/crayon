@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 
 import '../core/context.dart';
 import 'arrows/single_arrow.dart';
+import 'copy.dart';
 import 'delete.dart';
 import 'arrows/arrows.dart';
 import 'newline.dart';
+import 'paste.dart';
 import 'redo.dart';
 import 'select_all.dart';
 import 'styles.dart';
@@ -57,6 +59,16 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
       const LineThroughIntent(),
   LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
       const LineThroughIntent(),
+
+  ///copy and paste
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyC):
+      const CopyIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyC):
+      const CopyIntent(),
+  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyV):
+      const PasteIntent(),
+  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV):
+      const PasteIntent(),
 };
 
 Map<Type, RichEditorControllerAction> _actions = {
@@ -73,6 +85,8 @@ Map<Type, RichEditorControllerAction> _actions = {
   BoldIntent: (c) => BoldAction(c),
   ItalicIntent: (c) => ItalicAction(c),
   LineThroughIntent: (c) => LineThroughAction(c),
+  CopyIntent: (c) => CopyAction(c),
+  PasteIntent: (c) => PasteAction(c),
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>

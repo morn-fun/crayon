@@ -312,9 +312,9 @@ class RichTextNode extends EditorNode {
         final newOffset = lastSpan.text.lastOffset(lastSpan.textLength);
         return RichTextNodePosition(lastIndex, newOffset);
       } on RangeError {
-        throw ArrowIsEndException(ArrowType.left, position);
+        throw ArrowLeftBeginException(position);
       } on OffsetIsEndException {
-        throw ArrowIsEndException(ArrowType.left, position);
+        throw ArrowLeftBeginException(position);
       }
     } else {
       final span = spans[index];
@@ -322,7 +322,7 @@ class RichTextNode extends EditorNode {
         final newOffset = span.text.lastOffset(offset);
         return RichTextNodePosition(index, newOffset);
       } on OffsetIsEndException {
-        throw ArrowIsEndException(ArrowType.left, position);
+        throw ArrowLeftBeginException(position);
       }
     }
   }
@@ -355,16 +355,16 @@ class RichTextNode extends EditorNode {
         final newOffset = nextSpan.text.nextOffset(0);
         return RichTextNodePosition(nextIndex, newOffset);
       } on RangeError {
-        throw ArrowIsEndException(ArrowType.right, position);
+        throw ArrowRightEndException(position);
       } on OffsetIsEndException {
-        throw ArrowIsEndException(ArrowType.right, position);
+        throw ArrowRightEndException(position);
       }
     } else {
       try {
         final newOffset = span.text.nextOffset(position.offset);
         return RichTextNodePosition(index, newOffset);
       } on OffsetIsEndException {
-        throw ArrowIsEndException(ArrowType.right, position);
+        throw ArrowRightEndException(position);
       }
     }
   }

@@ -97,11 +97,12 @@ class CallbackCollection {
     }
   }
 
-  void onArrowAccept(String id, ArrowType type, NodePosition position) {
+  void onArrowAccept(AcceptArrowData data) {
+    final id = data.id;
     final set = _arrowDelegates[id] ?? {};
-    logger.i('$tag, onArrowAccept, id:$id, type:$type, length:${set.length}');
+    logger.i('$tag, onArrowAccept, id:$id, type:${data.type}, length:${set.length}');
     for (var c in Set.of(set)) {
-      c.call(type, position);
+      c.call(data);
     }
   }
 

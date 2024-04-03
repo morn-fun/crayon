@@ -1,8 +1,8 @@
+
 import '../command/basic_command.dart';
 import '../exception/command_exception.dart';
 import 'controller.dart';
 import 'logger.dart';
-import 'throttle.dart';
 
 class CommandInvoker {
   final List<UpdateControllerCommand> _undoCommands = [];
@@ -83,4 +83,29 @@ abstract class UpdateControllerCommand {
   UpdateControllerCommand update(RichEditorController controller);
 
   bool get enableThrottle => true;
+}
+
+class Throttle {
+  static final _tagMap = <String, int>{};
+
+  static const _t = 'Throttle';
+
+  static void execute(Function callBack,
+      {Duration duration = const Duration(milliseconds: 500),
+      String tag = 'default'}) {
+    final time = _tagMap[tag];
+    if (time == null) {
+      _tagMap[tag] = DateTime.now().millisecondsSinceEpoch;
+      callBack.call();
+      return;
+    }
+    final now = DateTime.now();
+    final oldTime = DateTime.fromMillisecondsSinceEpoch(time).add(duration);
+    logger.i('$_t,  diff mill:${now.difference(oldTime).inMilliseconds}');
+    if (now.isAfter(oldTime)) {
+      _tagMap[tag] = now.millisecondsSinceEpoch;
+      callBack.call();
+      return;
+    }
+  }
 }

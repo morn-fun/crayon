@@ -77,8 +77,8 @@ class RichEditorController {
     if (notify) notifyCursor(cursor);
   }
 
-  void onArrowAccept(int index, ArrowType type, NodePosition position) =>
-      _callbackCollection.onArrowAccept(_nodes[index].id, type, position);
+  void onArrowAccept(AcceptArrowData data) =>
+      _callbackCollection.onArrowAccept(data);
 
   void notifyCursor(BasicCursor cursor) =>
       _callbackCollection.notifyCursor(cursor);

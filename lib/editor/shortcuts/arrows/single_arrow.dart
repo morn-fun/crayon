@@ -74,13 +74,22 @@ void _onLeftOrUp(ArrowType type, EditorContext editorContext, Type actionType) {
   }
   if (index == -1) return;
   try {
-    controller.onArrowAccept(index, t, position);
-  } on ArrowIsEndException catch (e) {
-    logger.e('$actionType error $e');
+    controller.onArrowAccept(
+        AcceptArrowData(controller.getNode(index).id, t, position));
+  } on ArrowLeftBeginException catch (e) {
+    logger.e('$actionType error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) return;
-    controller.onArrowAccept(lastIndex, ArrowType.current,
-        controller.getNode(lastIndex).endPosition);
+    controller.onArrowAccept(AcceptArrowData(controller.getNode(lastIndex).id,
+        ArrowType.current, controller.getNode(lastIndex).endPosition));
+  } on ArrowUpTopException catch (e) {
+    logger.e('$actionType error ${e.message}');
+    final lastIndex = index - 1;
+    if (lastIndex < 0) return;
+    final node = controller.getNode(lastIndex);
+    controller.onArrowAccept(AcceptArrowData(
+        node.id, ArrowType.current, node.endPosition,
+        extras: e.offset));
   }
 }
 
@@ -105,13 +114,21 @@ void _onRightOrDown(
   }
   if (index == -1) return;
   try {
-    controller.onArrowAccept(index, t, position);
-  } on ArrowIsEndException catch (e) {
-    logger.e('$actionType error $e');
+    controller.onArrowAccept(
+        AcceptArrowData(controller.getNode(index).id, t, position));
+  } on ArrowRightEndException catch (e) {
+    logger.e('$actionType error ${e.message}');
     final nextIndex = index + 1;
-    final nodes = controller.nodes;
-    if (nextIndex > nodes.length - 1) return;
-    controller.onArrowAccept(nextIndex, ArrowType.current,
-        controller.getNode(nextIndex).beginPosition);
+    if (nextIndex > controller.nodeLength - 1) return;
+    controller.onArrowAccept(AcceptArrowData(controller.getNode(nextIndex).id,
+        ArrowType.current, controller.getNode(nextIndex).beginPosition));
+  } on ArrowDownBottomException catch (e) {
+    logger.e('$actionType error ${e.message}');
+    final nextIndex = index + 1;
+    if (nextIndex > controller.nodeLength - 1) return;
+    final node = controller.getNode(nextIndex);
+    controller.onArrowAccept(AcceptArrowData(
+        node.id, ArrowType.current, node.beginPosition,
+        extras: e.offset));
   }
 }
