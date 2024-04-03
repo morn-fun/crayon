@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import '../cursor/basic_cursor.dart';
+import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'basic_exception.dart';
 
@@ -135,4 +136,15 @@ class ArrowDownBottomException implements EditorNodeException {
 
   String get message =>
       'the position $position with $offset is in bottom, cannot move down any more!';
+}
+
+class UnablePasteExcepting implements EditorNodeException {
+  final List<EditorNode> nodes;
+  final Type source;
+  final NodePosition position;
+
+  UnablePasteExcepting(
+      this.nodes, this.source, this.position);
+
+  String get message => 'the $source cannot paste nodes!';
 }

@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../core/context.dart';
 import 'arrows/single_arrow.dart';
-import 'copy.dart';
+import 'copy_paste.dart';
 import 'delete.dart';
 import 'arrows/arrows.dart';
 import 'newline.dart';
-import 'paste.dart';
 import 'redo.dart';
 import 'select_all.dart';
 import 'styles.dart';

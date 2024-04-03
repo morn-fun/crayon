@@ -7,7 +7,7 @@ import 'position_data.dart';
 @immutable
 abstract class EditorNode {
   EditorNode({String? id})
-      : _id = id ?? '${DateTime.now().millisecondsSinceEpoch}';
+      : _id = id ?? randomNodeId;
 
   final String _id;
 
@@ -31,12 +31,18 @@ abstract class EditorNode {
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});
 
+  EditorNode newIdNode({String? id});
+
   NodePosition get beginPosition;
 
   NodePosition get endPosition;
 
   String get id => _id;
+
+  String get text;
 }
+
+String get randomNodeId => '${DateTime.now().millisecondsSinceEpoch}';
 
 class NodeWithPosition<T extends NodePosition> {
   final EditorNode node;
@@ -93,4 +99,5 @@ enum EventType {
   bold,
   italic,
   lineThrough,
+  paste,
 }

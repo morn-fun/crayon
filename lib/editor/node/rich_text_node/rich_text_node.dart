@@ -10,13 +10,13 @@ import '../../core/copier.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../shortcuts/arrows/arrows.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
+import 'generator/paste.dart';
 import 'generator/styles.dart';
 import 'generator/deletion.dart';
-import 'generator/selectall.dart';
+import 'generator/select_all.dart';
 import 'generator/typing.dart';
 import 'rich_text_span.dart';
 
@@ -124,7 +124,8 @@ class RichTextNode extends EditorNode {
   Map<String, dynamic> toJson() =>
       {'nodes': spans.map((e) => e.toJson()).toList()};
 
-  String get text => spans.map((e) => e.text).join(',');
+  @override
+  String get text => spans.map((e) => e.text).join('');
 
   @override
   RichTextNodePosition get beginPosition => RichTextNodePosition.zero();
@@ -391,6 +392,9 @@ class RichTextNode extends EditorNode {
     }
     return generator.call(data.as<RichTextNodePosition>(), this);
   }
+
+  @override
+  EditorNode newIdNode({String? id}) => RichTextNode._(spans, id: id ?? randomNodeId);
 }
 
 final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
@@ -406,6 +410,7 @@ final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
       styleRichTextNodeWhileEditing(d, n, RichTextTag.italic.name),
   EventType.lineThrough: (d, n) =>
       styleRichTextNodeWhileEditing(d, n, RichTextTag.lineThrough.name),
+  EventType.paste: (d, n) => pasteWhileEditing(d, n),
 };
 
 final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
@@ -421,6 +426,7 @@ final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
       styleRichTextNodeWhileSelecting(d, n, RichTextTag.italic.name),
   EventType.lineThrough: (d, n) =>
       styleRichTextNodeWhileSelecting(d, n, RichTextTag.lineThrough.name),
+  EventType.paste: (d, n) => pasteWhileSelecting(d, n),
 };
 
 typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(

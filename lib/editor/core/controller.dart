@@ -53,6 +53,8 @@ class RichEditorController {
 
   EditorNode getNode(int index) => _nodes[index];
 
+  Iterable<EditorNode> getRange(int begin, int end) => _nodes.getRange(begin, end);
+
   EditorNode get firstNode => _nodes.first;
 
   EditorNode get lastNode => _nodes.last;
