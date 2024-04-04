@@ -75,7 +75,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final c = cursor;
     if (c is NoneCursor) return;
     final last = textEditingDeltas.last;
-    logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
+    // logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
     final noComposing = last.composing == TextRange.empty;
     final isEmptyComposing =
         last.composing == const TextRange(start: 0, end: 0);
@@ -120,7 +120,6 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   }
 
   void requestFocus() {
-    logger.i('$tag, requestFocus');
     _focusCall.call();
   }
 

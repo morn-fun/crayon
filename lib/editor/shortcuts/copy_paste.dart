@@ -4,7 +4,6 @@ import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
 
 import '../command/modification.dart';
 import '../command/replacement.dart';
-import '../command/selecting_nodes/deletion.dart';
 import '../command/selecting_nodes/paste.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
@@ -60,7 +59,7 @@ class CopyAction extends ContextAction<CopyIntent> {
 
 final List<EditorNode> _copiedNodes = [];
 
-const _specialEdge = '${0xfd}';
+const _specialEdge = '\u{200C}';
 
 class PasteAction extends ContextAction<PasteIntent> {
   final EditorContext editorContext;
@@ -73,7 +72,6 @@ class PasteAction extends ContextAction<PasteIntent> {
     final data = await Clipboard.getData('text/plain');
     if (data is! ClipboardData) return;
     final text = data.text ?? '';
-    logger.i('$runtimeType, result $text');
     if (text.isEmpty) return;
     final List<EditorNode> nodes = [];
     if (text.startsWith(_specialEdge) && text.endsWith(_specialEdge)) {

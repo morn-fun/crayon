@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import '../core/context.dart';
 import '../cursor/basic_cursor.dart';
@@ -6,8 +8,7 @@ import 'position_data.dart';
 
 @immutable
 abstract class EditorNode {
-  EditorNode({String? id})
-      : _id = id ?? randomNodeId;
+  EditorNode({String? id}) : _id = id ?? randomNodeId;
 
   final String _id;
 
@@ -42,7 +43,8 @@ abstract class EditorNode {
   String get text;
 }
 
-String get randomNodeId => '${DateTime.now().millisecondsSinceEpoch}';
+String get randomNodeId =>
+    '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
 
 class NodeWithPosition<T extends NodePosition> {
   final EditorNode node;

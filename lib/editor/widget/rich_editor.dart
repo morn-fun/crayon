@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/exception/command_exception.dart';
-
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
@@ -8,6 +6,7 @@ import '../core/input_manager.dart';
 import '../core/logger.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/shortcuts.dart';
+import '../../editor/exception/command_exception.dart';
 
 class RichEditor extends StatefulWidget {
   final List<EditorNode> nodes;
@@ -24,10 +23,12 @@ class _RichEditorPageState extends State<RichEditor> {
   late EditorContext editorContext;
   late ShortcutManager manager;
   final CommandInvoker invoker = CommandInvoker();
+  Offset _panOffset = Offset.zero;
+  bool _hasTapDown = false;
 
   final focusNode = FocusNode();
 
-  final _tag = 'rich_editor';
+  final tag = 'rich_editor';
 
   @override
   void initState() {
@@ -64,7 +65,7 @@ class _RichEditorPageState extends State<RichEditor> {
 
   void _onFocusChanged() {
     final hasFocus = focusNode.hasFocus;
-    logger.i('$_tag, hasFocus:$hasFocus');
+    logger.i('$tag, hasFocus:$hasFocus');
     if (!hasFocus) {
       inputManager.stopInput();
     } else {
@@ -81,14 +82,47 @@ class _RichEditorPageState extends State<RichEditor> {
         actions: getActions(editorContext),
         child: Focus(
           focusNode: focusNode,
-          child: ListView.builder(
-              itemBuilder: (ctx, index) {
-                var current = nodes[index];
-                return Container(
-                    key: ValueKey(current.id),
-                    child: current.build(editorContext, index));
-              },
-              itemCount: nodes.length),
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTapDown: (detail) {
+              controller.notifyTapDown(detail.globalPosition);
+            },
+            onPanStart: (d) {
+              _panOffset = d.globalPosition;
+            },
+            onPanEnd: (d) {
+              controller.notifyDragUpdateDetails(_panOffset);
+            },
+            onPanDown: (d) {
+              _panOffset = d.globalPosition;
+              _hasTapDown = true;
+            },
+            onPanUpdate: (d) {
+              if (_hasTapDown) {
+                controller.notifyTapDown(_panOffset);
+                _hasTapDown = false;
+              }
+              _panOffset = _panOffset.translate(d.delta.dx, d.delta.dy);
+              Throttle.execute(
+                () => controller.notifyDragUpdateDetails(d.globalPosition),
+                tag: tag,
+                duration: const Duration(milliseconds: 50),
+              );
+            },
+            onPanCancel: () {
+              _panOffset = Offset.zero;
+              _hasTapDown = false;
+            },
+            child: ListView.builder(
+                padding: EdgeInsets.all(8),
+                itemBuilder: (ctx, index) {
+                  var current = nodes[index];
+                  return Container(
+                      key: ValueKey(current.id),
+                      child: current.build(editorContext, index));
+                },
+                itemCount: nodes.length),
+          ),
         ),
       ),
     );

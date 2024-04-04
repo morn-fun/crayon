@@ -101,7 +101,6 @@ class Throttle {
     }
     final now = DateTime.now();
     final oldTime = DateTime.fromMillisecondsSinceEpoch(time).add(duration);
-    logger.i('$_t,  diff mill:${now.difference(oldTime).inMilliseconds}');
     if (now.isAfter(oldTime)) {
       _tagMap[tag] = now.millisecondsSinceEpoch;
       callBack.call();

@@ -32,11 +32,11 @@ class RichEditorController {
   void removePanUpdateCallback(ValueChanged<Offset> callback) =>
       _callbackCollection.removePanUpdateCallback(callback);
 
-  void addTapDownCallback(String id, ValueChanged<Offset> callback) =>
-      _callbackCollection.addTapDownCallback(id, callback);
+  void addTapDownCallback(ValueChanged<Offset> callback) =>
+      _callbackCollection.addTapDownCallback(callback);
 
-  void removeTapDownCallback(String id, ValueChanged<Offset> callback) =>
-      _callbackCollection.removeTapDownCallback(id, callback);
+  void removeTapDownCallback( ValueChanged<Offset> callback) =>
+      _callbackCollection.removeTapDownCallback(callback);
 
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) =>
       _callbackCollection.addNodeChangedCallback(id, callback);
@@ -53,7 +53,8 @@ class RichEditorController {
 
   EditorNode getNode(int index) => _nodes[index];
 
-  Iterable<EditorNode> getRange(int begin, int end) => _nodes.getRange(begin, end);
+  Iterable<EditorNode> getRange(int begin, int end) =>
+      _nodes.getRange(begin, end);
 
   EditorNode get firstNode => _nodes.first;
 
@@ -88,8 +89,7 @@ class RichEditorController {
   void notifyDragUpdateDetails(Offset p) =>
       _callbackCollection.notifyDragUpdateDetails(p);
 
-  void notifyTapDown(String id, Offset p) =>
-      _callbackCollection.notifyTapDown(id, p);
+  void notifyTapDown(Offset p) => _callbackCollection.notifyTapDown(p);
 
   void notifyNode(EditorNode node) => _callbackCollection.notifyNode(node);
 

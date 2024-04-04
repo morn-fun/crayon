@@ -1,7 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../core/logger.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
 import '../../extension/collection_extension.dart';
@@ -375,7 +374,6 @@ class RichTextNode extends EditorNode {
 
   @override
   NodeWithPosition onEdit(EditingData data) {
-    logger.i('onEdit $data');
     final generator = _editingGenerator[data.type];
     if (generator == null) {
       return NodeWithPosition(this, EditingPosition(data.position));
@@ -385,7 +383,6 @@ class RichTextNode extends EditorNode {
 
   @override
   NodeWithPosition onSelect(SelectingData data) {
-    logger.i('onSelect $data');
     final generator = _selectingGenerator[data.type];
     if (generator == null) {
       return NodeWithPosition(this, data.position);
@@ -394,7 +391,8 @@ class RichTextNode extends EditorNode {
   }
 
   @override
-  EditorNode newIdNode({String? id}) => RichTextNode._(spans, id: id ?? randomNodeId);
+  EditorNode newIdNode({String? id}) =>
+      RichTextNode._(spans, id: id ?? randomNodeId);
 }
 
 final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{

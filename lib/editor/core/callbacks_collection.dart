@@ -13,7 +13,7 @@ class CallbackCollection {
   final Set<ValueChanged<Offset>> _onPanUpdateCallbacks = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeChangedCallbacks = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
-  final Map<String, Set<ValueChanged<Offset>>> _onTapDownCallbacks = {};
+  final Set<ValueChanged<Offset>> _onTapDownCallbacks = {};
 
   void dispose() {
     logger.i('$tag, dispose');
@@ -28,11 +28,8 @@ class CallbackCollection {
   void addCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
       _cursorChangedCallbacks.add(callback);
 
-  void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) {
-    _cursorChangedCallbacks.remove(callback);
-    logger.i(
-        '$tag, removeCursorChangedCallback length:${_cursorChangedCallbacks.length}');
-  }
+  void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
+      _cursorChangedCallbacks.remove(callback);
 
   void addNodesChangedCallback(VoidCallback callback) =>
       _nodesChangedCallbacks.add(callback);
@@ -43,26 +40,15 @@ class CallbackCollection {
   void removePanUpdateCallback(ValueChanged<Offset> callback) =>
       _onPanUpdateCallbacks.remove(callback);
 
-  void addTapDownCallback(String id, ValueChanged<Offset> callback) {
-    logger.i('$tag, addTapDownCallback:$id');
-    final set = _onTapDownCallbacks[id] ?? {};
-    set.add(callback);
-    _onTapDownCallbacks[id] = set;
-  }
+  void addTapDownCallback(ValueChanged<Offset> callback) =>
+      _onTapDownCallbacks.add(callback);
 
-  void removeTapDownCallback(String id, ValueChanged<Offset> callback) {
-    final set = _onTapDownCallbacks[id] ?? {};
-    set.remove(callback);
-    logger.i('$tag, removeTapDownCallback:$id, length:${set.length}');
-    if (set.isEmpty) {
-      _onTapDownCallbacks.remove(id);
-    } else {
-      _onTapDownCallbacks[id] = set;
-    }
-  }
+  void removeTapDownCallback(ValueChanged<Offset> callback) =>
+      _onTapDownCallbacks.remove(callback);
 
   void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) {
-    logger.i('$tag, addNodeChangedCallback:$id');
+    // logger.i(
+    //     '$tag, addNodeChangedCallback:$id, all:${_nodeChangedCallbacks.length}');
     final set = _nodeChangedCallbacks[id] ?? {};
     set.add(callback);
     _nodeChangedCallbacks[id] = set;
@@ -80,7 +66,7 @@ class CallbackCollection {
   }
 
   void addArrowDelegate(String id, ArrowDelegate callback) {
-    logger.i('$tag, addArrowDelegate:$id');
+    // logger.i('$tag, addArrowDelegate:$id, all:${_arrowDelegates.length}');
     final set = _arrowDelegates[id] ?? {};
     set.add(callback);
     _arrowDelegates[id] = set;
@@ -89,7 +75,8 @@ class CallbackCollection {
   void removeArrowDelegate(String id, ArrowDelegate callback) {
     final set = _arrowDelegates[id] ?? {};
     set.remove(callback);
-    logger.i('$tag, addArrowDelegate:$id, length:${set.length}');
+    // logger.i(
+    //     '$tag, addArrowDelegate:$id, length:${set.length}, all:${_arrowDelegates.length}');
     if (set.isEmpty) {
       _arrowDelegates.remove(id);
     } else {
@@ -100,7 +87,8 @@ class CallbackCollection {
   void onArrowAccept(AcceptArrowData data) {
     final id = data.id;
     final set = _arrowDelegates[id] ?? {};
-    logger.i('$tag, onArrowAccept, id:$id, type:${data.type}, length:${set.length}');
+    // logger.i(
+    //     '$tag, onArrowAccept, id:$id, type:${data.type}, length:${set.length}, all:${_arrowDelegates.length}');
     for (var c in Set.of(set)) {
       c.call(data);
     }
@@ -121,8 +109,8 @@ class CallbackCollection {
     //     '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
-  void notifyTapDown(String id, Offset p) {
-    for (var c in Set.of(_onTapDownCallbacks[id] ?? {})) {
+  void notifyTapDown(Offset p) {
+    for (var c in Set.of(_onTapDownCallbacks)) {
       c.call(p);
     }
     // logger.i('$tag, notifyTapDown length:${_onTapDownCallbacks[id]?.length}');

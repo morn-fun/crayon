@@ -1,4 +1,3 @@
-import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import '../exception/editor_node_exception.dart';
 import '../extension/offset_extension.dart';
@@ -53,8 +52,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   int get index => widget.index;
 
-  Offset _panOffset = Offset.zero;
-
   RenderBox? get renderBox =>
       key.currentContext?.findRenderObject() as RenderBox?;
 
@@ -72,7 +69,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       tryToUpdateInputAttribute(cursor);
     });
-    controller.addTapDownCallback(node.id, _updatePosition);
+    controller.addTapDownCallback(_updatePosition);
     controller.addNodeChangedCallback(node.id, onNodeChanged);
     controller.addArrowDelegate(node.id, onArrowAccept);
     controller.addCursorChangedCallback(onCursorChanged);
@@ -83,7 +80,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   void dispose() {
     super.dispose();
     controller.removeNodeChangedCallback(node.id, onNodeChanged);
-    controller.removeTapDownCallback(node.id, _updatePosition);
+    controller.removeTapDownCallback(_updatePosition);
     controller.removeArrowDelegate(node.id, onArrowAccept);
     controller.removeCursorChangedCallback(onCursorChanged);
     controller.removePanUpdateCallback(onPanUpdate);
@@ -123,14 +120,14 @@ class _RichTextWidgetState extends State<RichTextWidget> {
               painter.getOffsetFromTextOffset(node.getOffset(position));
           Offset? tapOffset;
           if (position == node.endPosition) {
-            tapOffset = Offset(extra.dx, offset.dy - h / 2);
+            tapOffset = Offset(extra.dx, offset.dy + h / 2);
           } else if (position == node.beginPosition) {
             tapOffset = Offset(extra.dx, offset.dy + h / 2);
           }
           if (tapOffset == null) return;
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
-          controller.notifyTapDown(node.id, newTapOffset);
+          controller.notifyTapDown(newTapOffset);
         } else {
           newPosition = position;
           newCursor = EditingCursor(index, newPosition);
@@ -161,7 +158,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        controller.notifyTapDown(node.id, newTapOffset);
+        controller.notifyTapDown(newTapOffset);
         break;
       case ArrowType.down:
         final box = renderBox;
@@ -180,7 +177,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        controller.notifyTapDown(node.id, newTapOffset);
+        controller.notifyTapDown(newTapOffset);
         break;
       default:
         break;
@@ -192,20 +189,27 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void onPanUpdate(Offset global) {
+    if (!_containsOffset(global)) return;
     final box = renderBox;
     if (box == null) return;
+    final widgetPosition = box.localToGlobal(Offset.zero);
+    final localPosition =
+        global.translate(-widgetPosition.dx, -widgetPosition.dy);
+    final textPosition = painter.getPositionForOffset(localPosition);
+    final richPosition = node.getPositionByOffset(textPosition.offset);
+    BasicCursor? newCursor =
+        generateSelectingCursor(controller.cursor, richPosition, index);
+    if (newCursor != null) controller.updateCursor(newCursor);
+  }
+
+  bool _containsOffset(Offset global) {
+    final box = renderBox;
+    if (box == null) return false;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
     final localPosition =
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
-    bool contains = size.contains(localPosition);
-    if (contains) {
-      final textPosition = painter.getPositionForOffset(localPosition);
-      final richPosition = node.getPositionByOffset(textPosition.offset);
-      BasicCursor? newCursor =
-          generateSelectingCursor(controller.cursor, richPosition, index);
-      if (newCursor != null) controller.updateCursor(newCursor);
-    }
+    return size.contains(localPosition);
   }
 
   void onNodeChanged(EditorNode node) {
@@ -253,67 +257,48 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTapDown: (detail) {
-        controller.notifyTapDown(node.id, detail.globalPosition);
-      },
-      onPanStart: (d) {
-        _panOffset = d.globalPosition;
-      },
-      onPanEnd: (d) {
-        EasyThrottle.cancel(node.id);
-        controller.notifyDragUpdateDetails(_panOffset);
-      },
-      onPanUpdate: (d) {
-        _panOffset = _panOffset.translate(d.delta.dx, d.delta.dy);
-        EasyThrottle.throttle(node.id, const Duration(milliseconds: 50), () {
-          controller.notifyDragUpdateDetails(d.globalPosition);
-        });
-      },
-      child: Container(
-        child: LayoutBuilder(builder: (context, constrains) {
-          if (recordWidth != constrains.maxWidth) {
-            recordWidth = constrains.maxWidth;
-            painter.layout(maxWidth: recordWidth);
-          }
-          return SizedBox(
-            key: key,
-            height: painter.height,
-            width: painter.width,
-            child: Stack(
-              children: [
-                SizedBox(
-                  height: painter.height,
-                  width: painter.width,
-                  child: MouseRegion(
-                      cursor: SystemMouseCursors.text,
-                      child: CustomPaint(painter: _TextPainter(painter))),
-                ),
-                ValueListenableBuilder(
-                    valueListenable: positionNotifier,
-                    builder: (ctx, v, c) {
-                      if (v == null) return Container();
-                      final offset =
-                          painter.getOffsetFromTextOffset(node.getOffset(v));
-                      double cursorHeight = painter.getFullHeightForCaret(
-                              TextPosition(offset: node.getOffset(v)),
-                              Rect.zero) ??
-                          16;
-                      return Positioned(
-                        left: offset.dx,
-                        top: offset.dy,
-                        child: EditingCursorWidget(
-                          cursorColor: Colors.black,
-                          cursorHeight: cursorHeight,
-                        ),
-                      );
-                    }),
-              ],
-            ),
-          );
-        }),
-      ),
+    return Container(
+      child: LayoutBuilder(builder: (context, constrains) {
+        if (recordWidth != constrains.maxWidth) {
+          recordWidth = constrains.maxWidth;
+          painter.layout(maxWidth: recordWidth);
+        }
+        return SizedBox(
+          key: key,
+          height: painter.height,
+          width: painter.width,
+          child: Stack(
+            children: [
+              SizedBox(
+                height: painter.height,
+                width: painter.width,
+                child: MouseRegion(
+                    cursor: SystemMouseCursors.text,
+                    child: CustomPaint(painter: _TextPainter(painter))),
+              ),
+              ValueListenableBuilder(
+                  valueListenable: positionNotifier,
+                  builder: (ctx, v, c) {
+                    if (v == null) return Container();
+                    final offset =
+                        painter.getOffsetFromTextOffset(node.getOffset(v));
+                    double cursorHeight = painter.getFullHeightForCaret(
+                            TextPosition(offset: node.getOffset(v)),
+                            Rect.zero) ??
+                        16;
+                    return Positioned(
+                      left: offset.dx,
+                      top: offset.dy,
+                      child: EditingCursorWidget(
+                        cursorColor: Colors.black,
+                        cursorHeight: cursorHeight,
+                      ),
+                    );
+                  }),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -328,6 +313,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void _updatePosition(Offset globalOffset) {
+    if (!_containsOffset(globalOffset)) return;
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
     logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
@@ -360,13 +346,14 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   void updateInputAttribute(RichTextNodePosition position) {
     if (key.currentContext == null) return;
     final box = key.currentContext!.findRenderObject() as RenderBox;
-    final offsetWithLineHeight = painter.getOffsetWithLineHeight(
-        TextPosition(offset: node.getOffset(position)),
-        Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero)));
-    final offset = offsetWithLineHeight.offset
-        .translate(0, offsetWithLineHeight.lineHeight);
+    final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
+    final height = painter.getFullHeightForCaret(
+            TextPosition(offset: node.getOffset(position)), Rect.zero) ??
+        16;
     inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
-        Rect.fromPoints(offset, offset), box.getTransformTo(null), box.size));
+        Rect.fromPoints(offset, offset.translate(0, height)),
+        box.getTransformTo(null),
+        box.size));
     inputManager.requestFocus();
   }
 }
