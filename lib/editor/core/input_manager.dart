@@ -4,8 +4,10 @@ import 'package:pre_editor/editor/node/position_data.dart';
 
 import '../command/basic_command.dart';
 import '../command/modification.dart';
+import '../command/replacement.dart';
 import '../command/selecting_nodes/replace.dart';
 import '../cursor/basic_cursor.dart';
+import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/shortcuts.dart';
 import 'controller.dart';
@@ -77,13 +79,14 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final last = textEditingDeltas.last;
     // logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
     final noComposing = last.composing == TextRange.empty;
-    final isEmptyComposing =
-        last.composing == const TextRange(start: 0, end: 0);
+    final isZeroComposing = last.composing == const TextRange(start: 0, end: 0);
     BasicCommand? command = _buildCommand(last);
-    if ((last is TextEditingDeltaNonTextUpdate) ||
+
+    if ((last is TextEditingDeltaNonTextUpdate &&
+            (noComposing || isZeroComposing)) ||
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing) ||
-        (last is TextEditingDeltaDeletion && isEmptyComposing)) {
+        (last is TextEditingDeltaDeletion && isZeroComposing)) {
       _typing = false;
       shortcutManager.shortcuts = editorShortcuts;
       restartInput();
@@ -98,15 +101,27 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final c = cursor;
     if (c is EditingCursor) {
       final node = controller.getNode(c.index);
-      final newOne =
-          node.onEdit(EditingData(c.position, EventType.typing, extras: delta));
-      return ModifyNode(newOne.toCursor(c.index), newOne.node);
+      try {
+        final newOne = node
+            .onEdit(EditingData(c.position, EventType.typing, extras: delta));
+        return ModifyNode(newOne.toCursor(c.index), newOne.node);
+      } on TypingToChangeNodeException catch (e) {
+        final index = c.index;
+        return ReplaceNode(Replace(
+            index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+      }
     } else if (c is SelectingNodeCursor) {
       final node = controller.getNode(c.index);
-      final newOne = node.onSelect(SelectingData(
-          SelectingPosition(c.begin, c.end), EventType.typing,
-          extras: delta));
-      return ModifyNode(newOne.toCursor(c.index), newOne.node);
+      try {
+        final newOne = node.onSelect(SelectingData(
+            SelectingPosition(c.begin, c.end), EventType.typing,
+            extras: delta));
+        return ModifyNode(newOne.toCursor(c.index), newOne.node);
+      } on TypingToChangeNodeException catch (e) {
+        final index = c.index;
+        return ReplaceNode(Replace(
+            index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+      }
     } else if (c is SelectingNodesCursor) {
       return ReplaceSelectingNodes(c, EventType.typing, delta);
     }

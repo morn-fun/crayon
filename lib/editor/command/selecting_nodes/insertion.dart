@@ -18,7 +18,7 @@ class InsertNodes implements BasicCommand {
     final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position,
-        newId: '${DateTime.now().millisecondsSinceEpoch}');
+        newId: randomNodeId);
     final copyNodes = List.of(nodes);
     try {
       copyNodes[0] = left.merge(copyNodes.first);

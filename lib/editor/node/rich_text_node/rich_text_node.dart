@@ -23,12 +23,15 @@ class RichTextNode extends EditorNode {
   ///there must be at least one span in [spans]
   final UnmodifiableListView<RichTextSpan> spans;
 
-  RichTextNode._(List<RichTextSpan> spans, {super.id})
-      : spans = _buildInitSpans(spans);
-
   RichTextNode.empty({super.id}) : spans = _buildInitSpans([]);
 
-  RichTextNode.from(List<RichTextSpan> spans) : spans = _buildInitSpans(spans);
+  RichTextNode.from(List<RichTextSpan> spans, {super.id})
+      : spans = _buildInitSpans(spans);
+
+  RichTextNode from(List<RichTextSpan> spans, {String? id}) =>
+      RichTextNode.from(spans, id: id);
+
+  RichTextNode empty({String? id}) => RichTextNode.empty(id: id);
 
   static UnmodifiableListView<RichTextSpan> _buildInitSpans(
       List<RichTextSpan> spans) {
@@ -36,39 +39,44 @@ class RichTextNode extends EditorNode {
     return UnmodifiableListView(spans);
   }
 
-  TextSpan get textSpan => TextSpan(
-      children:
-          List.generate(spans.length, (index) => spans[index].buildSpan()));
+  TextSpan buildTextSpan({TextStyle? style}) {
+    return TextSpan(
+        children:
+            List.generate(spans.length, (index) => spans[index].buildSpan()),
+        style: style);
+  }
 
-  TextSpan buildTextSpanWithCursor(BasicCursor c, int index) {
+  TextSpan buildTextSpanWithCursor(BasicCursor c, int index,
+      {TextStyle? style}) {
     if (c is SelectingNodeCursor && c.index == index) {
       final left = c.left;
       final right = c.right;
       if (left is RichTextNodePosition && right is RichTextNodePosition) {
-        return selectingTextSpan(left, right);
+        return selectingTextSpan(left, right, style: style);
       }
     } else if (c is SelectingNodesCursor && c.contains(index)) {
       final left = c.left;
       final right = c.right;
       if (left.index < index && right.index > index) {
-        return selectingTextSpan(beginPosition, endPosition);
+        return selectingTextSpan(beginPosition, endPosition, style: style);
       } else if (left.index == index) {
         final position = left.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(position, endPosition);
+          return selectingTextSpan(position, endPosition, style: style);
         }
       } else if (right.index == index) {
         final position = right.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(beginPosition, position);
+          return selectingTextSpan(beginPosition, position, style: style);
         }
       }
     }
-    return textSpan;
+    return buildTextSpan(style: style);
   }
 
   TextSpan selectingTextSpan(
-      RichTextNodePosition begin, RichTextNodePosition end) {
+      RichTextNodePosition begin, RichTextNodePosition end,
+      {TextStyle? style}) {
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
     final textSpans = <InlineSpan>[];
@@ -93,7 +101,7 @@ class RichTextNode extends EditorNode {
         textSpans.addAll(span.buildSelectingSpan(0, span.textLength));
       }
     }
-    return TextSpan(children: textSpans);
+    return TextSpan(children: textSpans, style: style);
   }
 
   @override
@@ -114,8 +122,7 @@ class RichTextNode extends EditorNode {
     }
     final copySpans = List.of(spans);
     copySpans.addAll(other.spans);
-    return RichTextNode._(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: newId ?? id);
   }
 
@@ -140,7 +147,7 @@ class RichTextNode extends EditorNode {
   RichTextNode insert(int index, RichTextSpan span, {bool trim = false}) {
     final copySpans = List.of(spans);
     copySpans.insert(index, span);
-    return RichTextNode._(
+    return from(
         UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
         id: id);
   }
@@ -153,7 +160,7 @@ class RichTextNode extends EditorNode {
     final copySpans = List.of(spans);
     copySpans.replaceRange(index, index + 1,
         currentSpan.insert(position.offset, span, trim: trim));
-    return RichTextNode._(
+    return from(
         UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
         id: id);
   }
@@ -167,7 +174,7 @@ class RichTextNode extends EditorNode {
       copySpans[i] = n.copy(offset: to(offset));
       offset += n.textLength;
     }
-    return RichTextNode._(
+    return from(
         UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
         id: id);
   }
@@ -199,8 +206,7 @@ class RichTextNode extends EditorNode {
     if (rightSpan.text.isNotEmpty) newSpans.add(rightSpan);
     if (leftSpan.text.isNotEmpty) newSpans.insert(0, leftSpan);
     copySpans.insertAll(leftIndex, newSpans);
-    return RichTextNode._(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: newId ?? id);
   }
 
@@ -243,14 +249,14 @@ class RichTextNode extends EditorNode {
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
       {String? newId, bool trim = false}) {
     if (begin == end) {
-      return RichTextNode.empty(id: newId ?? id);
+      return empty(id: newId ?? id);
     }
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
     if (left.sameIndex(right)) {
       final span = spans[left.index].copy(
           offset: to(0), text: (v) => v.substring(left.offset, right.offset));
-      return RichTextNode._(UnmodifiableListView([span]), id: newId ?? id);
+      return from(UnmodifiableListView([span]), id: newId ?? id);
     } else {
       final leftIndex = left.index;
       final rightIndex = right.index;
@@ -263,7 +269,7 @@ class RichTextNode extends EditorNode {
       newSpans.removeLast();
       newSpans.insert(0, leftSpan);
       newSpans.add(rightSpan);
-      return RichTextNode._(
+      return from(
           UnmodifiableListView(RichTextSpan.mergeList(newSpans, trim: trim)),
           id: newId ?? id);
     }
@@ -391,8 +397,7 @@ class RichTextNode extends EditorNode {
   }
 
   @override
-  EditorNode newIdNode({String? id}) =>
-      RichTextNode._(spans, id: id ?? randomNodeId);
+  EditorNode newIdNode({String? id}) => from(spans, id: id ?? randomNodeId);
 }
 
 final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{

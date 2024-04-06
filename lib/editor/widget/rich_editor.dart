@@ -116,7 +116,7 @@ class _RichEditorPageState extends State<RichEditor> {
             child: ListView.builder(
                 padding: EdgeInsets.all(8),
                 itemBuilder: (ctx, index) {
-                  var current = nodes[index];
+                  final current = nodes[index];
                   return Container(
                       key: ValueKey(current.id),
                       child: current.build(editorContext, index));

@@ -10,6 +10,7 @@ import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
+import '../node/rich_text_node/rich_text_node.dart';
 
 class DeleteIntent extends Intent {
   const DeleteIntent();
@@ -46,6 +47,9 @@ class DeleteAction extends ContextAction<DeleteIntent> {
                   index - 1, lastNode.beginPosition, lastNode.endPosition),
               node));
         }
+      } on DeleteToChangeNodeException catch(e){
+        editorContext.execute(ReplaceNode(Replace(index, index + 1,
+            [e.node], EditingCursor(index, e.position))));
       }
     } else if (cursor is SelectingNodeCursor) {
       final r = controller.getNode(cursor.index).onSelect(SelectingData(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pre_editor/editor/command/replacement.dart';
 import 'package:pre_editor/editor/exception/editor_node_exception.dart';
+import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
 
 import '../command/selecting_nodes/newline.dart';
 import '../core/context.dart';
@@ -31,10 +32,13 @@ class NewlineAction extends ContextAction<NewlineIntent> {
         int index = c.index;
         final current = controller.getNode(index);
         final left = current.frontPartNode(c.position);
-        final right = current.rearPartNode(c.position,
-            newId: '${DateTime.now().millisecondsSinceEpoch}');
+        final right = current.rearPartNode(c.position, newId: randomNodeId);
         editorContext.execute(ReplaceNode(Replace(index, index + 1,
             [left, right], EditingCursor(index + 1, right.beginPosition))));
+      } on NewlineRequiresNewSpecialNode catch (e) {
+        int index = c.index;
+        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
+            EditingCursor(index + e.newNodes.length - 1, e.position))));
       }
     } else if (c is SelectingNodeCursor) {
       try {
@@ -44,10 +48,13 @@ class NewlineAction extends ContextAction<NewlineIntent> {
         int index = c.index;
         final current = controller.getNode(index);
         final left = current.frontPartNode(c.left);
-        final right = current.rearPartNode(c.right,
-            newId: '${DateTime.now().millisecondsSinceEpoch}');
+        final right = current.rearPartNode(c.right, newId: randomNodeId);
         editorContext.execute(ReplaceNode(Replace(index, index + 1,
             [left, right], EditingCursor(index + 1, right.beginPosition))));
+      } on NewlineRequiresNewSpecialNode catch (e) {
+        int index = c.index;
+        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
+            EditingCursor(index + e.newNodes.length - 1, e.position))));
       }
     } else if (c is SelectingNodesCursor) {
       editorContext.execute(InsertNewLineWhileSelectingNodes(c));

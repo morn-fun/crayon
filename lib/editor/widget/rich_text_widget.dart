@@ -16,12 +16,20 @@ import '../shortcuts/arrows/arrows.dart';
 import 'editing_cursor.dart';
 
 class RichTextWidget extends StatefulWidget {
-  const RichTextWidget(this.editorContext, this.richTextNode, this.index,
-      {super.key});
+  const RichTextWidget(
+    this.editorContext,
+    this.richTextNode,
+    this.index, {
+    super.key,
+    this.painterBuilder,
+    this.fontSize = 16,
+  });
 
   final EditorContext editorContext;
   final RichTextNode richTextNode;
+  final TextPainterBuilder? painterBuilder;
   final int index;
+  final double fontSize;
 
   @override
   State<RichTextWidget> createState() => _RichTextWidgetState();
@@ -115,7 +123,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           final rect =
               Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
           final textPosition = TextPosition(offset: node.getOffset(position));
-          final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+          final h = painter.getFullHeightForCaret(textPosition, rect) ??
+              widget.fontSize;
           final offset =
               painter.getOffsetFromTextOffset(node.getOffset(position));
           Offset? tapOffset;
@@ -150,7 +159,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final offset = painter.getOffsetFromTextOffset(node.getOffset(position),
             rect: rect);
         final lineRange = painter.getLineBoundary(textPosition);
-        final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+        final h = painter.getFullHeightForCaret(textPosition, rect) ??
+            widget.fontSize;
         if (lineRange.start == 0) {
           throw ArrowUpTopException(position, offset);
         }
@@ -172,7 +182,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         if (lineRange.end == node.spans.last.endOffset) {
           throw ArrowDownBottomException(position, offset);
         }
-        final h = painter.getFullHeightForCaret(textPosition, rect) ?? 16;
+        final h = painter.getFullHeightForCaret(textPosition, rect) ??
+            widget.fontSize;
         final newOffset = painter.getOffsetFromTextOffset(lineRange.end);
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
@@ -263,40 +274,40 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           recordWidth = constrains.maxWidth;
           painter.layout(maxWidth: recordWidth);
         }
+        final child = Stack(
+          children: [
+            SizedBox(
+              height: painter.height,
+              width: painter.width,
+              child: MouseRegion(
+                  cursor: SystemMouseCursors.text,
+                  child: CustomPaint(painter: _TextPainter(painter))),
+            ),
+            ValueListenableBuilder(
+                valueListenable: positionNotifier,
+                builder: (ctx, v, c) {
+                  if (v == null) return Container();
+                  final offset =
+                      painter.getOffsetFromTextOffset(node.getOffset(v));
+                  double cursorHeight = painter.getFullHeightForCaret(
+                          TextPosition(offset: node.getOffset(v)), Rect.zero) ??
+                      widget.fontSize;
+                  return Positioned(
+                    left: offset.dx,
+                    top: offset.dy,
+                    child: EditingCursorWidget(
+                      cursorColor: Colors.black,
+                      cursorHeight: cursorHeight,
+                    ),
+                  );
+                }),
+          ],
+        );
         return SizedBox(
           key: key,
           height: painter.height,
           width: painter.width,
-          child: Stack(
-            children: [
-              SizedBox(
-                height: painter.height,
-                width: painter.width,
-                child: MouseRegion(
-                    cursor: SystemMouseCursors.text,
-                    child: CustomPaint(painter: _TextPainter(painter))),
-              ),
-              ValueListenableBuilder(
-                  valueListenable: positionNotifier,
-                  builder: (ctx, v, c) {
-                    if (v == null) return Container();
-                    final offset =
-                        painter.getOffsetFromTextOffset(node.getOffset(v));
-                    double cursorHeight = painter.getFullHeightForCaret(
-                            TextPosition(offset: node.getOffset(v)),
-                            Rect.zero) ??
-                        16;
-                    return Positioned(
-                      left: offset.dx,
-                      top: offset.dy,
-                      child: EditingCursorWidget(
-                        cursorColor: Colors.black,
-                        cursorHeight: cursorHeight,
-                      ),
-                    );
-                  }),
-            ],
-          ),
+          child: widget.painterBuilder?.call(painter, context, child) ?? child,
         );
       }),
     );
@@ -349,7 +360,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
     final height = painter.getFullHeightForCaret(
             TextPosition(offset: node.getOffset(position)), Rect.zero) ??
-        16;
+        widget.fontSize;
     inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
         Rect.fromPoints(offset, offset.translate(0, height)),
         box.getTransformTo(null),
@@ -374,3 +385,6 @@ class _TextPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+typedef TextPainterBuilder = Widget Function(
+    TextPainter painter, BuildContext context, Widget child);

@@ -18,7 +18,7 @@ NodeWithPosition pasteWhileEditing(
       return NodeWithPosition(
           newNode, EditingPosition(newLeftNode.endPosition));
     } on UnableToMergeException {
-      throw UnablePasteExcepting([leftNode, extra.first, rightNode],
+      throw UnablePasteException([leftNode, extra.first, rightNode],
           node.runtimeType, rightNode.beginPosition);
     }
   } else {
@@ -40,7 +40,7 @@ NodeWithPosition pasteWhileEditing(
       newNodes.add(rightNode);
       position = rightNode.beginPosition;
     }
-    throw UnablePasteExcepting(newNodes, node.runtimeType, position);
+    throw UnablePasteException(newNodes, node.runtimeType, position);
   }
 }
 
@@ -58,7 +58,7 @@ NodeWithPosition pasteWhileSelecting(
       return NodeWithPosition(
           newNode, EditingPosition(newLeftNode.endPosition));
     } on UnableToMergeException {
-      throw UnablePasteExcepting([leftNode, extra.first, rightNode],
+      throw UnablePasteException([leftNode, extra.first, rightNode],
           node.runtimeType, rightNode.beginPosition);
     }
   } else {
@@ -80,6 +80,6 @@ NodeWithPosition pasteWhileSelecting(
       newNodes.add(rightNode);
       position = rightNode.beginPosition;
     }
-    throw UnablePasteExcepting(newNodes, node.runtimeType, position);
+    throw UnablePasteException(newNodes, node.runtimeType, position);
   }
 }

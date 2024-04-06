@@ -20,7 +20,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
     final rightNode = controller.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
     final right = rightNode.rearPartNode(rightCursor.position,
-        newId: '${DateTime.now().millisecondsSinceEpoch}');
+        newId: randomNodeId);
     try {
       final newNode = left.merge(right);
       try {
@@ -31,7 +31,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
             rightCursor.index + 1,
             [r.node],
             r.position.toCursor(leftCursor.index)));
-      } on UnablePasteExcepting catch (e) {
+      } on UnablePasteException catch (e) {
         return controller.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,

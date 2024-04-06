@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
+
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
@@ -32,6 +34,15 @@ class DeleteRequiresNewLineException implements EditorNodeException {
   }
 }
 
+class DeleteToChangeNodeException implements EditorNodeException {
+  final EditorNode node;
+  final NodePosition position;
+
+  DeleteToChangeNodeException(this.node, this.position);
+
+  String get message => 'the node is going to be as ${node.runtimeType}';
+}
+
 class NewlineRequiresNewNode implements EditorNodeException {
   final Type type;
 
@@ -43,6 +54,15 @@ class NewlineRequiresNewNode implements EditorNodeException {
   String toString() {
     return 'NewlineRequiresNewNode{type: $type}';
   }
+}
+
+class NewlineRequiresNewSpecialNode implements EditorNodeException {
+  final List<EditorNode> newNodes;
+  final NodePosition position;
+
+  NewlineRequiresNewSpecialNode(this.newNodes, this.position);
+
+  String get message => 'newline with new special node!';
 }
 
 class DeleteNotAllowedException implements EditorNodeException {
@@ -138,13 +158,22 @@ class ArrowDownBottomException implements EditorNodeException {
       'the position $position with $offset is in bottom, cannot move down any more!';
 }
 
-class UnablePasteExcepting implements EditorNodeException {
+class UnablePasteException implements EditorNodeException {
   final List<EditorNode> nodes;
   final Type source;
   final NodePosition position;
 
-  UnablePasteExcepting(
-      this.nodes, this.source, this.position);
+  UnablePasteException(this.nodes, this.source, this.position);
 
   String get message => 'the $source cannot paste nodes!';
+}
+
+class TypingToChangeNodeException implements EditorNodeException {
+  final RichTextNode old;
+  final NodeWithPosition current;
+
+  TypingToChangeNodeException(this.old, this.current);
+
+  String get message =>
+      'old node ${old.runtimeType} is going to be changed as ${current.node.runtimeType}';
 }

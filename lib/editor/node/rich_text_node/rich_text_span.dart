@@ -42,18 +42,23 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan() => TextSpan(text: text, style: _buildStyle());
+  InlineSpan buildSpan() =>
+      TextSpan(text: text, style: buildStyle());
 
   List<InlineSpan> buildSelectingSpan(int begin, int end) {
     assert(begin <= end);
     return [
       if (begin != 0)
-        TextSpan(text: text.substring(0, begin), style: _buildStyle()),
+        TextSpan(
+            text: text.substring(0, begin), style: buildStyle()),
       TextSpan(
           text: text.substring(begin, end),
-          style: _buildStyle().copyWith(backgroundColor: Colors.blue)),
+          style:
+              buildStyle().copyWith(backgroundColor: Colors.blue)),
       if (end != textLength)
-        TextSpan(text: text.substring(end, textLength), style: _buildStyle()),
+        TextSpan(
+            text: text.substring(end, textLength),
+            style: buildStyle()),
     ];
   }
 
@@ -94,7 +99,7 @@ class RichTextSpan extends SpanNode {
     return mergeList(list, trim: trim);
   }
 
-  TextStyle _buildStyle() {
+  TextStyle buildStyle() {
     var style = const TextStyle();
     Set<TextDecoration> decorations = {};
     for (final tag in tags) {

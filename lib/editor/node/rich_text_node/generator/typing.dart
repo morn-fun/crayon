@@ -1,10 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../../../../editor/extension/string_extension.dart';
 
 import '../../../cursor/rich_text_cursor.dart';
+import '../../../exception/editor_node_exception.dart';
 import '../../basic_node.dart';
 import '../../position_data.dart';
+import '../head_node.dart';
 import '../rich_text_node.dart';
+import '../unordered_node.dart';
 
 NodeWithPosition typingRichTextNodeWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {
@@ -12,6 +16,7 @@ NodeWithPosition typingRichTextNodeWhileEditing(
   if (delta is TextEditingDeltaInsertion) {
     final position = data.position;
     final text = delta.textInserted;
+    checkNeedChangeNodeTyp(text, node, position);
     final span = node.getSpan(position.index);
     final newNode = node.update(position.index,
         span.copy(text: (v) => v.insert(position.offset, text)));
@@ -58,3 +63,25 @@ NodeWithPosition typingRichTextNodeWhileSelecting(
       EditingData(newLeft.endPosition, EventType.typing, extras: data.extras),
       nodeAfterMerge);
 }
+
+void checkNeedChangeNodeTyp(
+    String text, RichTextNode node, RichTextNodePosition position) {
+  if (text != ' ') return;
+  final frontText = node.frontPartNode(position).text;
+  final generator = _string2generator[frontText];
+  if (generator != null) {
+    final newNode = generator.call(node.rearPartNode(position));
+    if (node.runtimeType.toString() == newNode.runtimeType.toString()) return;
+    throw TypingToChangeNodeException(newNode,
+        NodeWithPosition(newNode, EditingPosition(newNode.beginPosition)));
+  }
+}
+
+typedef RichTextNodeGenerator = RichTextNode Function(RichTextNode node);
+
+final Map<String, RichTextNodeGenerator> _string2generator = {
+  '-': (n) => UnorderedNode.from(n.spans, id: n.id),
+  '#': (n) => H1Node.from(n.spans, id: n.id),
+  '##': (n) => H2Node.from(n.spans, id: n.id),
+  '###': (n) => H3Node.from(n.spans, id: n.id),
+};

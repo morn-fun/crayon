@@ -3,6 +3,7 @@ import '../../core/controller.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../exception/editor_node_exception.dart';
+import '../../node/basic_node.dart';
 import '../basic_command.dart';
 
 class DeletionWhileSelectingNodes implements BasicCommand {
@@ -17,8 +18,8 @@ class DeletionWhileSelectingNodes implements BasicCommand {
     final leftNode = controller.getNode(leftCursor.index);
     final rightNode = controller.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
-    final right = rightNode.rearPartNode(rightCursor.position,
-        newId: '${DateTime.now().millisecondsSinceEpoch}');
+    final right =
+        rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
     try {
       final newNode = left.merge(right);
       return controller.replace(Replace(leftCursor.index, rightCursor.index + 1,

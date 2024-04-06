@@ -90,7 +90,7 @@ class PasteAction extends ContextAction<PasteIntent> {
         final r = node.onEdit(
             EditingData(cursor.position, EventType.paste, extras: nodes));
         editorContext.execute(ModifyNode(r.position.toCursor(index), r.node));
-      } on UnablePasteExcepting catch (e) {
+      } on UnablePasteException catch (e) {
         editorContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       }
@@ -102,7 +102,7 @@ class PasteAction extends ContextAction<PasteIntent> {
             SelectingPosition(cursor.left, cursor.right), EventType.paste,
             extras: nodes));
         editorContext.execute(ModifyNode(r.position.toCursor(index), r.node));
-      } on UnablePasteExcepting catch (e) {
+      } on UnablePasteException catch (e) {
         editorContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       }

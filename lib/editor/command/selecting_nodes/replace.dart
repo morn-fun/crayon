@@ -22,7 +22,7 @@ class ReplaceSelectingNodes implements BasicCommand {
     final newLeftNP =
         leftNode.onEdit(EditingData(left.position, type, extras: extra));
     final newRight = rightNode.rearPartNode(right.position,
-        newId: '${DateTime.now().millisecondsSinceEpoch}');
+        newId: randomNodeId);
     final newCursor = newLeftNP.position.toCursor(left.index);
     try {
       final newNode = newLeftNP.node.merge(newRight);

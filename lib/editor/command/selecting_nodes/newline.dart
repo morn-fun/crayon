@@ -1,8 +1,8 @@
 import '../../core/command_invoker.dart';
 import '../../core/controller.dart';
 import '../../cursor/basic_cursor.dart';
+import '../../node/basic_node.dart';
 import '../basic_command.dart';
-
 
 class InsertNewLineWhileSelectingNodes implements BasicCommand {
   final SelectingNodesCursor cursor;
@@ -16,8 +16,8 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
     final leftNode = controller.getNode(leftCursor.index);
     final rightNode = controller.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
-    final right = rightNode.rearPartNode(rightCursor.position,
-        newId: '${DateTime.now().millisecondsSinceEpoch}');
+    final right =
+        rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
     return controller.replace(Replace(
         leftCursor.index,
         rightCursor.index + 1,
