@@ -42,28 +42,24 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan() =>
-      TextSpan(text: text, style: buildStyle());
+  InlineSpan buildSpan() => TextSpan(text: text, style: buildStyle());
 
   List<InlineSpan> buildSelectingSpan(int begin, int end) {
     assert(begin <= end);
     return [
       if (begin != 0)
-        TextSpan(
-            text: text.substring(0, begin), style: buildStyle()),
+        TextSpan(text: text.substring(0, begin), style: buildStyle()),
       TextSpan(
           text: text.substring(begin, end),
-          style:
-              buildStyle().copyWith(backgroundColor: Colors.blue)),
+          style: buildStyle().copyWith(backgroundColor: Colors.blue)),
       if (end != textLength)
-        TextSpan(
-            text: text.substring(end, textLength),
-            style: buildStyle()),
+        TextSpan(text: text.substring(end, textLength), style: buildStyle()),
     ];
   }
 
   RichTextSpan merge(RichTextSpan other, {bool trim = true}) {
     if (trim && other.isEmpty) return this;
+    if (trim && isEmpty) return other;
     if (!tags.equalsTo(other.tags) || !attributes.equalsTo(other.attributes)) {
       throw UnableToMergeException(toString(), other.toString());
     }
@@ -93,9 +89,13 @@ class RichTextSpan extends SpanNode {
 
   List<RichTextSpan> insert(int offset, RichTextSpan span, {bool trim = true}) {
     List<RichTextSpan> list = [];
-    list.add(copy(text: (t) => t.substring(0, offset)));
+    if (text.substring(0, offset).isNotEmpty) {
+      list.add(copy(text: (t) => t.substring(0, offset)));
+    }
     list.add(span);
-    list.add(copy(text: (t) => t.substring(offset, t.length)));
+    if (text.substring(offset, textLength).isNotEmpty) {
+      list.add(copy(text: (t) => t.substring(offset, t.length)));
+    }
     return mergeList(list, trim: trim);
   }
 

@@ -1,3 +1,5 @@
+import 'package:pre_editor/editor/node/position_data.dart';
+
 import '../../core/command_invoker.dart';
 import '../../core/controller.dart';
 import '../../core/logger.dart';
@@ -19,10 +21,11 @@ class ReplaceSelectingNodes implements BasicCommand {
     final right = cursor.right;
     final leftNode = controller.getNode(left.index);
     final rightNode = controller.getNode(right.index);
-    final newLeftNP =
-        leftNode.onEdit(EditingData(left.position, type, extras: extra));
-    final newRight = rightNode.rearPartNode(right.position,
-        newId: randomNodeId);
+    final newLeftNP = leftNode.onSelect(SelectingData(
+        SelectingPosition(left.position, leftNode.endPosition), type,
+        extras: extra));
+    final newRight =
+        rightNode.rearPartNode(right.position, newId: randomNodeId);
     final newCursor = newLeftNP.position.toCursor(left.index);
     try {
       final newNode = newLeftNP.node.merge(newRight);

@@ -185,7 +185,7 @@ class RichTextNode extends EditorNode {
 
   RichTextNode replace(RichTextNodePosition begin, RichTextNodePosition end,
       List<RichTextSpan> spans,
-      {String? newId}) {
+      {String? newId, bool trim = true}) {
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
 
@@ -206,7 +206,8 @@ class RichTextNode extends EditorNode {
     if (rightSpan.text.isNotEmpty) newSpans.add(rightSpan);
     if (leftSpan.text.isNotEmpty) newSpans.insert(0, leftSpan);
     copySpans.insertAll(leftIndex, newSpans);
-    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
+    return from(
+        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
         id: newId ?? id);
   }
 

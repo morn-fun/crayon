@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
 
 import '../command/selecting_nodes/update.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
+import '../node/rich_text_node/rich_text_node.dart';
 
 class UnderlineIntent extends Intent {
   const UnderlineIntent();
@@ -71,10 +73,36 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
 }
 
 void _onEvent(EditorContext context, EventType type) {
-  final c = context.cursor;
-  if (c is SingleNodeCursor) {
-    context.onNodeEditing(c, type);
-  } else if (c is SelectingNodesCursor) {
-    context.execute(UpdateSelectingNodes(c, type));
+  final cursor = context.cursor;
+  final controller = context.controller;
+  if (cursor is SingleNodeCursor) {
+    context.onNodeEditing(cursor, type, extra: false);
+  } else if (cursor is SelectingNodesCursor) {
+    final left = cursor.left;
+    final right = cursor.right;
+    int i = left.index;
+    bool coverTag = false;
+    while (i <= right.index) {
+      final node = controller.getNode(i);
+      if (node is RichTextNode) {
+        late RichTextNode newNode;
+        if (i == left.index) {
+          newNode = node.rearPartNode(left.position as RichTextNodePosition);
+        } else if (i == right.index) {
+          newNode = node.frontPartNode(right.position as RichTextNodePosition);
+        } else {
+          newNode = node;
+        }
+        for (var s in newNode.spans) {
+          if(!s.tags.contains(type.name)){
+            coverTag = true;
+            i = right.index + 1;
+            break;
+          }
+        }
+      }
+      i++;
+    }
+    context.execute(UpdateSelectingNodes(cursor, type, extra: coverTag));
   }
 }

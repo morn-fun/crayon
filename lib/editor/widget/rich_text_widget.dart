@@ -161,7 +161,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final lineRange = painter.getLineBoundary(textPosition);
         final h = painter.getFullHeightForCaret(textPosition, rect) ??
             widget.fontSize;
-        if (lineRange.start == 0) {
+        if (lineRange.start == 0 || lineRange == TextRange.empty) {
           throw ArrowUpTopException(position, offset);
         }
         final newOffset = painter.getOffsetFromTextOffset(lineRange.start);
@@ -179,7 +179,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final offset = painter.getOffsetFromTextOffset(node.getOffset(position),
             rect: rect);
         final lineRange = painter.getLineBoundary(textPosition);
-        if (lineRange.end == node.spans.last.endOffset) {
+        if (lineRange.end == node.spans.last.endOffset || lineRange == TextRange.empty) {
           throw ArrowDownBottomException(position, offset);
         }
         final h = painter.getFullHeightForCaret(textPosition, rect) ??

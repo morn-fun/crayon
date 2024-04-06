@@ -12,8 +12,11 @@ NodeWithPosition styleRichTextNodeWhileEditing(
   final position = data.position;
   final offset = node.getOffset(position);
   final currentSpan = node.getSpan(position.index);
-  bool needAddTag = !currentSpan.tags.contains(tag);
-  logger.i("styles,needAddTag:$needAddTag span:$currentSpan");
+  bool coverTag = (data.extras is bool) ? data.extras : false;
+  bool needAddTag = coverTag;
+  if(!coverTag) {
+    needAddTag = !currentSpan.tags.contains(tag);
+  }
   RichTextNode newNode;
   RichTextNodePosition newPosition;
   if (needAddTag) {
@@ -28,7 +31,7 @@ NodeWithPosition styleRichTextNodeWhileEditing(
   }
   newPosition = newNode.getPositionByOffset(offset);
   var span = newNode.getSpan(newPosition.index);
-  logger.i("styles,newPosition:$newPosition span:$span");
+  logger.i("styles,newPosition:$newPosition span:$span, offset:$offset");
 
   ///FIXME: the code is too ugly, try to fix it!!!
   if ((needAddTag && !span.tags.contains(tag)) ||
@@ -52,22 +55,24 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node, String tag) {
   final left = data.left;
   final right = data.right;
+  bool coverTag = (data.extras is bool) ? (data.extras) : false;
   final leftOffset = node.getOffset(left);
   final rightOffset = node.getOffset(right);
   final selectingNode = node.getFromPosition(left, right, trim: true);
-  bool needAddTag = false;
-  for (var span in selectingNode.spans) {
-    if (!span.tags.contains(tag)) {
-      needAddTag = true;
-      break;
+  bool needAddTag = coverTag;
+  if(!coverTag) {
+    for (var span in selectingNode.spans) {
+      if (!span.tags.contains(tag)) {
+        needAddTag = true;
+        break;
+      }
     }
   }
   final newSpans = needAddTag
       ? selectingNode.buildSpansByAddingTag(tag)
       : selectingNode.buildSpansByRemovingTag(tag);
   final newNode = node.replace(left, right, newSpans);
-  return NodeWithPosition(
-      newNode,
-      SelectingPosition(newNode.getPositionByOffset(leftOffset),
-          newNode.getPositionByOffset(rightOffset)));
+  final pLeft = newNode.getPositionByOffset(leftOffset);
+  final pRight = newNode.getPositionByOffset(rightOffset);
+  return NodeWithPosition(newNode, SelectingPosition(pLeft, pRight));
 }
