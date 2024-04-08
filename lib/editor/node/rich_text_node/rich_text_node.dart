@@ -328,7 +328,7 @@ class RichTextNode extends EditorNode {
       try {
         final newOffset = span.text.lastOffset(offset);
         return RichTextNodePosition(index, newOffset);
-      } on OffsetIsEndException {
+      } on RangeError {
         throw ArrowLeftBeginException(position);
       }
     }
@@ -336,19 +336,9 @@ class RichTextNode extends EditorNode {
 
   RichTextNodePosition nextPositionByLength(
       RichTextNodePosition position, int l) {
-    int index = position.index;
-    int offset = position.offset;
-    int restLength = l + offset;
-    while (index < spans.length && restLength > 0) {
-      final span = spans[index];
-      if (restLength < span.textLength) {
-        return RichTextNodePosition(index, offset);
-      }
-      restLength = restLength - span.textLength;
-      offset = span.offset;
-      index++;
-    }
-    return RichTextNodePosition(index, offset);
+    int targetOffset = getOffset(position) + l;
+    final targetPosition = getPositionByOffset(targetOffset);
+    return nextPosition(targetPosition);
   }
 
   RichTextNodePosition nextPosition(RichTextNodePosition position) {
@@ -370,7 +360,7 @@ class RichTextNode extends EditorNode {
       try {
         final newOffset = span.text.nextOffset(position.offset);
         return RichTextNodePosition(index, newOffset);
-      } on OffsetIsEndException {
+      } on RangeError{
         throw ArrowRightEndException(position);
       }
     }

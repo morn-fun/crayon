@@ -103,7 +103,7 @@ class RichTextSpan extends SpanNode {
     var style = const TextStyle();
     Set<TextDecoration> decorations = {};
     for (final tag in tags) {
-      final s = _tag2Style[tag];
+      final s = tag2Style[tag];
       final decoration = s?.decoration;
       if (decoration != null) {
         decorations.add(decoration);
@@ -129,7 +129,7 @@ class RichTextSpan extends SpanNode {
   }
 }
 
-Map<String, TextStyle> _tag2Style = {
+Map<String, TextStyle> tag2Style = {
   RichTextTag.lineThrough.name:
       const TextStyle(decoration: TextDecoration.lineThrough),
   RichTextTag.bold.name: const TextStyle(fontWeight: FontWeight.bold),
