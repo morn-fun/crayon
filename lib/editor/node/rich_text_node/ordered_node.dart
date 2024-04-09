@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
+import '../../core/controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
@@ -9,12 +10,12 @@ import '../basic_node.dart';
 import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
-class UnorderedNode extends RichTextNode {
-  UnorderedNode.from(super.spans, {super.id, super.depth}) : super.from();
+class OrderedNode extends RichTextNode {
+  OrderedNode.from(super.spans, {super.id, super.depth}) : super.from();
 
   @override
   RichTextNode from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      UnorderedNode.from(spans, id: id, depth: depth ?? this.depth);
+      OrderedNode.from(spans, id: id, depth: depth ?? this.depth);
 
   @override
   NodeWithPosition onEdit(EditingData data) {
@@ -65,18 +66,22 @@ class UnorderedNode extends RichTextNode {
   }
 
   @override
-  Widget build(EditorContext context, int index) {
+  Widget build(EditorContext c, int index) {
     return RichTextWidget(
-      context,
+      c,
       this,
       index,
       painterBuilder: (painter, context, child) {
-        final lines = painter.computeLineMetrics();
-        final height = lines.isEmpty ? 16.0 : lines.first.height;
+        final size = 14.0;
         final theme = Theme.of(context);
         return Row(
           children: [
-            buildMarker(height, theme),
+            Text(
+              '${generateOrderedNumber(getIndex(index, c.controller) + 1, depth)}. ',
+              style: TextStyle(
+                  fontSize: size,
+                  color: theme.textTheme.displayMedium?.color),
+            ),
             Expanded(child: child),
           ],
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,28 +90,68 @@ class UnorderedNode extends RichTextNode {
     );
   }
 
-  Container buildMarker(double height, ThemeData theme) {
-    int remainder = depth % 4 + 1;
-    final color = theme.textTheme.titleLarge?.color;
-    late Decoration decoration;
-    if (remainder == 1) {
-      decoration = BoxDecoration(shape: BoxShape.circle, color: color);
-    } else if (remainder == 2) {
-      decoration = BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: color ?? Colors.black));
-    } else if (remainder == 3) {
-      decoration = BoxDecoration(shape: BoxShape.rectangle, color: color);
-    } else {
-      decoration = BoxDecoration(
-          shape: BoxShape.rectangle,
-          border: Border.all(color: color ?? Colors.black));
-    }
-    return Container(
-      width: 5,
-      height: 5,
-      margin: EdgeInsets.only(top: height / 2 - 2, left: 4, right: 4),
-      decoration: decoration,
-    );
+  int getIndex(int indexInController, RichEditorController controller) {
+    if (indexInController <= 0) return 0;
+    int lastIndex = indexInController - 1;
+    final node = controller.getNode(lastIndex);
+    if (node is! OrderedNode) return 0;
+    if (node.depth != depth) return 0;
+    return getIndex(indexInController - 1, controller) + 1;
   }
 }
+
+String generateOrderedNumber(int index, int depth) {
+  int remainder = depth % 3 + 1;
+  if (remainder == 1) {
+    return '$index';
+  } else if (remainder == 2) {
+    return generateRomanNumeral(index);
+  } else {
+    return generateEnglishLetter(index);
+  }
+}
+
+String generateRomanNumeral(int index) {
+  if (index < 1) {
+    throw Exception('Index must be greater than 0');
+  }
+
+  String result = '';
+  for (final entry in romanNumerals.entries) {
+    while (index >= entry.key) {
+      result += entry.value;
+      index -= entry.key;
+    }
+  }
+  return result;
+}
+
+String generateEnglishLetter(int index) {
+  if (index < 1) {
+    throw Exception('Index must be greater than 0');
+  }
+  int alphabetLength = 26;
+  String sequence = '';
+  while (index > 0) {
+    int charIndex = (index - 1) % alphabetLength;
+    sequence = String.fromCharCode('a'.codeUnitAt(0) + charIndex) + sequence;
+    index = (index - 1) ~/ alphabetLength;
+  }
+  return sequence;
+}
+
+const Map<int, String> romanNumerals = {
+  1000: 'M',
+  900: 'CM',
+  500: 'D',
+  400: 'CD',
+  100: 'C',
+  90: 'XC',
+  50: 'L',
+  40: 'XL',
+  10: 'X',
+  9: 'IX',
+  5: 'V',
+  4: 'IV',
+  1: 'I'
+};

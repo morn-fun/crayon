@@ -7,6 +7,7 @@ import '../../../exception/editor_node_exception.dart';
 import '../../basic_node.dart';
 import '../../position_data.dart';
 import '../head_node.dart';
+import '../ordered_node.dart';
 import '../rich_text_node.dart';
 import '../unordered_node.dart';
 
@@ -68,6 +69,14 @@ void checkNeedChangeNodeTyp(
     String text, RichTextNode node, RichTextNodePosition position) {
   if (text != ' ') return;
   final frontText = node.frontPartNode(position).text;
+  RegExp orderedRegExp = RegExp(r'^(\+)?\d+(\.)$');
+  if (orderedRegExp.allMatches(frontText).length == 1) {
+    final rearNode = node.rearPartNode(position);
+    final newNode = OrderedNode.from(rearNode.spans,
+        id: rearNode.id, depth: rearNode.depth);
+    throw TypingToChangeNodeException(newNode,
+        NodeWithPosition(newNode, EditingPosition(newNode.beginPosition)));
+  }
   final generator = _string2generator[frontText];
   if (generator != null) {
     final newNode = generator.call(node.rearPartNode(position));
@@ -80,8 +89,8 @@ void checkNeedChangeNodeTyp(
 typedef RichTextNodeGenerator = RichTextNode Function(RichTextNode node);
 
 final Map<String, RichTextNodeGenerator> _string2generator = {
-  '-': (n) => UnorderedNode.from(n.spans, id: n.id),
-  '#': (n) => H1Node.from(n.spans, id: n.id),
-  '##': (n) => H2Node.from(n.spans, id: n.id),
-  '###': (n) => H3Node.from(n.spans, id: n.id),
+  '-': (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth),
+  '#': (n) => H1Node.from(n.spans, id: n.id, depth: n.depth),
+  '##': (n) => H2Node.from(n.spans, id: n.id, depth: n.depth),
+  '###': (n) => H3Node.from(n.spans, id: n.id, depth: n.depth),
 };
