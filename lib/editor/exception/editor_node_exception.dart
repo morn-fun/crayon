@@ -177,3 +177,22 @@ class TypingToChangeNodeException implements EditorNodeException {
   String get message =>
       'old node ${old.runtimeType} is going to be changed as ${current.node.runtimeType}';
 }
+
+class DepthNotAbleToIncreaseException implements EditorNodeException {
+  final Type type;
+  final int depth;
+
+  DepthNotAbleToIncreaseException(this.type, this.depth);
+
+  String get message => 'the node:$type depth:$depth cannot increase';
+}
+
+class DepthNeedDecreaseMoreException implements EditorNodeException {
+  final Type type;
+  final int depth;
+
+  DepthNeedDecreaseMoreException(this.type, this.depth);
+
+  String get message =>
+      'the node:$type need decrease more same type node with depth:$depth';
+}

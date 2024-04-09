@@ -76,7 +76,7 @@ class PasteAction extends ContextAction<PasteIntent> {
     final List<EditorNode> nodes = [];
     if (text.startsWith(_specialEdge) && text.endsWith(_specialEdge)) {
       for (var n in _copiedNodes) {
-        nodes.add(n.newIdNode());
+        nodes.add(n.newNode(id: randomNodeId));
       }
     } else {
       nodes.add(RichTextNode.from([RichTextSpan(text: text)]));

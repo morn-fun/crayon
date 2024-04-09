@@ -10,13 +10,11 @@ import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
 class UnorderedNode extends RichTextNode {
-  UnorderedNode.empty({super.id}) : super.empty();
-
-  UnorderedNode.from(super.spans, {super.id}) : super.from();
+  UnorderedNode.from(super.spans, {super.id, super.depth}) : super.from();
 
   @override
-  RichTextNode from(List<RichTextSpan> spans, {String? id}) =>
-      UnorderedNode.from(spans, id: id);
+  RichTextNode from(List<RichTextSpan> spans, {String? id, int? depth}) =>
+      UnorderedNode.from(spans, id: id, depth: depth ?? this.depth);
 
   @override
   NodeWithPosition onEdit(EditingData data) {
@@ -25,7 +23,7 @@ class UnorderedNode extends RichTextNode {
     if (type == EventType.newline) {
       if (beginPosition == endPosition) {
         throw NewlineRequiresNewSpecialNode(
-            [RichTextNode.empty(id: id)], beginPosition);
+            [RichTextNode.from([], id: id, depth: depth)], beginPosition);
       }
       final left = frontPartNode(d.position);
       final right = rearPartNode(d.position, newId: randomNodeId);
@@ -33,7 +31,7 @@ class UnorderedNode extends RichTextNode {
     } else if (type == EventType.delete) {
       if (d.position == beginPosition) {
         throw DeleteToChangeNodeException(
-            RichTextNode.from(spans, id: id), beginPosition);
+            RichTextNode.from(spans, id: id, depth: depth), beginPosition);
       }
     }
     return super.onEdit(data);
@@ -57,9 +55,9 @@ class UnorderedNode extends RichTextNode {
       {String? newId, bool trim = false}) {
     if (begin == end) {
       if (begin != beginPosition && end == endPosition) {
-        return UnorderedNode.empty(id: newId);
-      } else if(begin == beginPosition && end != endPosition){
-        return UnorderedNode.empty(id: newId);
+        return UnorderedNode.from([], id: newId);
+      } else if (begin == beginPosition && end != endPosition) {
+        return UnorderedNode.from([], id: newId);
       }
       return super.getFromPosition(begin, end, newId: newId, trim: trim);
     }

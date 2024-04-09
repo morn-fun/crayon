@@ -12,6 +12,7 @@ import '../../exception/editor_node_exception.dart';
 import '../../widget/rich_text_widget.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
+import 'generator/depth.dart';
 import 'generator/paste.dart';
 import 'generator/styles.dart';
 import 'generator/deletion.dart';
@@ -23,15 +24,11 @@ class RichTextNode extends EditorNode {
   ///there must be at least one span in [spans]
   final UnmodifiableListView<RichTextSpan> spans;
 
-  RichTextNode.empty({super.id}) : spans = _buildInitSpans([]);
-
-  RichTextNode.from(List<RichTextSpan> spans, {super.id})
+  RichTextNode.from(List<RichTextSpan> spans, {super.id, super.depth})
       : spans = _buildInitSpans(spans);
 
-  RichTextNode from(List<RichTextSpan> spans, {String? id}) =>
-      RichTextNode.from(spans, id: id);
-
-  RichTextNode empty({String? id}) => RichTextNode.empty(id: id);
+  RichTextNode from(List<RichTextSpan> spans, {String? id, int? depth}) =>
+      RichTextNode.from(spans, id: id, depth: depth ?? this.depth);
 
   static UnmodifiableListView<RichTextSpan> _buildInitSpans(
       List<RichTextSpan> spans) {
@@ -250,7 +247,7 @@ class RichTextNode extends EditorNode {
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
       {String? newId, bool trim = false}) {
     if (begin == end) {
-      return empty(id: newId ?? id);
+      return from([], id: newId ?? id);
     }
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
@@ -360,7 +357,7 @@ class RichTextNode extends EditorNode {
       try {
         final newOffset = span.text.nextOffset(position.offset);
         return RichTextNodePosition(index, newOffset);
-      } on RangeError{
+      } on RangeError {
         throw ArrowRightEndException(position);
       }
     }
@@ -388,7 +385,8 @@ class RichTextNode extends EditorNode {
   }
 
   @override
-  EditorNode newIdNode({String? id}) => from(spans, id: id ?? randomNodeId);
+  EditorNode newNode({String? id, int? depth}) =>
+      from(spans, id: id ?? id, depth: depth ?? this.depth);
 }
 
 final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
@@ -405,6 +403,9 @@ final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
   EventType.lineThrough: (d, n) =>
       styleRichTextNodeWhileEditing(d, n, RichTextTag.lineThrough.name),
   EventType.paste: (d, n) => pasteWhileEditing(d, n),
+  EventType.increaseDepth: (d, n) => increaseDepthWhileEditing(d, n),
+  EventType.decreaseDepth: (d, n) =>
+      throw DepthNeedDecreaseMoreException(n.runtimeType, n.depth),
 };
 
 final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
@@ -421,6 +422,9 @@ final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
   EventType.lineThrough: (d, n) =>
       styleRichTextNodeWhileSelecting(d, n, RichTextTag.lineThrough.name),
   EventType.paste: (d, n) => pasteWhileSelecting(d, n),
+  EventType.increaseDepth: (d, n) => increaseDepthWhileSelecting(d, n),
+  EventType.decreaseDepth: (d, n) =>
+      throw DepthNeedDecreaseMoreException(n.runtimeType, n.depth),
 };
 
 typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(

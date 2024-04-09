@@ -119,6 +119,7 @@ class _RichEditorPageState extends State<RichEditor> {
                   final current = nodes[index];
                   return Container(
                       key: ValueKey(current.id),
+                      padding: EdgeInsets.only(left: current.depth * 8),
                       child: current.build(editorContext, index));
                 },
                 itemCount: nodes.length),

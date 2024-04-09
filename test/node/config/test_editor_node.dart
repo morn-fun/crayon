@@ -37,7 +37,7 @@ class TestEditorNode extends EditorNode{
   }
 
   @override
-  EditorNode newIdNode({String? id}) {
+  EditorNode newNode({String? id, int? depth}) {
     // TODO: implement newIdNode
     throw UnimplementedError();
   }

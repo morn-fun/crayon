@@ -10,6 +10,7 @@ import 'newline.dart';
 import 'redo.dart';
 import 'select_all.dart';
 import 'styles.dart';
+import 'tab.dart';
 import 'undo.dart';
 
 Map<ShortcutActivator, Intent> editorShortcuts = {
@@ -68,6 +69,11 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
       const PasteIntent(),
   LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV):
       const PasteIntent(),
+
+  ///tab
+  const SingleActivator(LogicalKeyboardKey.tab): const TabIntent(),
+  LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab):
+      const ShiftTabIntent(),
 };
 
 Map<Type, RichEditorControllerAction> _actions = {
@@ -75,6 +81,8 @@ Map<Type, RichEditorControllerAction> _actions = {
   UndoIntent: (c) => UndoAction(c),
   RedoIntent: (c) => RedoAction(c),
   NewlineIntent: (c) => NewlineAction(c),
+  TabIntent: (c) => TabAction(c),
+  ShiftTabIntent: (c) => ShiftTabAction(c),
   LeftArrowIntent: (c) => LeftArrowAction(c),
   RightArrowIntent: (c) => RightArrowAction(c),
   UpArrowIntent: (c) => UpArrowAction(c),

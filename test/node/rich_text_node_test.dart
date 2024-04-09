@@ -261,7 +261,7 @@ void main() {
       offset += span.textLength;
     }
 
-    final node7 = RichTextNode.empty()
+    final node7 = RichTextNode.from([])
         .replace(RichTextNodePosition.zero(), RichTextNodePosition.zero(), []);
     assert(node7.spans.length == 1);
   });
@@ -640,7 +640,7 @@ void main() {
 
   test('newIdNode', () {
     final newNode = basicNode();
-    final node1 = newNode.newIdNode(id: 'aaa') as RichTextNode;
+    final node1 = newNode.newNode(id: 'aaa') as RichTextNode;
     assert(node1.id == 'aaa');
     assert(newNode.id != node1.id);
     assert(newNode.text == node1.text);

@@ -8,9 +8,11 @@ import 'position_data.dart';
 
 @immutable
 abstract class EditorNode {
-  EditorNode({String? id}) : _id = id ?? randomNodeId;
+  EditorNode({String? id, this.depth = 0}) : _id = id ?? randomNodeId;
 
   final String _id;
+
+  final int depth;
 
   Map<String, dynamic> toJson();
 
@@ -32,7 +34,7 @@ abstract class EditorNode {
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});
 
-  EditorNode newIdNode({String? id});
+  EditorNode newNode({String? id, int? depth});
 
   NodePosition get beginPosition;
 
@@ -95,6 +97,8 @@ enum EventType {
   typing,
   delete,
   enter,
+  increaseDepth,
+  decreaseDepth,
   selectAll,
   newline,
   underline,
