@@ -22,12 +22,22 @@ class DeletionWhileSelectingNodes implements BasicCommand {
         rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
     try {
       final newNode = left.merge(right);
-      return controller.replace(Replace(leftCursor.index, rightCursor.index + 1,
-          [newNode], EditingCursor(leftCursor.index, left.endPosition)));
+      List<EditorNode> listNeedRefreshDepth =
+          controller.listNeedRefreshDepth(rightCursor.index, newNode.depth);
+      return controller.replace(Replace(
+          leftCursor.index,
+          rightCursor.index + 1 + listNeedRefreshDepth.length,
+          [newNode, ...listNeedRefreshDepth],
+          EditingCursor(leftCursor.index, left.endPosition)));
     } on UnableToMergeException catch (e) {
       logger.e('$runtimeType error: $e');
-      return controller.replace(Replace(leftCursor.index, rightCursor.index + 1,
-          [left, right], EditingCursor(leftCursor.index, left.endPosition)));
+      List<EditorNode> listNeedRefreshDepth =
+          controller.listNeedRefreshDepth(rightCursor.index, right.depth);
+      return controller.replace(Replace(
+          leftCursor.index,
+          rightCursor.index + 1 + listNeedRefreshDepth.length,
+          [left, right, ...listNeedRefreshDepth],
+          EditingCursor(leftCursor.index, left.endPosition)));
     }
   }
 }

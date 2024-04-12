@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/context.dart';
 import '../../core/controller.dart';
 import '../../cursor/basic_cursor.dart';
@@ -66,21 +65,20 @@ class OrderedNode extends RichTextNode {
   }
 
   @override
-  Widget build(EditorContext c, int index) {
+  Widget build(EditorContext context, int index) {
     return RichTextWidget(
-      c,
+      context,
       this,
       index,
-      painterBuilder: (painter, context, child) {
+      painterBuilder: (painter, c, child) {
         final size = 14.0;
-        final theme = Theme.of(context);
+        final theme = Theme.of(c);
         return Row(
           children: [
             Text(
-              '${generateOrderedNumber(getIndex(index, c.controller) + 1, depth)}. ',
+              '${generateOrderedNumber(getIndex(index, context.controller) + 1, depth)}. ',
               style: TextStyle(
-                  fontSize: size,
-                  color: theme.textTheme.displayMedium?.color),
+                  fontSize: size, color: theme.textTheme.displayMedium?.color),
             ),
             Expanded(child: child),
           ],
@@ -94,9 +92,15 @@ class OrderedNode extends RichTextNode {
     if (indexInController <= 0) return 0;
     int lastIndex = indexInController - 1;
     final node = controller.getNode(lastIndex);
-    if (node is! OrderedNode) return 0;
-    if (node.depth != depth) return 0;
-    return getIndex(indexInController - 1, controller) + 1;
+    int nodeDepth = node.depth;
+    if (nodeDepth > depth) {
+      return getIndex(indexInController - 1, controller);
+    } else if (nodeDepth < depth) {
+      return 0;
+    } else {
+      if (node is! OrderedNode) return 0;
+      return getIndex(indexInController - 1, controller) + 1;
+    }
   }
 }
 
