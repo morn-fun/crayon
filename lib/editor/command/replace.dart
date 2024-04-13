@@ -9,7 +9,7 @@ class ReplaceNode implements BasicCommand {
   ReplaceNode(this.replace, {this.record = true});
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     return controller.replace(replace, record: record);
   }
 

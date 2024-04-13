@@ -1,10 +1,13 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+
+import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
-import 'callbacks_collection.dart';
+import '../widget/optional_menu.dart';
+import 'listener_collection.dart';
 import 'command_invoker.dart';
 
 class RichEditorController {
@@ -13,43 +16,11 @@ class RichEditorController {
   }
 
   final List<EditorNode> _nodes = [];
+  ControllerStatus _status = ControllerStatus.idle;
   BasicCursor _cursor = NoneCursor();
+  OverlayEntry? _optionalMenuEntry;
 
-  final CallbackCollection _callbackCollection = CallbackCollection();
-
-  void addCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
-      _callbackCollection.addCursorChangedCallback(callback);
-
-  void removeCursorChangedCallback(ValueChanged<BasicCursor> callback) =>
-      _callbackCollection.removeCursorChangedCallback(callback);
-
-  void addNodesChangedCallback(VoidCallback callback) =>
-      _callbackCollection.addNodesChangedCallback(callback);
-
-  void addPanUpdateCallback(ValueChanged<Offset> callback) =>
-      _callbackCollection.addPanUpdateCallback(callback);
-
-  void removePanUpdateCallback(ValueChanged<Offset> callback) =>
-      _callbackCollection.removePanUpdateCallback(callback);
-
-  void addTapDownCallback(ValueChanged<Offset> callback) =>
-      _callbackCollection.addTapDownCallback(callback);
-
-  void removeTapDownCallback( ValueChanged<Offset> callback) =>
-      _callbackCollection.removeTapDownCallback(callback);
-
-  void addNodeChangedCallback(String id, ValueChanged<EditorNode> callback) =>
-      _callbackCollection.addNodeChangedCallback(id, callback);
-
-  void removeNodeChangedCallback(
-          String id, ValueChanged<EditorNode> callback) =>
-      _callbackCollection.removeNodeChangedCallback(id, callback);
-
-  void addArrowDelegate(String id, ArrowDelegate callback) =>
-      _callbackCollection.addArrowDelegate(id, callback);
-
-  void removeArrowDelegate(String id, ArrowDelegate callback) =>
-      _callbackCollection.removeArrowDelegate(id, callback);
+  final ListenerCollection listeners = ListenerCollection();
 
   EditorNode getNode(int index) => _nodes[index];
 
@@ -64,14 +35,14 @@ class RichEditorController {
       IndexWithPosition(0, firstNode.beginPosition),
       IndexWithPosition(nodeLength - 1, lastNode.endPosition));
 
-  UpdateControllerCommand? update(UpdateOne data, {bool record = true}) {
-    final command = data.update(this);
-    return record ? command : null;
+  UpdateControllerOperation? update(Update data, {bool record = true}) {
+    final operation = data.update(this);
+    return record ? operation : null;
   }
 
-  UpdateControllerCommand? replace(Replace data, {bool record = true}) {
-    final command = data.update(this);
-    return record ? command : null;
+  UpdateControllerOperation? replace(Replace data, {bool record = true}) {
+    final operation = data.update(this);
+    return record ? operation : null;
   }
 
   void updateCursor(BasicCursor cursor, {bool notify = true}) {
@@ -80,26 +51,49 @@ class RichEditorController {
     if (notify) notifyCursor(cursor);
   }
 
-  void onArrowAccept(AcceptArrowData data) =>
-      _callbackCollection.onArrowAccept(data);
+  void updateStatus(ControllerStatus status) {
+    if (_status == status) return;
+    _status = status;
+    _notifyStatus(status);
+  }
 
-  void notifyCursor(BasicCursor cursor) =>
-      _callbackCollection.notifyCursor(cursor);
+  void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
 
-  void notifyDragUpdateDetails(Offset p) =>
-      _callbackCollection.notifyDragUpdateDetails(p);
+  void notifyCursor(BasicCursor cursor) => listeners.notifyCursor(cursor);
 
-  void notifyTapDown(Offset p) => _callbackCollection.notifyTapDown(p);
+  void _notifyStatus(ControllerStatus status) => listeners.notifyStatus(status);
 
-  void notifyNode(EditorNode node) => _callbackCollection.notifyNode(node);
+  void notifyGesture(GestureState s) => listeners.notifyGesture(s);
 
-  void notifyNodes() => _callbackCollection.notifyNodes();
+  void notifyNode(EditorNode node) => listeners.notifyNode(node);
+
+  void notifyNodes() => listeners.notifyNodes();
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
+  void showOptionalMenu(Offset offset, BuildContext context, String nodeId,
+      ValueChanged<BasicCommand> onCommand) async {
+    if (isSelectingMenuShowing) return;
+    updateStatus(ControllerStatus.showingOptionalMenu);
+    _optionalMenuEntry = OverlayEntry(
+        builder: (_) => OptionalMenu(
+            offset: offset,
+            controller: this,
+            nodeId: nodeId,
+            onCommand: onCommand));
+    Overlay.of(context).insert(_optionalMenuEntry!);
+  }
+
+  void removeEntry() {
+    _optionalMenuEntry?.remove();
+    _optionalMenuEntry?.dispose();
+    _optionalMenuEntry = null;
+  }
+
   void dispose() {
     _nodes.clear();
-    _callbackCollection.dispose();
+    removeEntry();
+    listeners.dispose();
   }
 
   UnmodifiableListView<EditorNode> get nodes => UnmodifiableListView(_nodes);
@@ -108,45 +102,32 @@ class RichEditorController {
 
   int get nodeLength => _nodes.length;
 
-  List<EditorNode> listNeedRefreshDepth(
-      int startIndex, int startDepth) {
-    final newList = <EditorNode>[];
-    int index = startIndex + 1;
-    int depth = startDepth;
-    while (index < nodeLength) {
-      var node = getNode(index);
-      if (node.depth - depth > 1) {
-        depth = depth + 1;
-        newList.add(node.newNode(depth: depth));
-      } else {
-        break;
-      }
-      index++;
-    }
-    return newList;
-  }
+  ControllerStatus get status => _status;
+
+  bool get isSelectingMenuShowing =>
+      status == ControllerStatus.showingOptionalMenu;
 }
 
-class UpdateOne extends UpdateControllerCommand {
+class Update extends UpdateControllerOperation {
   final int index;
   final EditorNode node;
   final BasicCursor cursor;
 
-  UpdateOne(this.index, this.node, this.cursor);
+  Update(this.index, this.node, this.cursor);
 
   @override
-  UpdateControllerCommand update(RichEditorController controller) {
+  UpdateControllerOperation update(RichEditorController controller) {
     final nodes = controller._nodes;
-    final undoCommand = UpdateOne(index, nodes[index], controller.cursor);
+    final undoOperation = Update(index, nodes[index], controller.cursor);
     nodes[index] = node;
     controller.updateCursor(cursor, notify: false);
     controller.notifyNode(node);
     controller.notifyCursor(cursor);
-    return undoCommand;
+    return undoOperation;
   }
 }
 
-class Replace extends UpdateControllerCommand {
+class Replace extends UpdateControllerOperation {
   final int begin;
   final int end;
   final UnmodifiableListView<EditorNode> newNodes;
@@ -156,18 +137,25 @@ class Replace extends UpdateControllerCommand {
       : newNodes = UnmodifiableListView(nodes);
 
   @override
-  UpdateControllerCommand update(RichEditorController controller) {
+  UpdateControllerOperation update(RichEditorController controller) {
     final nodes = controller._nodes;
     final oldNodes = nodes.sublist(begin, end);
-    final command =
+    final operation =
         Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
     nodes.replaceRange(begin, end, List.of(newNodes));
     controller.updateCursor(cursor, notify: false);
     controller.notifyNodes();
     controller.notifyCursor(cursor);
-    return command;
+    return operation;
   }
 
   @override
   bool get enableThrottle => false;
+}
+
+enum ControllerStatus {
+  typing,
+  idle,
+  readyForOptionalMenu,
+  showingOptionalMenu,
 }

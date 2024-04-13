@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../editor/command/replacement.dart';
+import '../../editor/command/replace.dart';
 import '../../editor/exception/editor_node_exception.dart';
 import '../../editor/extension/int_extension.dart';
 

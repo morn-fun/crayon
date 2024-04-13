@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/command/replacement.dart';
-import 'package:pre_editor/editor/exception/editor_node_exception.dart';
-import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
+import '../../editor/command/replace.dart';
+import '../../editor/exception/editor_node_exception.dart';
 
 import '../command/selecting_nodes/newline.dart';
 import '../core/context.dart';

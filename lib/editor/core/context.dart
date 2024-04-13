@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/node/position_data.dart';
+import '../../editor/node/position_data.dart';
 
 import '../command/basic_command.dart';
-import '../command/modification.dart';
+import '../command/modify.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/command_exception.dart';
 import '../node/basic_node.dart';
 import 'command_invoker.dart';
 import 'controller.dart';
 import 'input_manager.dart';
+import 'listener_collection.dart';
 import 'logger.dart';
 
 class EditorContext {
@@ -59,9 +60,11 @@ class EditorContext {
 
   BasicCursor get cursor => controller.cursor;
 
-  bool get typing => inputManager.typing;
+  ListenerCollection get listeners => controller.listeners;
 
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
+
+  void updateStatus(ControllerStatus status) => controller.updateStatus(status);
 }

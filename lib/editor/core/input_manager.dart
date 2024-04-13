@@ -1,15 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pre_editor/editor/node/position_data.dart';
 
 import '../command/basic_command.dart';
-import '../command/modification.dart';
-import '../command/replacement.dart';
+import '../command/modify.dart';
+import '../command/replace.dart';
 import '../command/selecting_nodes/replace.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
-import '../shortcuts/shortcuts.dart';
 import 'controller.dart';
 import 'logger.dart';
 
@@ -20,19 +18,13 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   InputConnectionAttribute _attribute = InputConnectionAttribute.empty();
 
   final RichEditorController controller;
-  final ShortcutManager shortcutManager;
 
   final ValueChanged<BasicCommand> onCommand;
   final VoidCallback _focusCall;
 
   BasicCursor get cursor => controller.cursor;
 
-  InputManager(
-      this.controller, this.shortcutManager, this.onCommand, this._focusCall);
-
-  bool _typing = false;
-
-  bool get typing => _typing;
+  InputManager(this.controller, this.onCommand, this._focusCall);
 
   @override
   void connectionClosed() {
@@ -87,12 +79,14 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing) ||
         (last is TextEditingDeltaDeletion && isZeroComposing)) {
-      _typing = false;
-      shortcutManager.shortcuts = editorShortcuts;
+      if (!controller.isSelectingMenuShowing) {
+        controller.updateStatus(ControllerStatus.idle);
+      }
       restartInput();
     } else {
-      shortcutManager.shortcuts = {};
-      _typing = true;
+      if (!controller.isSelectingMenuShowing) {
+        controller.updateStatus(ControllerStatus.typing);
+      }
     }
     if (command != null) onCommand.call(command);
   }
@@ -109,6 +103,10 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         final index = c.index;
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+      } on TypingRequiredOptionalMenuException catch (e) {
+        controller.updateStatus(ControllerStatus.readyForOptionalMenu);
+        return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
+            e.nodeWithPosition.node);
       }
     } else if (c is SelectingNodeCursor) {
       final node = controller.getNode(c.index);
@@ -121,6 +119,10 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         final index = c.index;
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+      } on TypingRequiredOptionalMenuException catch (e) {
+        controller.updateStatus(ControllerStatus.readyForOptionalMenu);
+        return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
+            e.nodeWithPosition.node);
       }
     } else if (c is SelectingNodesCursor) {
       return ReplaceSelectingNodes(c, EventType.typing, delta);

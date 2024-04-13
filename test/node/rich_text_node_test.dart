@@ -456,8 +456,7 @@ void main() {
   test('build', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
     final controller = RichEditorController.fromNodes([newNode]);
-    final inputManager =
-        InputManager(controller, ShortcutManager(), (value) {}, () {});
+    final inputManager = InputManager(controller, (value) {}, () {});
     final widget = newNode.build(
         EditorContext(controller, inputManager, FocusNode(), CommandInvoker()),
         0);

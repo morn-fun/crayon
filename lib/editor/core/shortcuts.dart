@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/context.dart';
-import 'arrows/single_arrow.dart';
-import 'copy_paste.dart';
-import 'delete.dart';
-import 'arrows/arrows.dart';
-import 'newline.dart';
-import 'redo.dart';
-import 'select_all.dart';
-import 'styles.dart';
-import 'tab.dart';
-import 'undo.dart';
+import '../shortcuts/optional_menu.dart';
+import 'context.dart';
+import '../shortcuts/arrows/single_arrow.dart';
+import '../shortcuts/copy_paste.dart';
+import '../shortcuts/delete.dart';
+import '../shortcuts/arrows/arrows.dart';
+import '../shortcuts/newline.dart';
+import '../shortcuts/redo.dart';
+import '../shortcuts/select_all.dart';
+import '../shortcuts/styles.dart';
+import '../shortcuts/tab.dart';
+import '../shortcuts/undo.dart';
 
-Map<ShortcutActivator, Intent> editorShortcuts = {
+final Map<ShortcutActivator, Intent> editorShortcuts = {
   ///single arrow
   const SingleActivator(LogicalKeyboardKey.arrowLeft): const LeftArrowIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowRight):
@@ -76,6 +77,15 @@ Map<ShortcutActivator, Intent> editorShortcuts = {
       const ShiftTabIntent(),
 };
 
+final Map<ShortcutActivator, Intent> selectingMenuShortcuts =
+    Map.of(editorShortcuts)
+      ..[const SingleActivator(LogicalKeyboardKey.arrowUp)] =
+          const OptionalMenuUpArrowIntent()
+      ..[const SingleActivator(LogicalKeyboardKey.arrowDown)] =
+          const OptionalMenuDownArrowIntent()
+      ..[const SingleActivator(LogicalKeyboardKey.enter)] =
+          const OptionalMenuEnterIntent();
+
 Map<Type, RichEditorControllerAction> _actions = {
   DeleteIntent: (c) => DeleteAction(c),
   UndoIntent: (c) => UndoAction(c),
@@ -94,6 +104,9 @@ Map<Type, RichEditorControllerAction> _actions = {
   LineThroughIntent: (c) => LineThroughAction(c),
   CopyIntent: (c) => CopyAction(c),
   PasteIntent: (c) => PasteAction(c),
+  OptionalMenuUpArrowIntent: (c) => OptionalMenuUpArrowAction(c),
+  OptionalMenuDownArrowIntent: (c) => OptionalMenuDownArrowAction(c),
+  OptionalMenuEnterIntent: (c) => OptionalMenuEnterAction(c),
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>

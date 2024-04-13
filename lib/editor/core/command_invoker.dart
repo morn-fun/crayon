@@ -5,8 +5,8 @@ import 'controller.dart';
 import 'logger.dart';
 
 class CommandInvoker {
-  final List<UpdateControllerCommand> _undoCommands = [];
-  final List<UpdateControllerCommand> _redoCommands = [];
+  final List<UpdateControllerOperation> _undoOperations = [];
+  final List<UpdateControllerOperation> _redoOperations = [];
 
   final _tag = 'RichEditorController';
 
@@ -23,15 +23,15 @@ class CommandInvoker {
           _addToUndoCommands(c);
         }, tag: _tag);
       }
-      _redoCommands.clear();
+      _redoOperations.clear();
     } catch (e) {
       throw PerformCommandException(command.runtimeType, '$_tag, execute', e);
     }
   }
 
   void undo(RichEditorController controller) {
-    if (_undoCommands.isEmpty) throw NoCommandException('undo');
-    final command = _undoCommands.removeLast();
+    if (_undoOperations.isEmpty) throw NoCommandException('undo');
+    final command = _undoOperations.removeLast();
     logger.i('undo 【${command.runtimeType}】');
     try {
       _addToRedoCommands(command.update(controller));
@@ -41,8 +41,8 @@ class CommandInvoker {
   }
 
   void redo(RichEditorController controller) {
-    if (_redoCommands.isEmpty) throw NoCommandException('undo');
-    final command = _redoCommands.removeLast();
+    if (_redoOperations.isEmpty) throw NoCommandException('undo');
+    final command = _redoOperations.removeLast();
     logger.i('redo 【${command.runtimeType}】');
     try {
       _addToUndoCommands(command.update(controller));
@@ -52,43 +52,41 @@ class CommandInvoker {
   }
 
   void insertUndoCommand(
-      UpdateControllerCommand c, bool record, RichEditorController controller) {
+      UpdateControllerOperation c, bool record, RichEditorController controller) {
     final command = c.update(controller);
     if (record) _addToUndoCommands(command);
   }
 
-  void _addToUndoCommands(UpdateControllerCommand? command) {
+  void _addToUndoCommands(UpdateControllerOperation? command) {
     if (command == null) return;
-    if (_undoCommands.length >= 100) {
-      _undoCommands.removeAt(0);
+    if (_undoOperations.length >= 100) {
+      _undoOperations.removeAt(0);
     }
-    _undoCommands.add(command);
+    _undoOperations.add(command);
   }
 
-  void _addToRedoCommands(UpdateControllerCommand? command) {
+  void _addToRedoCommands(UpdateControllerOperation? command) {
     if (command == null) return;
-    if (_redoCommands.length >= 100) {
-      _redoCommands.removeAt(0);
+    if (_redoOperations.length >= 100) {
+      _redoOperations.removeAt(0);
     }
-    _redoCommands.add(command);
+    _redoOperations.add(command);
   }
 
   void dispose() {
-    _redoCommands.clear();
-    _undoCommands.clear();
+    _redoOperations.clear();
+    _undoOperations.clear();
   }
 }
 
-abstract class UpdateControllerCommand {
-  UpdateControllerCommand update(RichEditorController controller);
+abstract class UpdateControllerOperation {
+  UpdateControllerOperation update(RichEditorController controller);
 
   bool get enableThrottle => true;
 }
 
 class Throttle {
   static final _tagMap = <String, int>{};
-
-  static const _t = 'Throttle';
 
   static void execute(Function callBack,
       {Duration duration = const Duration(milliseconds: 500),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/listener_collection.dart';
 import '../exception/editor_node_exception.dart';
 import '../extension/offset_extension.dart';
 import '../extension/painter_extension.dart';
@@ -21,13 +22,11 @@ class RichTextWidget extends StatefulWidget {
     this.richTextNode,
     this.index, {
     super.key,
-    this.painterBuilder,
     this.fontSize = 16,
   });
 
   final EditorContext editorContext;
   final RichTextNode richTextNode;
-  final TextPainterBuilder? painterBuilder;
   final int index;
   final double fontSize;
 
@@ -56,6 +55,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   RichEditorController get controller => editorContext.controller;
 
+  ListenerCollection get listeners => controller.listeners;
+
   InputManager get inputManager => editorContext.inputManager;
 
   int get index => widget.index;
@@ -77,21 +78,21 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       tryToUpdateInputAttribute(cursor);
     });
-    controller.addTapDownCallback(_updatePosition);
-    controller.addNodeChangedCallback(node.id, onNodeChanged);
-    controller.addArrowDelegate(node.id, onArrowAccept);
-    controller.addCursorChangedCallback(onCursorChanged);
-    controller.addPanUpdateCallback(onPanUpdate);
+    listeners.addGestureListener(_onGesture);
+    listeners.addStatusChangedListener(_onStatus);
+    listeners.addNodeChangedListener(node.id, onNodeChanged);
+    listeners.addArrowDelegate(node.id, onArrowAccept);
+    listeners.addCursorChangedListener(onCursorChanged);
   }
 
   @override
   void dispose() {
     super.dispose();
-    controller.removeNodeChangedCallback(node.id, onNodeChanged);
-    controller.removeTapDownCallback(_updatePosition);
-    controller.removeArrowDelegate(node.id, onArrowAccept);
-    controller.removeCursorChangedCallback(onCursorChanged);
-    controller.removePanUpdateCallback(onPanUpdate);
+    listeners.removeNodeChangedListener(node.id, onNodeChanged);
+    listeners.removeGestureListener(_onGesture);
+    listeners.removeStatusChangedListener(_onStatus);
+    listeners.removeArrowDelegate(node.id, onArrowAccept);
+    listeners.removeCursorChangedListener(onCursorChanged);
     painter.dispose();
   }
 
@@ -136,7 +137,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           if (tapOffset == null) return;
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
-          controller.notifyTapDown(newTapOffset);
+          controller.notifyGesture(GestureState(GestureType.tap, newTapOffset));
         } else {
           newPosition = position;
           newCursor = EditingCursor(index, newPosition);
@@ -168,7 +169,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        controller.notifyTapDown(newTapOffset);
+        controller.notifyGesture(GestureState(GestureType.tap, newTapOffset));
         break;
       case ArrowType.down:
         final box = renderBox;
@@ -179,7 +180,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final offset = painter.getOffsetFromTextOffset(node.getOffset(position),
             rect: rect);
         final lineRange = painter.getLineBoundary(textPosition);
-        if (lineRange.end == node.spans.last.endOffset || lineRange == TextRange.empty) {
+        if (lineRange.end == node.spans.last.endOffset ||
+            lineRange == TextRange.empty) {
           throw ArrowDownBottomException(position, offset);
         }
         final h = painter.getFullHeightForCaret(textPosition, rect) ??
@@ -188,7 +190,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        controller.notifyTapDown(newTapOffset);
+        controller.notifyGesture(GestureState(GestureType.tap, newTapOffset));
         break;
       default:
         break;
@@ -274,40 +276,37 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           recordWidth = constrains.maxWidth;
           painter.layout(maxWidth: recordWidth);
         }
-        final child = Stack(
-          children: [
-            SizedBox(
-              height: painter.height,
-              width: painter.width,
-              child: MouseRegion(
-                  cursor: SystemMouseCursors.text,
-                  child: CustomPaint(painter: _TextPainter(painter))),
-            ),
-            ValueListenableBuilder(
-                valueListenable: positionNotifier,
-                builder: (ctx, v, c) {
-                  if (v == null) return Container();
-                  final offset =
-                      painter.getOffsetFromTextOffset(node.getOffset(v));
-                  double cursorHeight = painter.getFullHeightForCaret(
-                          TextPosition(offset: node.getOffset(v)), Rect.zero) ??
-                      widget.fontSize;
-                  return Positioned(
-                    left: offset.dx,
-                    top: offset.dy,
-                    child: EditingCursorWidget(
-                      cursorColor: Colors.black,
-                      cursorHeight: cursorHeight,
-                    ),
-                  );
-                }),
-          ],
-        );
         return SizedBox(
           key: key,
           height: painter.height,
           width: painter.width,
-          child: widget.painterBuilder?.call(painter, context, child) ?? child,
+          child: Stack(
+            children: [
+              SizedBox(
+                height: painter.height,
+                width: painter.width,
+                child: MouseRegion(
+                    cursor: SystemMouseCursors.text,
+                    child: CustomPaint(painter: _TextPainter(painter))),
+              ),
+              ValueListenableBuilder(
+                  valueListenable: positionNotifier,
+                  builder: (ctx, v, c) {
+                    if (v == null) return Container();
+                    final offset =
+                        painter.getOffsetFromTextOffset(node.getOffset(v));
+                    double cursorHeight = widget.fontSize;
+                    return Positioned(
+                      left: offset.dx,
+                      top: offset.dy,
+                      child: EditingCursorWidget(
+                        cursorColor: Colors.black,
+                        cursorHeight: cursorHeight,
+                      ),
+                    );
+                  }),
+            ],
+          ),
         );
       }),
     );
@@ -321,6 +320,29 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         globalPosition.translate(-widgetPosition.dx, -widgetPosition.dy);
     logger.i('$tag, buildTextPosition, localPosition:$localPosition');
     return painter.getPositionForOffset(localPosition);
+  }
+
+  void _onGesture(GestureState s) {
+    switch (s.type) {
+      case GestureType.tap:
+        _updatePosition(s.globalOffset);
+        break;
+      case GestureType.panUpdate:
+        onPanUpdate(s.globalOffset);
+      case GestureType.hover:
+      // TODO: Handle this case.
+    }
+  }
+
+  void _onStatus(ControllerStatus s) {
+    if (s != ControllerStatus.readyForOptionalMenu) return;
+    final c = cursor;
+    if (c is! EditingCursor) return;
+    if (index != c.index) return;
+    if (key.currentContext == null) return;
+    final box = key.currentContext!.findRenderObject() as RenderBox;
+    controller.showOptionalMenu(box.localToGlobal(Offset.zero), context,
+        node.id, editorContext.execute);
   }
 
   void _updatePosition(Offset globalOffset) {
@@ -385,6 +407,3 @@ class _TextPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-typedef TextPainterBuilder = Widget Function(
-    TextPainter painter, BuildContext context, Widget child);

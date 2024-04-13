@@ -1,3 +1,5 @@
+import '../../../editor/extension/rich_editor_controller_extension.dart';
+
 import '../../core/command_invoker.dart';
 import '../../core/controller.dart';
 import '../../cursor/basic_cursor.dart';
@@ -10,7 +12,7 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
   InsertNewLineWhileSelectingNodes(this.cursor);
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     final leftNode = controller.getNode(leftCursor.index);

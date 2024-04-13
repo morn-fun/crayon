@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../command/modification.dart';
-import '../command/replacement.dart';
-import '../command/selecting_nodes/deletion.dart';
+import '../command/modify.dart';
+import '../command/replace.dart';
+import '../command/selecting_nodes/delete.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
 import '../core/logger.dart';
@@ -10,7 +10,6 @@ import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
-import '../node/rich_text_node/rich_text_node.dart';
 
 class DeleteIntent extends Intent {
   const DeleteIntent();

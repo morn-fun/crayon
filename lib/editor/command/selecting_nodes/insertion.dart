@@ -13,7 +13,7 @@ class InsertNodes implements BasicCommand {
   InsertNodes(this.cursor, this.nodes) : assert(nodes.isNotEmpty);
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     int index = cursor.index;
     final current = controller.getNode(index);
     final left = current.frontPartNode(cursor.position);

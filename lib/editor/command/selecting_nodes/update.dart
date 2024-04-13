@@ -15,7 +15,7 @@ class UpdateSelectingNodes implements BasicCommand {
   UpdateSelectingNodes(this.cursor, this.type, {this.extra});
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     final left = cursor.left;
     final right = cursor.right;
     List<EditorNode> nodes = [];

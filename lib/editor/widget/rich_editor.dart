@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pre_editor/editor/core/listener_collection.dart';
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
 import '../core/input_manager.dart';
 import '../core/logger.dart';
 import '../node/basic_node.dart';
-import '../shortcuts/shortcuts.dart';
+import '../core/shortcuts.dart';
 import '../../editor/exception/command_exception.dart';
 
 class RichEditor extends StatefulWidget {
@@ -23,8 +24,6 @@ class _RichEditorPageState extends State<RichEditor> {
   late EditorContext editorContext;
   late ShortcutManager manager;
   final CommandInvoker invoker = CommandInvoker();
-  Offset _panOffset = Offset.zero;
-  bool _hasTapDown = false;
 
   final focusNode = FocusNode();
 
@@ -35,7 +34,7 @@ class _RichEditorPageState extends State<RichEditor> {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
     manager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
-    inputManager = InputManager(controller, manager, (c) {
+    inputManager = InputManager(controller, (c) {
       try {
         invoker.execute(c, controller);
       } on PerformCommandException catch (e) {
@@ -46,7 +45,23 @@ class _RichEditorPageState extends State<RichEditor> {
     editorContext = EditorContext(controller, inputManager, focusNode, invoker);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
-    controller.addNodesChangedCallback(refresh);
+    final listenerCollection = controller.listeners;
+    listenerCollection.addNodesChangedListener(refresh);
+    listenerCollection.addStatusChangedListener((value) {
+      controller.removeEntry();
+      switch (value) {
+        case ControllerStatus.typing:
+          manager.shortcuts = {};
+          break;
+        case ControllerStatus.idle:
+          manager.shortcuts = editorShortcuts;
+          break;
+        case ControllerStatus.readyForOptionalMenu:
+        case ControllerStatus.showingOptionalMenu:
+          manager.shortcuts = selectingMenuShortcuts;
+          break;
+      }
+    });
   }
 
   void refresh() {
@@ -56,11 +71,11 @@ class _RichEditorPageState extends State<RichEditor> {
   @override
   void dispose() {
     super.dispose();
-    inputManager.dispose();
-    controller.dispose();
-    manager.dispose();
-    invoker.dispose();
     focusNode.removeListener(_onFocusChanged);
+    controller.dispose();
+    inputManager.dispose();
+    focusNode.dispose();
+    invoker.dispose();
   }
 
   void _onFocusChanged() {
@@ -76,6 +91,8 @@ class _RichEditorPageState extends State<RichEditor> {
   @override
   Widget build(BuildContext context) {
     final nodes = controller.nodes;
+    bool needTapDownWhilePanGesture = false;
+    Offset panOffset = Offset.zero;
     return Shortcuts.manager(
       manager: manager,
       child: Actions(
@@ -85,36 +102,40 @@ class _RichEditorPageState extends State<RichEditor> {
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTapDown: (detail) {
-              controller.notifyTapDown(detail.globalPosition);
+              controller.notifyGesture(
+                  GestureState(GestureType.tap, detail.globalPosition));
             },
             onPanStart: (d) {
-              _panOffset = d.globalPosition;
+              panOffset = d.globalPosition;
             },
             onPanEnd: (d) {
-              controller.notifyDragUpdateDetails(_panOffset);
+              controller.notifyGesture(
+                  GestureState(GestureType.panUpdate, panOffset));
             },
             onPanDown: (d) {
-              _panOffset = d.globalPosition;
-              _hasTapDown = true;
+              panOffset = d.globalPosition;
+              needTapDownWhilePanGesture = true;
             },
             onPanUpdate: (d) {
-              if (_hasTapDown) {
-                controller.notifyTapDown(_panOffset);
-                _hasTapDown = false;
+              if (needTapDownWhilePanGesture) {
+                controller
+                    .notifyGesture(GestureState(GestureType.tap, panOffset));
+                needTapDownWhilePanGesture = false;
               }
-              _panOffset = _panOffset.translate(d.delta.dx, d.delta.dy);
+              panOffset = panOffset.translate(d.delta.dx, d.delta.dy);
               Throttle.execute(
-                () => controller.notifyDragUpdateDetails(d.globalPosition),
+                () => controller.notifyGesture(
+                    GestureState(GestureType.panUpdate, d.globalPosition)),
                 tag: tag,
                 duration: const Duration(milliseconds: 50),
               );
             },
             onPanCancel: () {
-              _panOffset = Offset.zero;
-              _hasTapDown = false;
+              panOffset = Offset.zero;
+              needTapDownWhilePanGesture = false;
             },
             child: ListView.builder(
-                padding: EdgeInsets.all(8),
+                padding: EdgeInsets.all(12),
                 itemBuilder: (ctx, index) {
                   final current = nodes[index];
                   return Container(

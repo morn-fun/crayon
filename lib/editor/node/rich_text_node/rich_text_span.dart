@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/extension/collection_extension.dart';
+import '../../../editor/extension/collection_extension.dart';
 
 import '../../core/copier.dart';
 import '../../exception/editor_node_exception.dart';

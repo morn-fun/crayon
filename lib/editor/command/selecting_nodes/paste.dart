@@ -13,7 +13,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
   PasteWhileSelectingNodes(this.cursor, this.nodes);
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     final leftNode = controller.getNode(leftCursor.index);

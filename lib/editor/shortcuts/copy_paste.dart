@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
 
-import '../command/modification.dart';
-import '../command/replacement.dart';
+import '../command/modify.dart';
+import '../command/replace.dart';
 import '../command/selecting_nodes/paste.dart';
 import '../core/context.dart';
 import '../core/controller.dart';

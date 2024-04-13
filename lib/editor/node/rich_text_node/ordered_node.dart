@@ -55,37 +55,32 @@ class OrderedNode extends RichTextNode {
       {String? newId, bool trim = false}) {
     if (begin == end) {
       if (begin != beginPosition && end == endPosition) {
-        return from([], id: newId);
+        return from([], id: newId ?? id);
       } else if (begin == beginPosition && end != endPosition) {
-        return from([], id: newId);
+        return from([], id: newId ?? id);
       }
-      return super.getFromPosition(begin, end, newId: newId, trim: trim);
+      return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
     }
-    return super.getFromPosition(begin, end, newId: newId, trim: trim);
+    return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
   }
 
   @override
   Widget build(EditorContext context, int index) {
-    return RichTextWidget(
-      context,
-      this,
-      index,
-      painterBuilder: (painter, c, child) {
-        final size = 14.0;
-        final theme = Theme.of(c);
-        return Row(
-          children: [
-            Text(
-              '${generateOrderedNumber(getIndex(index, context.controller) + 1, depth)}. ',
-              style: TextStyle(
-                  fontSize: size, color: theme.textTheme.displayMedium?.color),
-            ),
-            Expanded(child: child),
-          ],
-          crossAxisAlignment: CrossAxisAlignment.start,
-        );
-      },
-    );
+    final size = 14.0;
+    return Builder(builder: (c) {
+      final theme = Theme.of(c);
+      return Row(
+        children: [
+          Text(
+            '${generateOrderedNumber(getIndex(index, context.controller) + 1, depth)}. ',
+            style: TextStyle(
+                fontSize: size, color: theme.textTheme.displayMedium?.color),
+          ),
+          Expanded(child: RichTextWidget(context, this, index)),
+        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+      );
+    });
   }
 
   int getIndex(int indexInController, RichEditorController controller) {

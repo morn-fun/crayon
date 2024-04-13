@@ -11,8 +11,8 @@ class ModifyNode implements BasicCommand {
   ModifyNode(this.cursor, this.node);
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
-    return controller.update(UpdateOne(cursor.index, node, cursor));
+  UpdateControllerOperation? run(RichEditorController controller) {
+    return controller.update(Update(cursor.index, node, cursor));
   }
 
   @override

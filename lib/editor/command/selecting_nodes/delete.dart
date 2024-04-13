@@ -1,3 +1,5 @@
+import '../../../editor/extension/rich_editor_controller_extension.dart';
+
 import '../../core/command_invoker.dart';
 import '../../core/controller.dart';
 import '../../core/logger.dart';
@@ -12,7 +14,7 @@ class DeletionWhileSelectingNodes implements BasicCommand {
   DeletionWhileSelectingNodes(this.cursor);
 
   @override
-  UpdateControllerCommand? run(RichEditorController controller) {
+  UpdateControllerOperation? run(RichEditorController controller) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     final leftNode = controller.getNode(leftCursor.index);

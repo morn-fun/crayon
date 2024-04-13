@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../../../../editor/extension/string_extension.dart';
 
@@ -21,10 +20,10 @@ NodeWithPosition typingRichTextNodeWhileEditing(
     final span = node.getSpan(position.index);
     final newNode = node.update(position.index,
         span.copy(text: (v) => v.insert(position.offset, text)));
-    return NodeWithPosition(
-        newNode,
-        EditingPosition(RichTextNodePosition(
-            position.index, position.offset + text.length)));
+    final newPosition = EditingPosition(
+        RichTextNodePosition(position.index, position.offset + text.length));
+    checkNeedShowSelectingMenu(text, newNode, newPosition.position);
+    return NodeWithPosition(newNode, newPosition);
   } else if (delta is TextEditingDeltaReplacement) {
     final position = data.position;
     final text = delta.replacementText;
@@ -60,9 +59,13 @@ NodeWithPosition typingRichTextNodeWhileSelecting(
   final newLeft = node.frontPartNode(data.left);
   final newRight = node.rearPartNode(data.right);
   final nodeAfterMerge = newLeft.merge(newRight);
-  return typingRichTextNodeWhileEditing(
-      EditingData(newLeft.endPosition, EventType.typing, extras: data.extras),
-      nodeAfterMerge);
+  try {
+    return typingRichTextNodeWhileEditing(
+        EditingData(newLeft.endPosition, EventType.typing, extras: data.extras),
+        nodeAfterMerge);
+  } on TypingRequiredOptionalMenuException catch (e) {
+    return e.nodeWithPosition;
+  }
 }
 
 void checkNeedChangeNodeTyp(
@@ -83,6 +86,15 @@ void checkNeedChangeNodeTyp(
     if (node.runtimeType.toString() == newNode.runtimeType.toString()) return;
     throw TypingToChangeNodeException(newNode,
         NodeWithPosition(newNode, EditingPosition(newNode.beginPosition)));
+  }
+}
+
+void checkNeedShowSelectingMenu(
+    String text, RichTextNode node, RichTextNodePosition position) {
+  final frontText = node.frontPartNode(position).text;
+  if (frontText == '/') {
+    throw TypingRequiredOptionalMenuException(
+        NodeWithPosition(node, EditingPosition(position)));
   }
 }
 

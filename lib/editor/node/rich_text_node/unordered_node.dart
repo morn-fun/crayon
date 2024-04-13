@@ -55,34 +55,32 @@ class UnorderedNode extends RichTextNode {
       {String? newId, bool trim = false}) {
     if (begin == end) {
       if (begin != beginPosition && end == endPosition) {
-        return from([], id: newId);
+        return from([], id: newId ?? id);
       } else if (begin == beginPosition && end != endPosition) {
-        return from([], id: newId);
+        return from([], id: newId ?? id);
       }
-      return super.getFromPosition(begin, end, newId: newId, trim: trim);
+      return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
     }
-    return super.getFromPosition(begin, end, newId: newId, trim: trim);
+    return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
   }
 
   @override
   Widget build(EditorContext context, int index) {
-    return RichTextWidget(
-      context,
-      this,
-      index,
-      painterBuilder: (painter, context, child) {
-        final lines = painter.computeLineMetrics();
-        final height = lines.isEmpty ? 16.0 : lines.first.height;
-        final theme = Theme.of(context);
-        return Row(
-          children: [
-            buildMarker(height, theme),
-            Expanded(child: child),
-          ],
-          crossAxisAlignment: CrossAxisAlignment.start,
-        );
-      },
-    );
+    return Builder(builder: (c) {
+      final theme = Theme.of(c);
+      return Row(
+        children: [
+          buildMarker(18, theme),
+          Expanded(
+              child: RichTextWidget(
+            context,
+            this,
+            index,
+          )),
+        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+      );
+    });
   }
 
   Container buildMarker(double height, ThemeData theme) {
@@ -105,7 +103,7 @@ class UnorderedNode extends RichTextNode {
     return Container(
       width: 5,
       height: 5,
-      margin: EdgeInsets.only(top: height / 2 - 2, left: 4, right: 4),
+      margin: EdgeInsets.only(top: height / 2 - 2, right: 8),
       decoration: decoration,
     );
   }
