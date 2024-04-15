@@ -2,31 +2,27 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../command/basic_command.dart';
-import '../command/replace.dart';
-import '../core/controller.dart';
-import '../core/listener_collection.dart';
-import '../cursor/basic_cursor.dart';
-import '../cursor/rich_text_cursor.dart';
-import '../node/basic_node.dart';
-import '../node/rich_text_node/head_node.dart';
-import '../node/rich_text_node/ordered_node.dart';
-import '../node/rich_text_node/rich_text_node.dart';
-import '../node/rich_text_node/unordered_node.dart';
+import '../../command/replace.dart';
+import '../../core/context.dart';
+import '../../core/controller.dart';
+import '../../core/listener_collection.dart';
+import '../../cursor/basic_cursor.dart';
+import '../../cursor/rich_text_cursor.dart';
+import '../../node/basic_node.dart';
+import '../../node/rich_text_node/head_node.dart';
+import '../../node/rich_text_node/ordered_node.dart';
+import '../../node/rich_text_node/rich_text_node.dart';
+import '../../node/rich_text_node/unordered_node.dart';
 
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final Offset offset;
-  final RichEditorController controller;
-  final String nodeId;
-  final ValueChanged<BasicCommand> onCommand;
+  final EditorContext editorContext;
 
   const OptionalMenu({
     super.key,
     required this.offset,
-    required this.controller,
-    required this.nodeId,
-    required this.onCommand,
+    required this.editorContext,
   });
 
   @override
@@ -36,19 +32,25 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   Offset get offset => widget.offset;
 
-  RichEditorController get controller => widget.controller;
+  EditorContext get editorContext => widget.editorContext;
+
+  RichEditorController get controller => editorContext.controller;
 
   ListenerCollection get listeners => controller.listeners;
 
-  final ValueNotifier<int> currentIndex = ValueNotifier(0);
+  final ValueNotifier<int> currentIndex = ValueNotifier(1);
   bool isCheckingText = false;
 
   final list = List.of(defaultMenus);
 
+  late String nodeId;
+
   @override
   void initState() {
+    final cursor = controller.cursor as EditingCursor;
+    nodeId = controller.getNode(cursor.index).id;
     listeners.addCursorChangedListener(_onCursorChanged);
-    listeners.addNodeChangedListener(widget.nodeId, _onNodeChanged);
+    listeners.addNodeChangedListener(nodeId, _onNodeChanged);
     listeners.addOptionalMenuListener(_onOptionalMenuSelected);
     super.initState();
   }
@@ -56,7 +58,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
   @override
   void dispose() {
     listeners.removeCursorChangedListener(_onCursorChanged);
-    listeners.removeNodeChangedListener(widget.nodeId, _onNodeChanged);
+    listeners.removeNodeChangedListener(nodeId, _onNodeChanged);
     listeners.removeOptionalMenuListener(_onOptionalMenuSelected);
     currentIndex.dispose();
     super.dispose();
@@ -68,11 +70,11 @@ class _OptionalMenuState extends State<OptionalMenu> {
       return;
     }
     final node = controller.getNode(cursor.index);
-    if (node.id != widget.nodeId) return;
+    if (node.id != nodeId) return;
     checkText(node, cursor);
   }
 
-  void hideMenu() => controller.updateStatus(ControllerStatus.idle);
+  void hideMenu() => editorContext.hideOptionalMenu();
 
   void _onNodeChanged(EditorNode node) {
     final cursor = controller.cursor;
@@ -89,17 +91,30 @@ class _OptionalMenuState extends State<OptionalMenu> {
   }
 
   void _onOptionalMenuSelected(OptionalSelectedType type) {
+    int v = currentIndex.value;
     switch (type) {
       case OptionalSelectedType.last:
-        if (currentIndex.value <= 0) return;
-        currentIndex.value = currentIndex.value - 1;
+        v--;
+        while (v >= 0) {
+          final current = list[v];
+          if (current.interactive) break;
+          v--;
+        }
+        currentIndex.value = max(v, 1);
         break;
       case OptionalSelectedType.next:
-        if (currentIndex.value >= list.length - 1) return;
-        currentIndex.value = currentIndex.value + 1;
+        v++;
+        while (v < list.length) {
+          final current = list[v];
+          if (current.interactive) break;
+          v++;
+        }
+        currentIndex.value = min(v, list.length - 1);
         break;
       case OptionalSelectedType.current:
-        _onItemSelected(list[currentIndex.value]);
+        final current = list[v];
+        if (!current.interactive) return;
+        _onItemSelected(current);
         break;
     }
   }
@@ -109,13 +124,14 @@ class _OptionalMenuState extends State<OptionalMenu> {
     final cursor = controller.cursor;
     if (cursor is! EditingCursor) return;
     final node = controller.getNode(cursor.index);
-    if (node.id != widget.nodeId) return;
+    if (node.id != nodeId) return;
     if (node is! RichTextNode) return;
     if (current.generator == null) return;
+
     ///TODO:avoid hardcode here
     final nodes = current.generator!
         .call(node.rearPartNode(cursor.position as RichTextNodePosition));
-    widget.onCommand.call(ReplaceNode(Replace(
+    editorContext.execute(ReplaceNode(Replace(
       cursor.index,
       cursor.index + 1,
       nodes,

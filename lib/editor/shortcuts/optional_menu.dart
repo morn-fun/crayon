@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/context.dart';
-import '../widget/optional_menu.dart';
+import '../widget/menu/optional_menu.dart';
 
 class OptionalMenuUpArrowIntent extends Intent {
   const OptionalMenuUpArrowIntent();

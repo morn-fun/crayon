@@ -69,4 +69,10 @@ class TestEditorNode extends EditorNode{
     // TODO: implement toJson
     throw UnimplementedError();
   }
+
+  @override
+  List<EditorNode> getInlineNodesFromPosition(NodePosition begin, NodePosition end) {
+    // TODO: implement getInlineNodesFromPosition
+    throw UnimplementedError();
+  }
 }

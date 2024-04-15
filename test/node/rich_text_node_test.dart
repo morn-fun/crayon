@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pre_editor/editor/core/command_invoker.dart';
 import 'package:pre_editor/editor/core/context.dart';
 import 'package:pre_editor/editor/core/controller.dart';
+import 'package:pre_editor/editor/core/entry_manager.dart';
 import 'package:pre_editor/editor/core/input_manager.dart';
 import 'package:pre_editor/editor/cursor/basic_cursor.dart';
 import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
@@ -456,9 +457,14 @@ void main() {
   test('build', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
     final controller = RichEditorController.fromNodes([newNode]);
-    final inputManager = InputManager(controller, (value) {}, () {});
+    final inputManager = InputManager(
+        controller: controller,
+        onCommand: (v) {},
+        focusCall: () {},
+        onEntryStatus: (s) {});
     final widget = newNode.build(
-        EditorContext(controller, inputManager, FocusNode(), CommandInvoker()),
+        EditorContext(controller, inputManager, FocusNode(), CommandInvoker(),
+            EntryManager()),
         0);
     assert(widget is RichTextWidget);
   });

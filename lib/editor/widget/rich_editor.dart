@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pre_editor/editor/core/listener_collection.dart';
+import 'package:pre_editor/editor/cursor/basic_cursor.dart';
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
+import '../core/entry_manager.dart';
 import '../core/input_manager.dart';
 import '../core/logger.dart';
 import '../node/basic_node.dart';
@@ -22,7 +24,8 @@ class _RichEditorPageState extends State<RichEditor> {
   late RichEditorController controller;
   late InputManager inputManager;
   late EditorContext editorContext;
-  late ShortcutManager manager;
+  late EntryManager entryManager;
+  late ShortcutManager shortcutManager;
   final CommandInvoker invoker = CommandInvoker();
 
   final focusNode = FocusNode();
@@ -32,34 +35,50 @@ class _RichEditorPageState extends State<RichEditor> {
   @override
   void initState() {
     super.initState();
+    entryManager = EntryManager();
     controller = RichEditorController.fromNodes(widget.nodes);
-    manager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
-    inputManager = InputManager(controller, (c) {
-      try {
-        invoker.execute(c, controller);
-      } on PerformCommandException catch (e) {
-        logger.e('$e');
-      }
-    }, () => focusNode.requestFocus());
+    final listeners = controller.listeners;
+    shortcutManager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
+    inputManager = InputManager(
+        controller: controller,
+        onCommand: (c) {
+          try {
+            invoker.execute(c, controller);
+          } on PerformCommandException catch (e) {
+            logger.e('$e');
+          }
+        },
+        focusCall: () => focusNode.requestFocus(),
+        onEntryStatus: (s) => entryManager.updateStatus(s, listeners));
     inputManager.startInput();
-    editorContext = EditorContext(controller, inputManager, focusNode, invoker);
+    editorContext = EditorContext(
+        controller, inputManager, focusNode, invoker, entryManager);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
-    final listenerCollection = controller.listeners;
-    listenerCollection.addNodesChangedListener(refresh);
-    listenerCollection.addStatusChangedListener((value) {
-      controller.removeEntry();
+    listeners.addNodesChangedListener(refresh);
+    listeners.addStatusChangedListener((value) {
+      editorContext.hideOptionalMenu();
       switch (value) {
         case ControllerStatus.typing:
-          manager.shortcuts = {};
+          shortcutManager.shortcuts = {};
           break;
         case ControllerStatus.idle:
-          manager.shortcuts = editorShortcuts;
+          shortcutManager.shortcuts = editorShortcuts;
           break;
-        case ControllerStatus.readyForOptionalMenu:
-        case ControllerStatus.showingOptionalMenu:
-          manager.shortcuts = selectingMenuShortcuts;
-          break;
+      }
+    });
+    listeners.addEntryStatusChangedListener((value) {
+      if (value == EntryStatus.showingOptionalMenu) {
+        shortcutManager.shortcuts = selectingMenuShortcuts;
+      } else {
+        shortcutManager.shortcuts = editorShortcuts;
+      }
+    });
+    listeners.addCursorChangedListener((c) {
+      if (c is SelectingNodeCursor || c is SelectingNodesCursor) {
+        if(!entryManager.isShowing) {
+          entryManager.updateStatus(EntryStatus.readyForTextMenu, listeners);
+        }
       }
     });
   }
@@ -76,6 +95,7 @@ class _RichEditorPageState extends State<RichEditor> {
     inputManager.dispose();
     focusNode.dispose();
     invoker.dispose();
+    entryManager.dispose();
   }
 
   void _onFocusChanged() {
@@ -94,7 +114,7 @@ class _RichEditorPageState extends State<RichEditor> {
     bool needTapDownWhilePanGesture = false;
     Offset panOffset = Offset.zero;
     return Shortcuts.manager(
-      manager: manager,
+      manager: shortcutManager,
       child: Actions(
         actions: getActions(editorContext),
         child: Focus(
@@ -134,16 +154,24 @@ class _RichEditorPageState extends State<RichEditor> {
               panOffset = Offset.zero;
               needTapDownWhilePanGesture = false;
             },
-            child: ListView.builder(
-                padding: EdgeInsets.all(12),
-                itemBuilder: (ctx, index) {
-                  final current = nodes[index];
-                  return Container(
+            child: MouseRegion(
+              onHover: (d) {
+                if (controller.cursor is EditingCursor) return;
+                controller
+                    .notifyGesture(GestureState(GestureType.hover, d.position));
+              },
+              child: ListView.builder(
+                  padding: EdgeInsets.all(12),
+                  itemBuilder: (ctx, index) {
+                    final current = nodes[index];
+                    return Container(
                       key: ValueKey(current.id),
                       padding: EdgeInsets.only(left: current.depth * 12),
-                      child: current.build(editorContext, index));
-                },
-                itemCount: nodes.length),
+                      child: current.build(editorContext, index),
+                    );
+                  },
+                  itemCount: nodes.length),
+            ),
           ),
         ),
       ),

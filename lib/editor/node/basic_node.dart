@@ -34,6 +34,8 @@ abstract class EditorNode {
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});
 
+  List<EditorNode> getInlineNodesFromPosition(NodePosition begin, NodePosition end);
+
   EditorNode newNode({String? id, int? depth});
 
   NodePosition get beginPosition;

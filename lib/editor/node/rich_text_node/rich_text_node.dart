@@ -387,6 +387,12 @@ class RichTextNode extends EditorNode {
   @override
   EditorNode newNode({String? id, int? depth}) =>
       from(spans, id: id ?? id, depth: depth ?? this.depth);
+
+  @override
+  List<EditorNode> getInlineNodesFromPosition(
+          covariant RichTextNodePosition begin,
+          covariant RichTextNodePosition end) =>
+      [getFromPosition(begin, end)];
 }
 
 final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{

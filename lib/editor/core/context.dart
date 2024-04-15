@@ -8,6 +8,7 @@ import '../exception/command_exception.dart';
 import '../node/basic_node.dart';
 import 'command_invoker.dart';
 import 'controller.dart';
+import 'entry_manager.dart';
 import 'input_manager.dart';
 import 'listener_collection.dart';
 import 'logger.dart';
@@ -17,9 +18,15 @@ class EditorContext {
   final InputManager inputManager;
   final FocusNode focusNode;
   final CommandInvoker invoker;
+  final EntryManager entryManager;
 
   EditorContext(
-      this.controller, this.inputManager, this.focusNode, this.invoker);
+    this.controller,
+    this.inputManager,
+    this.focusNode,
+    this.invoker,
+    this.entryManager,
+  );
 
   void execute(BasicCommand command) {
     try {
@@ -62,9 +69,25 @@ class EditorContext {
 
   ListenerCollection get listeners => controller.listeners;
 
+  EntryStatus get entryStatus => entryManager.status;
+
+  TextMenuInfo get lastTextMenuInfo => entryManager.lastTextMenuInfo;
+
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
 
   void updateStatus(ControllerStatus status) => controller.updateStatus(status);
+
+  void showOptionalMenu(Offset offset, OverlayState state) =>
+      entryManager.showOptionalMenu(offset, state, this);
+
+  void showTextMenu(OverlayState state, TextMenuInfo? info, LayerLink link) =>
+      entryManager.showTextMenu(state, info, link, this);
+
+  void hideOptionalMenu() => entryManager.removeOptionalMenu(listeners);
+
+  void removeTextMenu() => entryManager.removeTextMenu(listeners);
+
+  void hideTextMenu() => entryManager.hideTextMenu(listeners);
 }

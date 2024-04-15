@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
-import '../widget/optional_menu.dart';
+import '../widget/menu/optional_menu.dart';
 import 'controller.dart';
+import 'entry_manager.dart';
 import 'logger.dart';
 
 class ListenerCollection {
@@ -14,6 +15,7 @@ class ListenerCollection {
   final Set<VoidCallback> _nodesListeners = {};
   final Set<ValueChanged<GestureState>> _gestureListeners = {};
   final Set<ValueChanged<ControllerStatus>> _statusListeners = {};
+  final Set<ValueChanged<EntryStatus>> _entryStatusListeners = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
@@ -25,6 +27,7 @@ class ListenerCollection {
     _nodesListeners.clear();
     _gestureListeners.clear();
     _statusListeners.clear();
+    _entryStatusListeners.clear();
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _optionalMenuListeners.clear();
@@ -50,6 +53,12 @@ class ListenerCollection {
 
   void removeStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
       _statusListeners.remove(listener);
+
+  void addEntryStatusChangedListener(ValueChanged<EntryStatus> listener) =>
+      _entryStatusListeners.add(listener);
+
+  void removeEntryStatusChangedListener(ValueChanged<EntryStatus> listener) =>
+      _entryStatusListeners.remove(listener);
 
   void addOptionalMenuListener(ValueChanged<OptionalSelectedType> listener) =>
       _optionalMenuListeners.add(listener);
@@ -137,6 +146,12 @@ class ListenerCollection {
 
   void notifyStatus(ControllerStatus status) {
     for (var c in Set.of(_statusListeners)) {
+      c.call(status);
+    }
+  }
+
+  void notifyEntryStatus(EntryStatus status) {
+    for (var c in Set.of(_entryStatusListeners)) {
       c.call(status);
     }
   }

@@ -139,4 +139,4 @@ Map<String, TextStyle> tag2Style = {
   RichTextTag.link.name: const TextStyle(color: Color(0xff0969da)),
 };
 
-enum RichTextTag { link, underline, bold, italic, lineThrough }
+enum RichTextTag { link, underline, bold, italic, lineThrough, code }

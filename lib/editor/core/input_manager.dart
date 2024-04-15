@@ -9,6 +9,7 @@ import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import 'controller.dart';
+import 'entry_manager.dart';
 import 'logger.dart';
 
 class InputManager with TextInputClient, DeltaTextInputClient {
@@ -20,11 +21,16 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   final RichEditorController controller;
 
   final ValueChanged<BasicCommand> onCommand;
-  final VoidCallback _focusCall;
+  final ValueChanged<EntryStatus> onEntryStatus;
+  final VoidCallback focusCall;
 
   BasicCursor get cursor => controller.cursor;
 
-  InputManager(this.controller, this.onCommand, this._focusCall);
+  InputManager(
+      {required this.controller,
+      required this.onCommand,
+      required this.onEntryStatus,
+      required this.focusCall});
 
   @override
   void connectionClosed() {
@@ -79,14 +85,10 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         (last is TextEditingDeltaReplacement && noComposing) ||
         (last is TextEditingDeltaInsertion && noComposing) ||
         (last is TextEditingDeltaDeletion && isZeroComposing)) {
-      if (!controller.isSelectingMenuShowing) {
-        controller.updateStatus(ControllerStatus.idle);
-      }
+      controller.updateStatus(ControllerStatus.idle);
       restartInput();
     } else {
-      if (!controller.isSelectingMenuShowing) {
-        controller.updateStatus(ControllerStatus.typing);
-      }
+      controller.updateStatus(ControllerStatus.typing);
     }
     if (command != null) onCommand.call(command);
   }
@@ -104,7 +106,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        controller.updateStatus(ControllerStatus.readyForOptionalMenu);
+        onEntryStatus.call(EntryStatus.readyForOptionalMenu);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }
@@ -120,7 +122,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        controller.updateStatus(ControllerStatus.readyForOptionalMenu);
+        onEntryStatus.call(EntryStatus.readyForOptionalMenu);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }
@@ -137,7 +139,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   }
 
   void requestFocus() {
-    _focusCall.call();
+    focusCall.call();
   }
 
   bool get attached => _inputConnection?.attached ?? false;

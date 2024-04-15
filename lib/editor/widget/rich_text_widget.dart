@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/entry_manager.dart';
 import '../core/listener_collection.dart';
 import '../exception/editor_node_exception.dart';
 import '../extension/offset_extension.dart';
@@ -39,6 +40,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   final key = GlobalKey();
 
+  final LayerLink layerLink = LayerLink();
+
   late TextPainter painter;
 
   late RichTextNode node;
@@ -48,6 +51,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   late ValueNotifier<RichTextNodePosition?> positionNotifier;
 
   double recordWidth = 0;
+
+  bool get showingTextMenu => node.id == editorContext.lastTextMenuInfo.nodeId;
+
+  bool get showingTextMenuInvisible =>
+      editorContext.entryStatus == EntryStatus.showingTextMenuInvisible;
 
   TextSpan get textSpan => node.buildTextSpanWithCursor(cursor, index);
 
@@ -61,8 +69,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   int get index => widget.index;
 
-  RenderBox? get renderBox =>
-      key.currentContext?.findRenderObject() as RenderBox?;
+  RenderBox? get renderBox {
+    if (!mounted) return null;
+    return key.currentContext?.findRenderObject() as RenderBox?;
+  }
 
   @override
   void initState() {
@@ -79,10 +89,17 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       tryToUpdateInputAttribute(cursor);
     });
     listeners.addGestureListener(_onGesture);
-    listeners.addStatusChangedListener(_onStatus);
+    listeners.addEntryStatusChangedListener(_onStatus);
     listeners.addNodeChangedListener(node.id, onNodeChanged);
     listeners.addArrowDelegate(node.id, onArrowAccept);
     listeners.addCursorChangedListener(onCursorChanged);
+    if (showingTextMenu && showingTextMenuInvisible) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        if (mounted) {
+          editorContext.showTextMenu(Overlay.of(context), null, layerLink);
+        }
+      });
+    }
   }
 
   @override
@@ -90,10 +107,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     super.dispose();
     listeners.removeNodeChangedListener(node.id, onNodeChanged);
     listeners.removeGestureListener(_onGesture);
-    listeners.removeStatusChangedListener(_onStatus);
+    listeners.removeEntryStatusChangedListener(_onStatus);
     listeners.removeArrowDelegate(node.id, onArrowAccept);
     listeners.removeCursorChangedListener(onCursorChanged);
     painter.dispose();
+    if (showingTextMenu) editorContext.hideTextMenu();
   }
 
   void refresh() {
@@ -270,42 +288,44 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return MouseRegion(
+      cursor: SystemMouseCursors.text,
       child: LayoutBuilder(builder: (context, constrains) {
         if (recordWidth != constrains.maxWidth) {
           recordWidth = constrains.maxWidth;
           painter.layout(maxWidth: recordWidth);
         }
-        return SizedBox(
-          key: key,
-          height: painter.height,
-          width: painter.width,
-          child: Stack(
-            children: [
-              SizedBox(
-                height: painter.height,
-                width: painter.width,
-                child: MouseRegion(
-                    cursor: SystemMouseCursors.text,
-                    child: CustomPaint(painter: _TextPainter(painter))),
-              ),
-              ValueListenableBuilder(
-                  valueListenable: positionNotifier,
-                  builder: (ctx, v, c) {
-                    if (v == null) return Container();
-                    final offset =
-                        painter.getOffsetFromTextOffset(node.getOffset(v));
-                    double cursorHeight = widget.fontSize;
-                    return Positioned(
-                      left: offset.dx,
-                      top: offset.dy,
-                      child: EditingCursorWidget(
-                        cursorColor: Colors.black,
-                        cursorHeight: cursorHeight,
-                      ),
-                    );
-                  }),
-            ],
+        return CompositedTransformTarget(
+          link: layerLink,
+          child: SizedBox(
+            key: key,
+            height: painter.height,
+            width: painter.width,
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: painter.height,
+                  width: painter.width,
+                  child: CustomPaint(painter: _TextPainter(painter)),
+                ),
+                ValueListenableBuilder(
+                    valueListenable: positionNotifier,
+                    builder: (ctx, v, c) {
+                      if (v == null) return Container();
+                      final offset =
+                          painter.getOffsetFromTextOffset(node.getOffset(v));
+                      double cursorHeight = widget.fontSize;
+                      return Positioned(
+                        left: offset.dx,
+                        top: offset.dy,
+                        child: EditingCursorWidget(
+                          cursorColor: Colors.black,
+                          cursorHeight: cursorHeight,
+                        ),
+                      );
+                    }),
+              ],
+            ),
           ),
         );
       }),
@@ -329,20 +349,22 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
       case GestureType.panUpdate:
         onPanUpdate(s.globalOffset);
+        break;
       case GestureType.hover:
-      // TODO: Handle this case.
+        _checkNeedShowTextMenu(s.globalOffset);
+        break;
     }
   }
 
-  void _onStatus(ControllerStatus s) {
-    if (s != ControllerStatus.readyForOptionalMenu) return;
+  void _onStatus(EntryStatus s) {
+    if (s != EntryStatus.readyForOptionalMenu) return;
+    final box = renderBox;
+    if (box == null) return;
     final c = cursor;
     if (c is! EditingCursor) return;
     if (index != c.index) return;
-    if (key.currentContext == null) return;
-    final box = key.currentContext!.findRenderObject() as RenderBox;
-    controller.showOptionalMenu(box.localToGlobal(Offset.zero), context,
-        node.id, editorContext.execute);
+    editorContext.showOptionalMenu(
+        box.localToGlobal(Offset.zero), Overlay.of(context));
   }
 
   void _updatePosition(Offset globalOffset) {
@@ -353,6 +375,20 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final newCursor = EditingCursor(index, richPosition);
     controller.updateCursor(newCursor);
     updateInputAttribute(newCursor.position);
+  }
+
+  void _checkNeedShowTextMenu(Offset offset) {
+    if (editorContext.entryStatus != EntryStatus.readyForTextMenu) return;
+    final cursor = editorContext.cursor;
+    bool contains = false;
+    if (cursor is SelectingNodeCursor) {
+      contains = cursor.index == index;
+    } else if (cursor is SelectingNodesCursor) {
+      contains = cursor.contains(index);
+    }
+    if (!contains) return;
+    if (!_containsOffset(offset)) return;
+    editorContext.showTextMenu(Overlay.of(context), TextMenuInfo(offset, node.id), layerLink);
   }
 
   bool tryToUpdateInputAttribute(BasicCursor cursor) {
@@ -377,8 +413,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void updateInputAttribute(RichTextNodePosition position) {
-    if (key.currentContext == null) return;
-    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final box = renderBox;
+    if (box == null) return;
     final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
     final height = painter.getFullHeightForCaret(
             TextPosition(offset: node.getOffset(position)), Rect.zero) ??

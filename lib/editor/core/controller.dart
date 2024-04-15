@@ -1,12 +1,8 @@
 import 'dart:collection';
 
-import 'package:flutter/material.dart';
-
-import '../command/basic_command.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
-import '../widget/optional_menu.dart';
 import 'listener_collection.dart';
 import 'command_invoker.dart';
 
@@ -18,7 +14,6 @@ class RichEditorController {
   final List<EditorNode> _nodes = [];
   ControllerStatus _status = ControllerStatus.idle;
   BasicCursor _cursor = NoneCursor();
-  OverlayEntry? _optionalMenuEntry;
 
   final ListenerCollection listeners = ListenerCollection();
 
@@ -71,28 +66,8 @@ class RichEditorController {
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
-  void showOptionalMenu(Offset offset, BuildContext context, String nodeId,
-      ValueChanged<BasicCommand> onCommand) async {
-    if (isSelectingMenuShowing) return;
-    updateStatus(ControllerStatus.showingOptionalMenu);
-    _optionalMenuEntry = OverlayEntry(
-        builder: (_) => OptionalMenu(
-            offset: offset,
-            controller: this,
-            nodeId: nodeId,
-            onCommand: onCommand));
-    Overlay.of(context).insert(_optionalMenuEntry!);
-  }
-
-  void removeEntry() {
-    _optionalMenuEntry?.remove();
-    _optionalMenuEntry?.dispose();
-    _optionalMenuEntry = null;
-  }
-
   void dispose() {
     _nodes.clear();
-    removeEntry();
     listeners.dispose();
   }
 
@@ -103,9 +78,6 @@ class RichEditorController {
   int get nodeLength => _nodes.length;
 
   ControllerStatus get status => _status;
-
-  bool get isSelectingMenuShowing =>
-      status == ControllerStatus.showingOptionalMenu;
 }
 
 class Update extends UpdateControllerOperation {
@@ -156,6 +128,4 @@ class Replace extends UpdateControllerOperation {
 enum ControllerStatus {
   typing,
   idle,
-  readyForOptionalMenu,
-  showingOptionalMenu,
 }

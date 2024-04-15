@@ -86,7 +86,7 @@ final Map<ShortcutActivator, Intent> selectingMenuShortcuts =
       ..[const SingleActivator(LogicalKeyboardKey.enter)] =
           const OptionalMenuEnterIntent();
 
-Map<Type, RichEditorControllerAction> _actions = {
+Map<Type, RichEditorControllerAction> shortcutActions = {
   DeleteIntent: (c) => DeleteAction(c),
   UndoIntent: (c) => UndoAction(c),
   RedoIntent: (c) => RedoAction(c),
@@ -110,7 +110,7 @@ Map<Type, RichEditorControllerAction> _actions = {
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>
-    _actions.map((key, value) => MapEntry(key, value.call(context)));
+    shortcutActions.map((key, value) => MapEntry(key, value.call(context)));
 
 typedef RichEditorControllerAction = Action<Intent> Function(
     EditorContext context);
