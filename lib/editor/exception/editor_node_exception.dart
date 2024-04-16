@@ -179,12 +179,12 @@ class TypingToChangeNodeException implements EditorNodeException {
 }
 
 class TypingRequiredOptionalMenuException implements EditorNodeException {
-
   final NodeWithPosition nodeWithPosition;
 
   TypingRequiredOptionalMenuException(this.nodeWithPosition);
 
-  String get message => '${nodeWithPosition.node.runtimeType} required optional menu';
+  String get message =>
+      '${nodeWithPosition.node.runtimeType} required optional menu';
 }
 
 class DepthNotAbleToIncreaseException implements EditorNodeException {
@@ -204,4 +204,20 @@ class DepthNeedDecreaseMoreException implements EditorNodeException {
 
   String get message =>
       'the node:$type need decrease more same type node with depth:$depth';
+}
+
+class NodeNotFoundException implements EditorNodeException {
+  final String id;
+
+  NodeNotFoundException(this.id);
+
+  String get message => 'the node:$id not found';
+}
+
+class EmptyNodeToSelectAllException implements EditorNodeException {
+  final String id;
+
+  EmptyNodeToSelectAllException(this.id);
+
+  String get message => 'the node:$id is empty, to select all';
 }

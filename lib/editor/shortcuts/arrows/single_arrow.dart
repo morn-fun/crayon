@@ -90,6 +90,9 @@ void _onLeftOrUp(ArrowType type, EditorContext editorContext, Type actionType) {
     controller.onArrowAccept(AcceptArrowData(
         node.id, ArrowType.current, node.endPosition,
         extras: e.offset));
+  } on NodeNotFoundException catch (e) {
+    logger.e('$actionType error ${e.message}');
+    controller.updateCursor(EditingCursor(index, position));
   }
 }
 
@@ -130,5 +133,8 @@ void _onRightOrDown(
     controller.onArrowAccept(AcceptArrowData(
         node.id, ArrowType.current, node.beginPosition,
         extras: e.offset));
+  } on NodeNotFoundException catch (e) {
+    logger.e('$actionType error ${e.message}');
+    controller.updateCursor(EditingCursor(index, position));
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
+import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
 
@@ -21,10 +22,15 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
     final controller = editorContext.controller;
     final cursor = editorContext.cursor;
     if (cursor is EditingCursor) {
-      final r = controller
-          .getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, EventType.selectAll));
-      controller.updateCursor(r.toCursor(cursor.index));
+      try {
+
+        final r = controller
+            .getNode(cursor.index)
+            .onEdit(EditingData(cursor.position, EventType.selectAll));
+        controller.updateCursor(r.toCursor(cursor.index));
+      } on EmptyNodeToSelectAllException {
+        controller.updateCursor(controller.selectAllCursor);
+      }
     } else if (cursor is SelectingNodeCursor) {
       final node = controller.getNode(cursor.index);
       if (node.beginPosition == cursor.begin &&

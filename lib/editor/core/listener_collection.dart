@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../cursor/basic_cursor.dart';
+import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../shortcuts/arrows/arrows.dart';
 import '../widget/menu/optional_menu.dart';
@@ -19,6 +20,7 @@ class ListenerCollection {
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
+  final Set<ValueChanged<CursorOffset>> _editingCursorOffsetListeners = {};
 
 
   void dispose() {
@@ -31,6 +33,7 @@ class ListenerCollection {
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _optionalMenuListeners.clear();
+    _editingCursorOffsetListeners.clear();
   }
 
   void addCursorChangedListener(ValueChanged<BasicCursor> listener) =>
@@ -65,6 +68,12 @@ class ListenerCollection {
 
   void removeOptionalMenuListener(ValueChanged<OptionalSelectedType> listener) =>
       _optionalMenuListeners.remove(listener);
+
+  void addEditingCursorOffsetListener(ValueChanged<CursorOffset> listener) =>
+      _editingCursorOffsetListeners.add(listener);
+
+  void removeEditingCursorOffsetListener(ValueChanged<CursorOffset> listener) =>
+      _editingCursorOffsetListeners.remove(listener);
 
   void addNodeChangedListener(String id, ValueChanged<EditorNode> listener) {
     // logger.i(
@@ -107,6 +116,7 @@ class ListenerCollection {
   void onArrowAccept(AcceptArrowData data) {
     final id = data.id;
     final set = _arrowDelegates[id] ?? {};
+    if(set.isEmpty) throw NodeNotFoundException(id);
     // logger.i(
     //     '$tag, onArrowAccept, id:$id, type:${data.type}, length:${set.length}, all:${_arrowDelegates.length}');
     for (var c in Set.of(set)) {
@@ -161,6 +171,12 @@ class ListenerCollection {
       c.call(type);
     }
   }
+
+  void notifyEditingCursorOffset(CursorOffset indexY){
+    for (var c in Set.of(_editingCursorOffsetListeners)) {
+      c.call(indexY);
+    }
+  }
 }
 
 class GestureState {
@@ -171,3 +187,30 @@ class GestureState {
 }
 
 enum GestureType { tap, panUpdate, hover }
+
+class CursorOffset{
+  final int index;
+  final double localY;
+  final double widgetY;
+
+  CursorOffset(this.index, this.localY, this.widgetY);
+
+  double get globalY => widgetY + localY;
+
+  @override
+  String toString() {
+    return 'IndexY{index: $index, localY: $localY, globalY: $widgetY}';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CursorOffset &&
+          runtimeType == other.runtimeType &&
+          index == other.index &&
+          localY == other.localY &&
+          widgetY == other.widgetY;
+
+  @override
+  int get hashCode => index.hashCode ^ localY.hashCode ^ widgetY.hashCode;
+}

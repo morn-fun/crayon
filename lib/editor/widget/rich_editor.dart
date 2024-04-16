@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/core/listener_collection.dart';
-import 'package:pre_editor/editor/cursor/basic_cursor.dart';
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/controller.dart';
 import '../core/entry_manager.dart';
 import '../core/input_manager.dart';
 import '../core/logger.dart';
+import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../core/shortcuts.dart';
 import '../../editor/exception/command_exception.dart';
+import 'auto_scroll_editor_list.dart';
 
 class RichEditor extends StatefulWidget {
   final List<EditorNode> nodes;
@@ -76,7 +76,7 @@ class _RichEditorPageState extends State<RichEditor> {
     });
     listeners.addCursorChangedListener((c) {
       if (c is SelectingNodeCursor || c is SelectingNodesCursor) {
-        if(!entryManager.isShowing) {
+        if (!entryManager.isShowing) {
           entryManager.updateStatus(EntryStatus.readyForTextMenu, listeners);
         }
       }
@@ -110,69 +110,13 @@ class _RichEditorPageState extends State<RichEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final nodes = controller.nodes;
-    bool needTapDownWhilePanGesture = false;
-    Offset panOffset = Offset.zero;
     return Shortcuts.manager(
       manager: shortcutManager,
       child: Actions(
         actions: getActions(editorContext),
         child: Focus(
           focusNode: focusNode,
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTapDown: (detail) {
-              controller.notifyGesture(
-                  GestureState(GestureType.tap, detail.globalPosition));
-            },
-            onPanStart: (d) {
-              panOffset = d.globalPosition;
-            },
-            onPanEnd: (d) {
-              controller.notifyGesture(
-                  GestureState(GestureType.panUpdate, panOffset));
-            },
-            onPanDown: (d) {
-              panOffset = d.globalPosition;
-              needTapDownWhilePanGesture = true;
-            },
-            onPanUpdate: (d) {
-              if (needTapDownWhilePanGesture) {
-                controller
-                    .notifyGesture(GestureState(GestureType.tap, panOffset));
-                needTapDownWhilePanGesture = false;
-              }
-              panOffset = panOffset.translate(d.delta.dx, d.delta.dy);
-              Throttle.execute(
-                () => controller.notifyGesture(
-                    GestureState(GestureType.panUpdate, d.globalPosition)),
-                tag: tag,
-                duration: const Duration(milliseconds: 50),
-              );
-            },
-            onPanCancel: () {
-              panOffset = Offset.zero;
-              needTapDownWhilePanGesture = false;
-            },
-            child: MouseRegion(
-              onHover: (d) {
-                if (controller.cursor is EditingCursor) return;
-                controller
-                    .notifyGesture(GestureState(GestureType.hover, d.position));
-              },
-              child: ListView.builder(
-                  padding: EdgeInsets.all(12),
-                  itemBuilder: (ctx, index) {
-                    final current = nodes[index];
-                    return Container(
-                      key: ValueKey(current.id),
-                      padding: EdgeInsets.only(left: current.depth * 12),
-                      child: current.build(editorContext, index),
-                    );
-                  },
-                  itemCount: nodes.length),
-            ),
-          ),
+          child: AutoScrollEditorList(editorContext: editorContext),
         ),
       ),
     );

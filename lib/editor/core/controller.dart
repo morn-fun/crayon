@@ -64,6 +64,8 @@ class RichEditorController {
 
   void notifyNodes() => listeners.notifyNodes();
 
+  void notifyEditingCursorOffset(CursorOffset indexY) => listeners.notifyEditingCursorOffset(indexY);
+
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
   void dispose() {

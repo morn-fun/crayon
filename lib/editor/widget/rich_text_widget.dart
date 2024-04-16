@@ -383,8 +383,29 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     bool contains = false;
     if (cursor is SelectingNodeCursor) {
       contains = cursor.index == index;
+      if(contains){
+        var node = controller.getNode(index);
+        node = node.getFromPosition(cursor.begin, cursor.end);
+        if(node.text.isEmpty) contains = false;
+      }
     } else if (cursor is SelectingNodesCursor) {
       contains = cursor.contains(index);
+      if(contains){
+        final left = cursor.left;
+        final right = cursor.right;
+        int l = left.index, r = right.index;
+        while(l <= r){
+          var node = controller.getNode(l);
+          if(l == left.index){
+            node = node.getFromPosition(left.position, node.endPosition);
+          } else if(l == right.index){
+            node = node.getFromPosition(node.beginPosition, right.position);
+          }
+          if(node.text.isNotEmpty) break;
+          l++;
+        }
+        if(l > r) contains = false;
+      }
     }
     if (!contains) return;
     if (!_containsOffset(offset)) return;
@@ -416,6 +437,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final box = renderBox;
     if (box == null) return;
     final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
+    controller.notifyEditingCursorOffset(CursorOffset(index, offset.dy, box.localToGlobal(Offset.zero).dy));
     final height = painter.getFullHeightForCaret(
             TextPosition(offset: node.getOffset(position)), Rect.zero) ??
         widget.fontSize;
