@@ -11,9 +11,10 @@ import '../../shortcuts/styles.dart';
 
 class TextMenu extends StatefulWidget {
   final EditorContext editorContext;
-  final TextMenuInfo info;
+  final MenuInfo info;
+  final LayerLink link;
 
-  const TextMenu(this.editorContext, this.info, {super.key});
+  const TextMenu(this.editorContext, this.info, this.link, {super.key});
 
   @override
   State<TextMenu> createState() => _TextMenuState();
@@ -26,7 +27,7 @@ class _TextMenuState extends State<TextMenu> {
 
   ListenerCollection get listeners => controller.listeners;
 
-  TextMenuInfo get info => widget.info;
+  MenuInfo get info => widget.info;
 
   Set<String> tagSets = {};
 
@@ -56,7 +57,7 @@ class _TextMenuState extends State<TextMenu> {
     if (mounted) setState(() {});
   }
 
-  void hideMenu() => editorContext.removeTextMenu();
+  void hideMenu() => editorContext.hideMenu();
 
   @override
   Widget build(BuildContext context) {
@@ -93,37 +94,46 @@ class _TextMenuState extends State<TextMenu> {
                   verticalDivider(),
                   TextMenuItem(
                     iconData: Icons.format_bold,
-                    onTap: () {
-                      BoldAction(editorContext).invoke(const BoldIntent());
-                    },
+                    onTap: () => onStyleEvent(editorContext, RichTextTag.bold),
                     contains: tagSets.contains(RichTextTag.bold.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_strikethrough_rounded,
-                    onTap: () => LineThroughAction(editorContext)
-                        .invoke(const LineThroughIntent()),
+                    onTap: () =>
+                        onStyleEvent(editorContext, RichTextTag.lineThrough),
                     contains: tagSets.contains(RichTextTag.lineThrough.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_italic_rounded,
-                    onTap: () => ItalicAction(editorContext)
-                        .invoke(const ItalicIntent()),
+                    onTap: () =>
+                        onStyleEvent(editorContext, RichTextTag.italic),
                     contains: tagSets.contains(RichTextTag.italic.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_underline_rounded,
-                    onTap: () => UnderlineAction(editorContext)
-                        .invoke(const UnderlineIntent()),
+                    onTap: () =>
+                        onStyleEvent(editorContext, RichTextTag.underline),
                     contains: tagSets.contains(RichTextTag.underline.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.link_rounded,
-                    onTap: () {},
+                    onTap: () {
+                      hideMenu();
+                      if (tagSets.contains(RichTextTag.link.name)) {
+                        onStyleEvent(editorContext, RichTextTag.link,
+                            attributes: {});
+                      } else {
+                        editorContext.updateEntryStatus(
+                            EntryStatus.readyToShowingLinkMenu);
+                        editorContext.showLinkMenu(
+                            Overlay.of(context), info, widget.link);
+                      }
+                    },
                     contains: tagSets.contains(RichTextTag.link.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.code,
-                    onTap: () {},
+                    onTap: () => onStyleEvent(editorContext, RichTextTag.code),
                     contains: tagSets.contains(RichTextTag.code.name),
                   ),
                 ],

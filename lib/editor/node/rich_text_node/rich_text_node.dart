@@ -36,43 +36,47 @@ class RichTextNode extends EditorNode {
     return UnmodifiableListView(spans);
   }
 
-  TextSpan buildTextSpan({TextStyle? style}) {
+  TextSpan buildTextSpan(SpanNodeContext context, {TextStyle? style}) {
     return TextSpan(
-        children:
-            List.generate(spans.length, (index) => spans[index].buildSpan()),
+        children: List.generate(
+            spans.length, (index) => spans[index].buildSpan(context)),
         style: style);
   }
 
-  TextSpan buildTextSpanWithCursor(BasicCursor c, int index,
+  TextSpan buildTextSpanWithCursor(
+      BasicCursor cursor, int index, SpanNodeContext context,
       {TextStyle? style}) {
-    if (c is SelectingNodeCursor && c.index == index) {
-      final left = c.left;
-      final right = c.right;
+    if (cursor is SelectingNodeCursor && cursor.index == index) {
+      final left = cursor.left;
+      final right = cursor.right;
       if (left is RichTextNodePosition && right is RichTextNodePosition) {
-        return selectingTextSpan(left, right, style: style);
+        return selectingTextSpan(left, right, context, style: style);
       }
-    } else if (c is SelectingNodesCursor && c.contains(index)) {
-      final left = c.left;
-      final right = c.right;
+    } else if (cursor is SelectingNodesCursor && cursor.contains(index)) {
+      final left = cursor.left;
+      final right = cursor.right;
       if (left.index < index && right.index > index) {
-        return selectingTextSpan(beginPosition, endPosition, style: style);
+        return selectingTextSpan(beginPosition, endPosition, context,
+            style: style);
       } else if (left.index == index) {
         final position = left.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(position, endPosition, style: style);
+          return selectingTextSpan(position, endPosition, context,
+              style: style);
         }
       } else if (right.index == index) {
         final position = right.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(beginPosition, position, style: style);
+          return selectingTextSpan(beginPosition, position, context,
+              style: style);
         }
       }
     }
-    return buildTextSpan(style: style);
+    return buildTextSpan(context, style: style);
   }
 
-  TextSpan selectingTextSpan(
-      RichTextNodePosition begin, RichTextNodePosition end,
+  TextSpan selectingTextSpan(RichTextNodePosition begin,
+      RichTextNodePosition end, SpanNodeContext context,
       {TextStyle? style}) {
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
@@ -80,22 +84,24 @@ class RichTextNode extends EditorNode {
     for (var i = 0; i < spans.length; ++i) {
       var span = spans[i];
       if (i < left.index || i > right.index) {
-        textSpans.add(span.buildSpan());
+        textSpans.add(span.buildSpan(context));
         continue;
       }
       if (left.index == right.index && left.index == i) {
-        textSpans.addAll(span.buildSelectingSpan(left.offset, right.offset));
+        textSpans.addAll(
+            span.buildSelectingSpan(left.offset, right.offset, context));
         continue;
       }
       if (i == left.index) {
-        textSpans.addAll(span.buildSelectingSpan(left.offset, span.textLength));
+        textSpans.addAll(
+            span.buildSelectingSpan(left.offset, span.textLength, context));
         continue;
       } else if (i == right.index) {
-        textSpans.addAll(span.buildSelectingSpan(0, right.offset));
+        textSpans.addAll(span.buildSelectingSpan(0, right.offset, context));
         continue;
       }
       if (i > left.index || i < right.index) {
-        textSpans.addAll(span.buildSelectingSpan(0, span.textLength));
+        textSpans.addAll(span.buildSelectingSpan(0, span.textLength, context));
       }
     }
     return TextSpan(children: textSpans, style: style);
@@ -236,25 +242,37 @@ class RichTextNode extends EditorNode {
 
   RichTextSpan getSpan(int index) => spans[index];
 
-  List<RichTextSpan> buildSpansByAddingTag(String tag) =>
-      spans.map((e) => e.copy(tags: (tags) => tags.addOne(tag))).toList();
+  List<RichTextSpan> buildSpansByAddingTag(String tag,
+          {Map<String, String>? attributes}) =>
+      spans
+          .map((e) => e.copy(
+                tags: (tags) => tags.addOne(tag),
+                attributes: (a) => attributes ?? a,
+              ))
+          .toList();
 
-  List<RichTextSpan> buildSpansByRemovingTag(String tag) =>
-      spans.map((e) => e.copy(tags: (tags) => tags.removeOne(tag))).toList();
+  List<RichTextSpan> buildSpansByRemovingTag(String tag,
+          {Map<String, String>? attributes}) =>
+      spans
+          .map((e) => e.copy(
+                tags: (tags) => tags.removeOne(tag),
+                attributes: (a) => attributes ?? a,
+              ))
+          .toList();
 
   @override
   RichTextNode getFromPosition(
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
       {String? newId, bool trim = false}) {
     if (begin == end) {
-      return from([], id: newId ?? id);
+      return from([], id: newId ?? id, depth: depth);
     }
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
     if (left.sameIndex(right)) {
       final span = spans[left.index].copy(
           offset: to(0), text: (v) => v.substring(left.offset, right.offset));
-      return from(UnmodifiableListView([span]), id: newId ?? id);
+      return from(UnmodifiableListView([span]), id: newId ?? id, depth: depth);
     } else {
       final leftIndex = left.index;
       final rightIndex = right.index;
@@ -269,7 +287,8 @@ class RichTextNode extends EditorNode {
       newSpans.add(rightSpan);
       return from(
           UnmodifiableListView(RichTextSpan.mergeList(newSpans, trim: trim)),
-          id: newId ?? id);
+          id: newId ?? id,
+          depth: depth);
     }
   }
 
@@ -368,7 +387,7 @@ class RichTextNode extends EditorNode {
 
   @override
   NodeWithPosition onEdit(EditingData data) {
-    final generator = _editingGenerator[data.type];
+    final generator = _editingGenerator[data.type.name];
     if (generator == null) {
       return NodeWithPosition(this, EditingPosition(data.position));
     }
@@ -377,7 +396,7 @@ class RichTextNode extends EditorNode {
 
   @override
   NodeWithPosition onSelect(SelectingData data) {
-    final generator = _selectingGenerator[data.type];
+    final generator = _selectingGenerator[data.type.name];
     if (generator == null) {
       return NodeWithPosition(this, data.position);
     }
@@ -392,45 +411,33 @@ class RichTextNode extends EditorNode {
   List<EditorNode> getInlineNodesFromPosition(
           covariant RichTextNodePosition begin,
           covariant RichTextNodePosition end) =>
-      [getFromPosition(begin, end)];
+      [getFromPosition(begin, end, trim: true)];
 }
 
-final _editingGenerator = <EventType, _NodeGeneratorWhileEditing>{
-  EventType.delete: (d, n) => n.delete(d.position),
-  EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
-  EventType.selectAll: (d, n) => selectAllRichTextNodeWhileEditing(d, n),
-  EventType.typing: (d, n) => typingRichTextNodeWhileEditing(d, n),
-  EventType.underline: (d, n) =>
-      styleRichTextNodeWhileEditing(d, n, RichTextTag.underline.name),
-  EventType.bold: (d, n) =>
-      styleRichTextNodeWhileEditing(d, n, RichTextTag.bold.name),
-  EventType.italic: (d, n) =>
-      styleRichTextNodeWhileEditing(d, n, RichTextTag.italic.name),
-  EventType.lineThrough: (d, n) =>
-      styleRichTextNodeWhileEditing(d, n, RichTextTag.lineThrough.name),
-  EventType.paste: (d, n) => pasteWhileEditing(d, n),
-  EventType.increaseDepth: (d, n) => increaseDepthWhileEditing(d, n),
-  EventType.decreaseDepth: (d, n) =>
+final _editingGenerator = <String, _NodeGeneratorWhileEditing>{
+  EventType.delete.name: (d, n) => n.delete(d.position),
+  EventType.newline.name: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
+  EventType.selectAll.name: (d, n) => selectAllRichTextNodeWhileEditing(d, n),
+  EventType.typing.name: (d, n) => typingRichTextNodeWhileEditing(d, n),
+  EventType.paste.name: (d, n) => pasteWhileEditing(d, n),
+  EventType.increaseDepth.name: (d, n) => increaseDepthWhileEditing(d, n),
+  EventType.decreaseDepth.name: (d, n) =>
       throw DepthNeedDecreaseMoreException(n.runtimeType, n.depth),
+  ...Map.fromEntries(RichTextTag.values.map((e) =>
+      MapEntry(e.name, (d, n) => styleRichTextNodeWhileEditing(d, n, e.name)))),
 };
 
-final _selectingGenerator = <EventType, _NodeGeneratorWhileSelecting>{
-  EventType.delete: (d, n) => deleteRichTextNodeWhileSelecting(d, n),
-  EventType.newline: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
-  EventType.selectAll: (d, n) => selectAllRichTextNodeWhileSelecting(d, n),
-  EventType.typing: (d, n) => typingRichTextNodeWhileSelecting(d, n),
-  EventType.underline: (d, n) =>
-      styleRichTextNodeWhileSelecting(d, n, RichTextTag.underline.name),
-  EventType.bold: (d, n) =>
-      styleRichTextNodeWhileSelecting(d, n, RichTextTag.bold.name),
-  EventType.italic: (d, n) =>
-      styleRichTextNodeWhileSelecting(d, n, RichTextTag.italic.name),
-  EventType.lineThrough: (d, n) =>
-      styleRichTextNodeWhileSelecting(d, n, RichTextTag.lineThrough.name),
-  EventType.paste: (d, n) => pasteWhileSelecting(d, n),
-  EventType.increaseDepth: (d, n) => increaseDepthWhileSelecting(d, n),
-  EventType.decreaseDepth: (d, n) =>
+final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
+  EventType.delete.name: (d, n) => deleteRichTextNodeWhileSelecting(d, n),
+  EventType.newline.name: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
+  EventType.selectAll.name: (d, n) => selectAllRichTextNodeWhileSelecting(d, n),
+  EventType.typing.name: (d, n) => typingRichTextNodeWhileSelecting(d, n),
+  EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
+  EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
+  EventType.decreaseDepth.name: (d, n) =>
       throw DepthNeedDecreaseMoreException(n.runtimeType, n.depth),
+  ...Map.fromEntries(RichTextTag.values.map((e) => MapEntry(
+      e.name, (d, n) => styleRichTextNodeWhileSelecting(d, n, e.name)))),
 };
 
 typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
@@ -440,5 +447,12 @@ typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
     SelectingData<RichTextNodePosition> data, RichTextNode node);
 
 abstract class SpanNode {
-  InlineSpan buildSpan();
+  InlineSpan buildSpan(SpanNodeContext context);
+}
+
+class SpanNodeContext {
+  final ValueChanged<RichTextSpan>? onLinkTap;
+  final ValueChanged<RichTextSpan>? onLinkLongTap;
+
+  SpanNodeContext({this.onLinkTap, this.onLinkLongTap});
 }

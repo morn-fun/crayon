@@ -1,111 +1,120 @@
 import 'package:flutter/material.dart';
 
+import '../widget/menu/link_menu.dart';
 import '../widget/menu/optional_menu.dart';
 import '../widget/menu/text_menu.dart';
 import 'context.dart';
-import 'listener_collection.dart';
 
 class EntryManager {
-  OverlayEntry? _optionalMenuEntry;
-  OverlayEntry? _textMenu;
-  OverlayEntry? _linkMenuEntry;
+  OverlayEntry? showingEntry;
   EntryStatus _status = EntryStatus.idle;
-  TextMenuInfo _lastTextMenuInfo = TextMenuInfo.zero();
+
+  final Function(EntryStatus status) onStatusChanged;
+
+  EntryManager(this.onStatusChanged);
+
+  void removeEntry() {
+    showingEntry?.remove();
+    showingEntry = null;
+  }
+
+  void hideMenu() {
+    removeEntry();
+    updateStatus(EntryStatus.idle);
+  }
 
   void showOptionalMenu(
       Offset offset, OverlayState state, EditorContext context) async {
-    if (isShowing) return;
-    updateStatus(EntryStatus.showingOptionalMenu, context.listeners);
-    _optionalMenuEntry = OverlayEntry(
+    if (_status != EntryStatus.readyToShowingOptionalMenu) return;
+    removeEntry();
+    showingEntry = OverlayEntry(
         builder: (_) => OptionalMenu(offset: offset, editorContext: context));
-    state.insert(_optionalMenuEntry!);
+    state.insert(showingEntry!);
+    updateStatus(EntryStatus.showingOptionalMenu);
   }
 
-  void showTextMenu(OverlayState state, TextMenuInfo? info, LayerLink link,
+  void hideOptionalMenu() {
+    if (!isOptionalMenuShowing) return;
+    hideMenu();
+  }
+
+  void showTextMenu(OverlayState state, MenuInfo info, LayerLink link,
       EditorContext context) {
-    if (isShowing) return;
-    _removeEntry(_textMenu);
-    _textMenu = null;
-    final currentInfo = info ?? _lastTextMenuInfo;
-    updateStatus(EntryStatus.showingTextMenu, context.listeners);
-    _lastTextMenuInfo = currentInfo;
-    _textMenu = OverlayEntry(
+    if (_status != EntryStatus.readyToShowingTextMenu) return;
+    removeEntry();
+    showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: TextMenu( context, currentInfo),
+              child: TextMenu(context, info, link),
               showWhenUnlinked: false,
               link: link,
             ));
-    state.insert(_textMenu!);
+    state.insert(showingEntry!);
+    updateStatus(EntryStatus.showingTextMenu);
   }
 
-  void removeOptionalMenu(ListenerCollection listeners) {
-    if (isOptionalMenuShowing) updateStatus(EntryStatus.idle, listeners);
-    _removeEntry(_optionalMenuEntry);
-    _optionalMenuEntry = null;
+  void hideTextMenu() {
+    if (!isTextMenuShowing) return;
+    hideMenu();
   }
 
-  void removeTextMenu(ListenerCollection listeners) {
-    updateStatus(EntryStatus.idle, listeners);
-    _removeEntry(_textMenu);
-    _textMenu = null;
-    _lastTextMenuInfo = TextMenuInfo.zero();
+  void showLinkMenu(
+      OverlayState state, MenuInfo info, LayerLink link, EditorContext context,
+      {String? initialUrl}) {
+    if (_status != EntryStatus.readyToShowingLinkMenu) return;
+    removeEntry();
+    showingEntry = OverlayEntry(
+        builder: (_) => CompositedTransformFollower(
+              child: LinkMenu(context, info, initialUrl: initialUrl),
+              showWhenUnlinked: false,
+              link: link,
+            ));
+    state.insert(showingEntry!);
+    updateStatus(EntryStatus.showingLinkMenu);
   }
 
-  void hideTextMenu(ListenerCollection listeners) {
-    if (isTextMenuShowing) {
-      updateStatus(EntryStatus.showingTextMenuInvisible, listeners);
-    }
-    _removeEntry(_textMenu);
-    _textMenu = null;
+  void hideLinkMenu() {
+    if (!isLinkMenuShowing) return;
+    hideMenu();
   }
 
   void dispose() {
-    _removeEntry(_optionalMenuEntry);
-    _removeEntry(_textMenu);
-    _removeEntry(_linkMenuEntry);
-    _optionalMenuEntry = null;
-    _textMenu = null;
-    _linkMenuEntry = null;
+    removeEntry();
   }
 
-  void _removeEntry(OverlayEntry? entry) {
-    entry?.remove();
-    entry?.dispose();
-  }
-
-  void updateStatus(EntryStatus status, ListenerCollection listeners) {
+  void updateStatus(EntryStatus status) {
     if (_status == status) return;
     _status = status;
-    listeners.notifyEntryStatus(status);
+    onStatusChanged.call(status);
   }
 
   bool get isOptionalMenuShowing => _status == EntryStatus.showingOptionalMenu;
 
   bool get isTextMenuShowing => _status == EntryStatus.showingTextMenu;
 
-  bool get isShowing => isOptionalMenuShowing || isTextMenuShowing;
+  bool get isLinkMenuShowing => _status == EntryStatus.showingLinkMenu;
+
+  bool get isShowing => _status != EntryStatus.idle;
 
   EntryStatus get status => _status;
-
-  TextMenuInfo get lastTextMenuInfo => _lastTextMenuInfo;
 }
 
-class TextMenuInfo {
+class MenuInfo {
   final Offset offset;
   final String nodeId;
 
-  TextMenuInfo(this.offset, this.nodeId);
+  MenuInfo(this.offset, this.nodeId);
 
-  TextMenuInfo.zero()
+  MenuInfo.zero()
       : offset = Offset.zero,
         nodeId = '';
 }
 
 enum EntryStatus {
   idle,
-  readyForOptionalMenu,
+  readyToShowingOptionalMenu,
   showingOptionalMenu,
-  readyForTextMenu,
+  readyToShowingTextMenu,
   showingTextMenu,
-  showingTextMenuInvisible,
+  readyToShowingLinkMenu,
+  showingLinkMenu,
 }

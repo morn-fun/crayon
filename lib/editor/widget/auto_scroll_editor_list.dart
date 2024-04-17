@@ -125,7 +125,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     Offset panOffset = Offset.zero;
     return GestureDetector(
       key: key,
-      behavior: HitTestBehavior.deferToChild,
+      behavior: HitTestBehavior.translucent,
       onTapDown: (d) {
         // logger.i('onTapDown:$d');
         controller

@@ -74,7 +74,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     checkText(node, cursor);
   }
 
-  void hideMenu() => editorContext.hideOptionalMenu();
+  void hideMenu() => editorContext.hideMenu();
 
   void _onNodeChanged(EditorNode node) {
     final cursor = controller.cursor;

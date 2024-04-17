@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pre_editor/editor/exception/editor_node_exception.dart';
 import 'package:pre_editor/editor/extension/collection_extension.dart';
+import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
 import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
 
 void main() {
@@ -28,13 +29,14 @@ void main() {
   });
 
   test('buildSelectingSpan', () {
+    final context = SpanNodeContext();
     final span = RichTextSpan(
         text: '123456', offset: 0, tags: {RichTextTag.lineThrough.name});
-    final spans1 = span.buildSelectingSpan(0, 1);
+    final spans1 = span.buildSelectingSpan(0, 1, context);
     assert(spans1.length == 2);
-    final spans2 = span.buildSelectingSpan(3, 6);
+    final spans2 = span.buildSelectingSpan(3, 6, context);
     assert(spans2.length == 2);
-    final spans3 = span.buildSelectingSpan(2, 4);
+    final spans3 = span.buildSelectingSpan(2, 4, context);
     assert(spans3.length == 3);
   });
 
@@ -140,7 +142,7 @@ void main() {
 
   test('other', () {
     final span = RichTextSpan(text: '123456', offset: 0, tags: {'x'});
-    final textSpan = span.buildSpan() as TextSpan;
+    final textSpan = span.buildSpan(SpanNodeContext()) as TextSpan;
     assert(textSpan.text == span.text);
     final json = span.toJson();
     assert((json['tags'] as Set).equalsTo(span.tags));

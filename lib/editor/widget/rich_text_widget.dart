@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pre_editor/editor/extension/rich_editor_controller_extension.dart';
 import '../core/entry_manager.dart';
 import '../core/listener_collection.dart';
 import '../exception/editor_node_exception.dart';
@@ -50,14 +51,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   late ValueNotifier<RichTextNodePosition?> positionNotifier;
 
+  late SpanNodeContext spanNodeContext;
+
   double recordWidth = 0;
 
-  bool get showingTextMenu => node.id == editorContext.lastTextMenuInfo.nodeId;
-
-  bool get showingTextMenuInvisible =>
-      editorContext.entryStatus == EntryStatus.showingTextMenuInvisible;
-
-  TextSpan get textSpan => node.buildTextSpanWithCursor(cursor, index);
+  TextSpan get textSpan =>
+      node.buildTextSpanWithCursor(cursor, index, spanNodeContext);
 
   EditorContext get editorContext => widget.editorContext;
 
@@ -77,6 +76,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void initState() {
     super.initState();
+    spanNodeContext = SpanNodeContext(onLinkTap: (s) {
+      final url = s.attributes['url'];
+      logger.i('$tag,  url:$url');
+    }, onLinkLongTap: (s) {
+      final url = s.attributes['url'];
+      logger.i('$tag,  long tap url:$url');
+    });
     node = widget.richTextNode;
     cursor = controller.cursor;
     positionNotifier = ValueNotifier(getNodePosition(cursor));
@@ -93,13 +99,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     listeners.addNodeChangedListener(node.id, onNodeChanged);
     listeners.addArrowDelegate(node.id, onArrowAccept);
     listeners.addCursorChangedListener(onCursorChanged);
-    if (showingTextMenu && showingTextMenuInvisible) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        if (mounted) {
-          editorContext.showTextMenu(Overlay.of(context), null, layerLink);
-        }
-      });
-    }
   }
 
   @override
@@ -111,7 +110,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     listeners.removeArrowDelegate(node.id, onArrowAccept);
     listeners.removeCursorChangedListener(onCursorChanged);
     painter.dispose();
-    if (showingTextMenu) editorContext.hideTextMenu();
   }
 
   void refresh() {
@@ -306,7 +304,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                 SizedBox(
                   height: painter.height,
                   width: painter.width,
-                  child: CustomPaint(painter: _TextPainter(painter)),
+                  child: RichText(text: textSpan),
+                  // child: CustomPaint(painter: _TextPainter(painter)),
                 ),
                 ValueListenableBuilder(
                     valueListenable: positionNotifier,
@@ -357,7 +356,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void _onStatus(EntryStatus s) {
-    if (s != EntryStatus.readyForOptionalMenu) return;
+    if (s != EntryStatus.readyToShowingOptionalMenu) return;
     final box = renderBox;
     if (box == null) return;
     final c = cursor;
@@ -378,38 +377,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   void _checkNeedShowTextMenu(Offset offset) {
-    if (editorContext.entryStatus != EntryStatus.readyForTextMenu) return;
-    final cursor = editorContext.cursor;
-    bool contains = false;
-    if (cursor is SelectingNodeCursor) {
-      contains = cursor.index == index;
-      if(contains){
-        var node = controller.getNode(index);
-        node = node.getFromPosition(cursor.begin, cursor.end);
-        if(node.text.isEmpty) contains = false;
-      }
-    } else if (cursor is SelectingNodesCursor) {
-      contains = cursor.contains(index);
-      if(contains){
-        final left = cursor.left;
-        final right = cursor.right;
-        int l = left.index, r = right.index;
-        while(l <= r){
-          var node = controller.getNode(l);
-          if(l == left.index){
-            node = node.getFromPosition(left.position, node.endPosition);
-          } else if(l == right.index){
-            node = node.getFromPosition(node.beginPosition, right.position);
-          }
-          if(node.text.isNotEmpty) break;
-          l++;
-        }
-        if(l > r) contains = false;
-      }
-    }
-    if (!contains) return;
+    if (editorContext.entryStatus != EntryStatus.idle) return;
+    bool textNotEmptyAt = controller.textNotEmptyAt(index);
+    if (!textNotEmptyAt) return;
     if (!_containsOffset(offset)) return;
-    editorContext.showTextMenu(Overlay.of(context), TextMenuInfo(offset, node.id), layerLink);
+    editorContext.updateEntryStatus(EntryStatus.readyToShowingTextMenu);
+    editorContext.showTextMenu(
+        Overlay.of(context), MenuInfo(offset, node.id), layerLink);
   }
 
   bool tryToUpdateInputAttribute(BasicCursor cursor) {
@@ -437,7 +411,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final box = renderBox;
     if (box == null) return;
     final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
-    controller.notifyEditingCursorOffset(CursorOffset(index, offset.dy, box.localToGlobal(Offset.zero).dy));
+    controller.notifyEditingCursorOffset(
+        CursorOffset(index, offset.dy, box.localToGlobal(Offset.zero).dy));
     final height = painter.getFullHeightForCaret(
             TextPosition(offset: node.getOffset(position)), Rect.zero) ??
         widget.fontSize;
@@ -449,19 +424,19 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 }
 
-class _TextPainter extends CustomPainter {
-  final TextPainter _painter;
-
-  _TextPainter(this._painter);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
-    Paint backgroundPaint = Paint()..color = Colors.transparent;
-    canvas.drawRect(background, backgroundPaint);
-    _painter.paint(canvas, Offset.zero);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// class _TextPainter extends CustomPainter {
+//   final TextPainter _painter;
+//
+//   _TextPainter(this._painter);
+//
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
+//     Paint backgroundPaint = Paint()..color = Colors.transparent;
+//     canvas.drawRect(background, backgroundPaint);
+//     _painter.paint(canvas, Offset.zero);
+//   }
+//
+//   @override
+//   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+// }

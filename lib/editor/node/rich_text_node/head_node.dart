@@ -46,20 +46,22 @@ abstract class HeadNode extends RichTextNode {
   }
 
   @override
-  TextSpan buildTextSpan({TextStyle? style}) =>
-      super.buildTextSpan(style: TextStyle(fontSize: fontSize));
+  TextSpan buildTextSpan(SpanNodeContext context, {TextStyle? style}) =>
+      super.buildTextSpan(context, style: TextStyle(fontSize: fontSize));
 
   @override
-  TextSpan buildTextSpanWithCursor(BasicCursor<NodePosition> c, int index,
+  TextSpan buildTextSpanWithCursor(
+          BasicCursor<NodePosition> cursor, int index, SpanNodeContext context,
           {TextStyle? style}) =>
-      super.buildTextSpanWithCursor(c, index,
+      super.buildTextSpanWithCursor(cursor, index, context,
           style: TextStyle(fontSize: fontSize));
 
   @override
-  TextSpan selectingTextSpan(
-          RichTextNodePosition begin, RichTextNodePosition end,
+  TextSpan selectingTextSpan(RichTextNodePosition begin,
+          RichTextNodePosition end, SpanNodeContext context,
           {TextStyle? style}) =>
-      super.selectingTextSpan(begin, end, style: TextStyle(fontSize: fontSize));
+      super.selectingTextSpan(begin, end, context,
+          style: TextStyle(fontSize: fontSize));
 
   @override
   Widget build(EditorContext context, int index) {

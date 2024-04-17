@@ -107,5 +107,7 @@ enum EventType {
   bold,
   italic,
   lineThrough,
+  link,
+  code,
   paste,
 }

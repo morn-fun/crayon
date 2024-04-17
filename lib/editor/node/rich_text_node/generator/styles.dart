@@ -2,6 +2,7 @@ import 'package:pre_editor/editor/extension/collection_extension.dart';
 
 import '../../../core/logger.dart';
 import '../../../cursor/rich_text_cursor.dart';
+import '../../../shortcuts/styles.dart';
 import '../../basic_node.dart';
 import '../../position_data.dart';
 import '../rich_text_node.dart';
@@ -12,9 +13,11 @@ NodeWithPosition styleRichTextNodeWhileEditing(
   final position = data.position;
   final offset = node.getOffset(position);
   final currentSpan = node.getSpan(position.index);
-  bool coverTag = (data.extras is bool) ? data.extras : false;
+  final StyleExtra styleExtra =
+      data.extras is StyleExtra ? data.extras : StyleExtra(false, null);
+  bool coverTag = styleExtra.containsTag;
   bool needAddTag = coverTag;
-  if(!coverTag) {
+  if (!coverTag) {
     needAddTag = !currentSpan.tags.contains(tag);
   }
   RichTextNode newNode;
@@ -55,12 +58,14 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node, String tag) {
   final left = data.left;
   final right = data.right;
-  bool coverTag = (data.extras is bool) ? (data.extras) : false;
+  final StyleExtra styleExtra =
+      data.extras is StyleExtra ? data.extras : StyleExtra(false, null);
+  bool coverTag = styleExtra.containsTag;
   final leftOffset = node.getOffset(left);
   final rightOffset = node.getOffset(right);
   final selectingNode = node.getFromPosition(left, right, trim: true);
   bool needAddTag = coverTag;
-  if(!coverTag) {
+  if (!coverTag) {
     for (var span in selectingNode.spans) {
       if (!span.tags.contains(tag)) {
         needAddTag = true;
@@ -69,8 +74,10 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
     }
   }
   final newSpans = needAddTag
-      ? selectingNode.buildSpansByAddingTag(tag)
-      : selectingNode.buildSpansByRemovingTag(tag);
+      ? selectingNode.buildSpansByAddingTag(tag,
+          attributes: styleExtra.attributes)
+      : selectingNode.buildSpansByRemovingTag(tag,
+          attributes: styleExtra.attributes);
   final newNode = node.replace(left, right, newSpans);
   final pLeft = newNode.getPositionByOffset(leftOffset);
   final pRight = newNode.getPositionByOffset(rightOffset);

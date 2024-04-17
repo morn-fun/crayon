@@ -106,7 +106,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onEntryStatus.call(EntryStatus.readyForOptionalMenu);
+        onEntryStatus.call(EntryStatus.readyToShowingOptionalMenu);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }
@@ -122,7 +122,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onEntryStatus.call(EntryStatus.readyForOptionalMenu);
+        onEntryStatus.call(EntryStatus.readyToShowingOptionalMenu);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }

@@ -40,11 +40,12 @@ class EditorContext {
     if (cursor is EditingCursor) {
       final r = controller
           .getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type));
+          .onEdit(EditingData(cursor.position, type, extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     } else if (cursor is SelectingNodeCursor) {
-      final r = controller.getNode(cursor.index).onSelect(
-          SelectingData(SelectingPosition(cursor.begin, cursor.end), type));
+      final r = controller.getNode(cursor.index).onSelect(SelectingData(
+          SelectingPosition(cursor.begin, cursor.end), type,
+          extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     }
   }
@@ -71,23 +72,23 @@ class EditorContext {
 
   EntryStatus get entryStatus => entryManager.status;
 
-  TextMenuInfo get lastTextMenuInfo => entryManager.lastTextMenuInfo;
-
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
 
   void updateStatus(ControllerStatus status) => controller.updateStatus(status);
 
+  void updateEntryStatus(EntryStatus status) =>
+      entryManager.updateStatus(status);
+
   void showOptionalMenu(Offset offset, OverlayState state) =>
       entryManager.showOptionalMenu(offset, state, this);
 
-  void showTextMenu(OverlayState state, TextMenuInfo? info, LayerLink link) =>
+  void showTextMenu(OverlayState state, MenuInfo info, LayerLink link) =>
       entryManager.showTextMenu(state, info, link, this);
 
-  void hideOptionalMenu() => entryManager.removeOptionalMenu(listeners);
+  void showLinkMenu(OverlayState state, MenuInfo info, LayerLink link, {String? initialUrl}) =>
+      entryManager.showLinkMenu(state, info, link, this, initialUrl: initialUrl);
 
-  void removeTextMenu() => entryManager.removeTextMenu(listeners);
-
-  void hideTextMenu() => entryManager.hideTextMenu(listeners);
+  void hideMenu() => entryManager.hideMenu();
 }

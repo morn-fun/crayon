@@ -7,6 +7,7 @@ import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
+import '../node/rich_text_node/rich_text_span.dart';
 
 class UnderlineIntent extends Intent {
   const UnderlineIntent();
@@ -32,7 +33,7 @@ class UnderlineAction extends ContextAction<UnderlineIntent> {
   @override
   void invoke(UnderlineIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onEvent(editorContext, EventType.underline);
+    onStyleEvent(editorContext, RichTextTag.underline);
   }
 }
 
@@ -44,7 +45,7 @@ class BoldAction extends ContextAction<BoldIntent> {
   @override
   void invoke(BoldIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onEvent(editorContext, EventType.bold);
+    onStyleEvent(editorContext, RichTextTag.bold);
   }
 }
 
@@ -56,7 +57,7 @@ class ItalicAction extends ContextAction<ItalicIntent> {
   @override
   void invoke(ItalicIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onEvent(editorContext, EventType.italic);
+    onStyleEvent(editorContext, RichTextTag.italic);
   }
 }
 
@@ -68,41 +69,56 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
   @override
   void invoke(LineThroughIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onEvent(editorContext, EventType.lineThrough);
+    onStyleEvent(editorContext, RichTextTag.lineThrough);
   }
 }
 
-void _onEvent(EditorContext context, EventType type) {
+void onStyleEvent(EditorContext context, RichTextTag tag,
+    {Map<String, String>? attributes}) {
   final cursor = context.cursor;
   final controller = context.controller;
-  if (cursor is SingleNodeCursor) {
-    context.onNodeEditing(cursor, type, extra: false);
-  } else if (cursor is SelectingNodesCursor) {
-    final left = cursor.left;
-    final right = cursor.right;
-    int i = left.index;
-    bool coverTag = false;
-    while (i <= right.index) {
-      final node = controller.getNode(i);
-      if (node is RichTextNode) {
-        late RichTextNode newNode;
-        if (i == left.index) {
-          newNode = node.rearPartNode(left.position as RichTextNodePosition);
-        } else if (i == right.index) {
-          newNode = node.frontPartNode(right.position as RichTextNodePosition);
-        } else {
-          newNode = node;
-        }
-        for (var s in newNode.spans) {
-          if(!s.tags.contains(type.name)){
-            coverTag = true;
-            i = right.index + 1;
-            break;
+  try {
+    final type = EventType.values.byName(tag.name);
+    if (cursor is SingleNodeCursor) {
+      context.onNodeEditing(cursor, type, extra: StyleExtra(false, attributes));
+    } else if (cursor is SelectingNodesCursor) {
+      final left = cursor.left;
+      final right = cursor.right;
+      int i = left.index;
+      bool coverTag = false;
+      while (i <= right.index) {
+        final node = controller.getNode(i);
+        if (node is RichTextNode) {
+          late RichTextNode newNode;
+          if (i == left.index) {
+            newNode = node.rearPartNode(left.position as RichTextNodePosition);
+          } else if (i == right.index) {
+            newNode =
+                node.frontPartNode(right.position as RichTextNodePosition);
+          } else {
+            newNode = node;
+          }
+          for (var s in newNode.spans) {
+            if (!s.tags.contains(type.name)) {
+              coverTag = true;
+              i = right.index + 1;
+              break;
+            }
           }
         }
+        i++;
       }
-      i++;
+      context.execute(UpdateSelectingNodes(cursor, type,
+          extra: StyleExtra(coverTag, attributes)));
     }
-    context.execute(UpdateSelectingNodes(cursor, type, extra: coverTag));
+  } on ArgumentError catch (e) {
+    logger.e('onStyleEvent error: $e');
   }
+}
+
+class StyleExtra {
+  final bool containsTag;
+  final Map<String, String>? attributes;
+
+  StyleExtra(this.containsTag, this.attributes);
 }

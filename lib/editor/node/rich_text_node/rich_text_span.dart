@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../../editor/extension/collection_extension.dart';
 
@@ -42,18 +43,39 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan() => TextSpan(text: text, style: buildStyle());
+  InlineSpan buildSpan(SpanNodeContext context) {
+    final recognizer = buildRecognizer(context);
+    final cursor = recognizer == null ? null : SystemMouseCursors.click;
+    return TextSpan(
+        text: text,
+        style: buildStyle(),
+        recognizer: recognizer,
+        mouseCursor: cursor);
+  }
 
-  List<InlineSpan> buildSelectingSpan(int begin, int end) {
+  List<InlineSpan> buildSelectingSpan(
+      int begin, int end, SpanNodeContext context) {
     assert(begin <= end);
+    final recognizer = buildRecognizer(context);
+    final cursor = recognizer == null ? null : SystemMouseCursors.click;
     return [
       if (begin != 0)
-        TextSpan(text: text.substring(0, begin), style: buildStyle()),
+        TextSpan(
+            text: text.substring(0, begin),
+            style: buildStyle(),
+            recognizer: recognizer,
+            mouseCursor: cursor),
       TextSpan(
           text: text.substring(begin, end),
-          style: buildStyle().copyWith(backgroundColor: Colors.blue)),
+          style: buildStyle().copyWith(backgroundColor: Colors.blue),
+          recognizer: recognizer,
+          mouseCursor: cursor),
       if (end != textLength)
-        TextSpan(text: text.substring(end, textLength), style: buildStyle()),
+        TextSpan(
+            text: text.substring(end, textLength),
+            style: buildStyle(),
+            recognizer: recognizer,
+            mouseCursor: cursor),
     ];
   }
 
@@ -100,7 +122,7 @@ class RichTextSpan extends SpanNode {
   }
 
   TextStyle buildStyle() {
-    var style = const TextStyle();
+    var style = const TextStyle(color: Colors.black);
     Set<TextDecoration> decorations = {};
     for (final tag in tags) {
       final s = tag2Style[tag];
@@ -111,8 +133,7 @@ class RichTextSpan extends SpanNode {
       style = style.merge(s);
     }
     return style.copyWith(
-        decoration: TextDecoration.combine(decorations.toList()),
-        color: Colors.black);
+        decoration: TextDecoration.combine(decorations.toList()));
   }
 
   Map<String, dynamic> toJson() => {
@@ -127,6 +148,19 @@ class RichTextSpan extends SpanNode {
   String toString() {
     return 'RichTextSpan{attributes: $attributes, text: $text, tags: $tags, offset: $offset}';
   }
+
+  bool get isLinkTag => tags.contains(RichTextTag.link.name);
+
+  GestureRecognizer? buildRecognizer(SpanNodeContext context) {
+    if (!isLinkTag) return null;
+    return MultiTapGestureRecognizer()
+      ..onTap = (v) {
+        context.onLinkTap?.call(this);
+      }
+      ..onLongTapDown = (_, __) {
+        context.onLinkLongTap?.call(this);
+      };
+  }
 }
 
 Map<String, TextStyle> tag2Style = {
@@ -136,7 +170,10 @@ Map<String, TextStyle> tag2Style = {
   RichTextTag.italic.name: const TextStyle(fontStyle: FontStyle.italic),
   RichTextTag.underline.name:
       const TextStyle(decoration: TextDecoration.underline),
-  RichTextTag.link.name: const TextStyle(color: Color(0xff0969da)),
+  RichTextTag.link.name: const TextStyle(
+      color: Colors.blueAccent, decoration: TextDecoration.underline),
+  RichTextTag.code.name:
+      TextStyle(backgroundColor: Colors.grey.withOpacity(0.5)),
 };
 
 enum RichTextTag { link, underline, bold, italic, lineThrough, code }
