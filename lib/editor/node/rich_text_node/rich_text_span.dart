@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../../editor/extension/collection_extension.dart';
 
@@ -43,39 +42,25 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan(SpanNodeContext context) {
-    final recognizer = buildRecognizer(context);
-    final cursor = recognizer == null ? null : SystemMouseCursors.click;
-    return TextSpan(
-        text: text,
-        style: buildStyle(),
-        recognizer: recognizer,
-        mouseCursor: cursor);
-  }
+  InlineSpan buildSpan() => TextSpan(
+      text: text,
+      style: buildStyle());
 
   List<InlineSpan> buildSelectingSpan(
-      int begin, int end, SpanNodeContext context) {
+      int begin, int end) {
     assert(begin <= end);
-    final recognizer = buildRecognizer(context);
-    final cursor = recognizer == null ? null : SystemMouseCursors.click;
     return [
       if (begin != 0)
         TextSpan(
             text: text.substring(0, begin),
-            style: buildStyle(),
-            recognizer: recognizer,
-            mouseCursor: cursor),
+            style: buildStyle()),
       TextSpan(
           text: text.substring(begin, end),
-          style: buildStyle().copyWith(backgroundColor: Colors.blue),
-          recognizer: recognizer,
-          mouseCursor: cursor),
+          style: buildStyle().copyWith(backgroundColor: Colors.blue)),
       if (end != textLength)
         TextSpan(
             text: text.substring(end, textLength),
-            style: buildStyle(),
-            recognizer: recognizer,
-            mouseCursor: cursor),
+            style: buildStyle()),
     ];
   }
 
@@ -150,17 +135,6 @@ class RichTextSpan extends SpanNode {
   }
 
   bool get isLinkTag => tags.contains(RichTextTag.link.name);
-
-  GestureRecognizer? buildRecognizer(SpanNodeContext context) {
-    if (!isLinkTag) return null;
-    return MultiTapGestureRecognizer()
-      ..onTap = (v) {
-        context.onLinkTap?.call(this);
-      }
-      ..onLongTapDown = (_, __) {
-        context.onLinkLongTap?.call(this);
-      };
-  }
 }
 
 Map<String, TextStyle> tag2Style = {

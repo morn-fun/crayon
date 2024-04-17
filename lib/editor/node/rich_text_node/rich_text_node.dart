@@ -36,47 +36,43 @@ class RichTextNode extends EditorNode {
     return UnmodifiableListView(spans);
   }
 
-  TextSpan buildTextSpan(SpanNodeContext context, {TextStyle? style}) {
+  TextSpan buildTextSpan({TextStyle? style}) {
     return TextSpan(
-        children: List.generate(
-            spans.length, (index) => spans[index].buildSpan(context)),
+        children:
+            List.generate(spans.length, (index) => spans[index].buildSpan()),
         style: style);
   }
 
-  TextSpan buildTextSpanWithCursor(
-      BasicCursor cursor, int index, SpanNodeContext context,
+  TextSpan buildTextSpanWithCursor(BasicCursor cursor, int index,
       {TextStyle? style}) {
     if (cursor is SelectingNodeCursor && cursor.index == index) {
       final left = cursor.left;
       final right = cursor.right;
       if (left is RichTextNodePosition && right is RichTextNodePosition) {
-        return selectingTextSpan(left, right, context, style: style);
+        return selectingTextSpan(left, right, style: style);
       }
     } else if (cursor is SelectingNodesCursor && cursor.contains(index)) {
       final left = cursor.left;
       final right = cursor.right;
       if (left.index < index && right.index > index) {
-        return selectingTextSpan(beginPosition, endPosition, context,
-            style: style);
+        return selectingTextSpan(beginPosition, endPosition, style: style);
       } else if (left.index == index) {
         final position = left.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(position, endPosition, context,
-              style: style);
+          return selectingTextSpan(position, endPosition, style: style);
         }
       } else if (right.index == index) {
         final position = right.position;
         if (position is RichTextNodePosition) {
-          return selectingTextSpan(beginPosition, position, context,
-              style: style);
+          return selectingTextSpan(beginPosition, position, style: style);
         }
       }
     }
-    return buildTextSpan(context, style: style);
+    return buildTextSpan(style: style);
   }
 
-  TextSpan selectingTextSpan(RichTextNodePosition begin,
-      RichTextNodePosition end, SpanNodeContext context,
+  TextSpan selectingTextSpan(
+      RichTextNodePosition begin, RichTextNodePosition end,
       {TextStyle? style}) {
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
@@ -84,24 +80,22 @@ class RichTextNode extends EditorNode {
     for (var i = 0; i < spans.length; ++i) {
       var span = spans[i];
       if (i < left.index || i > right.index) {
-        textSpans.add(span.buildSpan(context));
+        textSpans.add(span.buildSpan());
         continue;
       }
       if (left.index == right.index && left.index == i) {
-        textSpans.addAll(
-            span.buildSelectingSpan(left.offset, right.offset, context));
+        textSpans.addAll(span.buildSelectingSpan(left.offset, right.offset));
         continue;
       }
       if (i == left.index) {
-        textSpans.addAll(
-            span.buildSelectingSpan(left.offset, span.textLength, context));
+        textSpans.addAll(span.buildSelectingSpan(left.offset, span.textLength));
         continue;
       } else if (i == right.index) {
-        textSpans.addAll(span.buildSelectingSpan(0, right.offset, context));
+        textSpans.addAll(span.buildSelectingSpan(0, right.offset));
         continue;
       }
       if (i > left.index || i < right.index) {
-        textSpans.addAll(span.buildSelectingSpan(0, span.textLength, context));
+        textSpans.addAll(span.buildSelectingSpan(0, span.textLength));
       }
     }
     return TextSpan(children: textSpans, style: style);
@@ -447,12 +441,5 @@ typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
     SelectingData<RichTextNodePosition> data, RichTextNode node);
 
 abstract class SpanNode {
-  InlineSpan buildSpan(SpanNodeContext context);
-}
-
-class SpanNodeContext {
-  final ValueChanged<RichTextSpan>? onLinkTap;
-  final ValueChanged<RichTextSpan>? onLinkLongTap;
-
-  SpanNodeContext({this.onLinkTap, this.onLinkLongTap});
+  InlineSpan buildSpan();
 }

@@ -1,3 +1,5 @@
+import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../editor/extension/rich_editor_controller_extension.dart';
 import '../core/entry_manager.dart';
@@ -51,12 +53,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   late ValueNotifier<RichTextNodePosition?> positionNotifier;
 
-  late SpanNodeContext spanNodeContext;
 
   double recordWidth = 0;
 
   TextSpan get textSpan =>
-      node.buildTextSpanWithCursor(cursor, index, spanNodeContext);
+      node.buildTextSpanWithCursor(cursor, index);
 
   EditorContext get editorContext => widget.editorContext;
 
@@ -76,13 +77,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void initState() {
     super.initState();
-    spanNodeContext = SpanNodeContext(onLinkTap: (s) {
-      final url = s.attributes['url'];
-      logger.i('$tag,  url:$url');
-    }, onLinkLongTap: (s) {
-      final url = s.attributes['url'];
-      logger.i('$tag,  long tap url:$url');
-    });
     node = widget.richTextNode;
     cursor = controller.cursor;
     positionNotifier = ValueNotifier(getNodePosition(cursor));
@@ -304,8 +298,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                 SizedBox(
                   height: painter.height,
                   width: painter.width,
-                  child: RichText(text: textSpan),
-                  // child: CustomPaint(painter: _TextPainter(painter)),
+                  // child: RichText(text: textSpan),
+                  child: CustomPaint(painter: _TextPainter(painter)),
                 ),
                 ValueListenableBuilder(
                     valueListenable: positionNotifier,
@@ -323,12 +317,44 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                         ),
                       );
                     }),
+                ...buildPositions(),
               ],
             ),
           ),
         );
       }),
     );
+  }
+
+  List<Widget> buildPositions() {
+    List<Widget> widgets = [];
+    for (var span in node.spans) {
+      if (!span.tags.contains(RichTextTag.link.name)) continue;
+      final boxList = painter.getBoxesForSelection(
+          TextSelection(baseOffset: span.offset, extentOffset: span.endOffset));
+      for (var box in boxList) {
+        widgets.add(Positioned(
+            left: box.left,
+            top: box.top,
+            child: Theme(
+              data: ThemeData(
+                splashFactory: NoSplash.splashFactory,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+              ),
+              child: InkWell(
+                onTap: () {
+                  logger.i('$tag,  被点击了:${span.text}');
+                },
+                child: SizedBox(
+                  width: box.right - box.left,
+                  height: box.bottom - box.top,
+                ),
+              ),
+            )));
+      }
+    }
+    return widgets;
   }
 
   TextPosition buildTextPosition(Offset globalPosition) {
@@ -424,19 +450,29 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 }
 
-// class _TextPainter extends CustomPainter {
-//   final TextPainter _painter;
-//
-//   _TextPainter(this._painter);
-//
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
-//     Paint backgroundPaint = Paint()..color = Colors.transparent;
-//     canvas.drawRect(background, backgroundPaint);
-//     _painter.paint(canvas, Offset.zero);
-//   }
-//
-//   @override
-//   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-// }
+class _TextPainter extends CustomPainter {
+  final TextPainter _painter;
+
+  _TextPainter(this._painter);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
+    Paint backgroundPaint = Paint()..color = Colors.transparent;
+    canvas.drawRect(background, backgroundPaint);
+    _painter.paint(canvas, Offset.zero);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+
+  @override
+  bool? hitTest(Offset position) {
+    final TextPosition textPosition = _painter.getPositionForOffset(position);
+    final Object? span = _painter.text!.getSpanForPosition(textPosition);
+    if (span is HitTestTarget) {
+      return true;
+    }
+    return false;
+  }
+}
