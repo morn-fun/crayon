@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:pre_editor/editor/node/position_data.dart';
 
 import '../command/basic_command.dart';
 import '../command/modify.dart';
@@ -8,6 +7,7 @@ import '../command/selecting_nodes/replace.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
+import '../node/position_data.dart';
 import 'controller.dart';
 import 'entry_manager.dart';
 import 'logger.dart';

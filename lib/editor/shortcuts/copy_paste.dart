@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
 
 import '../command/modify.dart';
 import '../command/replace.dart';
@@ -13,6 +12,7 @@ import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
 import '../node/rich_text_node/rich_text_node.dart';
+import '../node/rich_text_node/rich_text_span.dart';
 
 class CopyIntent extends Intent {
   const CopyIntent();

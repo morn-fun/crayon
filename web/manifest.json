@@ -1,6 +1,6 @@
 {
-    "name": "pre_editor",
-    "short_name": "pre_editor",
+    "name": "crayon",
+    "short_name": "crayon",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

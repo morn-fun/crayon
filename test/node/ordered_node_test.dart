@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pre_editor/editor/node/rich_text_node/ordered_node.dart';
+import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
 
 void main() {
   test('test pre text RegExp', () {

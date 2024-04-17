@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/extension/rich_editor_controller_extension.dart';
+import '../../editor/extension/rich_editor_controller_extension.dart';
 import '../core/entry_manager.dart';
 import '../core/listener_collection.dart';
 import '../exception/editor_node_exception.dart';

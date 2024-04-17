@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
 
 import '../command/selecting_nodes/update.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
+import '../cursor/rich_text_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
 import '../node/rich_text_node/rich_text_span.dart';

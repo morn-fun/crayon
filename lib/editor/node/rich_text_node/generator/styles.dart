@@ -1,4 +1,4 @@
-import 'package:pre_editor/editor/extension/collection_extension.dart';
+import '../../../../editor/extension/collection_extension.dart';
 
 import '../../../core/logger.dart';
 import '../../../cursor/rich_text_cursor.dart';

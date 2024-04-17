@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pre_editor/editor/core/context.dart';
 
-import 'package:pre_editor/editor/cursor/basic_cursor.dart';
 
+import '../../core/context.dart';
+import '../../cursor/basic_cursor.dart';
 import '../basic_node.dart';
 
 class CodeBlockNode extends EditorNode {

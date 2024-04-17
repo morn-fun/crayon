@@ -1,20 +1,20 @@
 import 'dart:math';
 
+import 'package:crayon/editor/cursor/basic_cursor.dart';
+import 'package:crayon/editor/cursor/rich_text_cursor.dart';
+import 'package:crayon/editor/node/rich_text_node/rich_text_node.dart';
+import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pre_editor/editor/core/command_invoker.dart';
-import 'package:pre_editor/editor/core/context.dart';
-import 'package:pre_editor/editor/core/controller.dart';
-import 'package:pre_editor/editor/core/entry_manager.dart';
-import 'package:pre_editor/editor/core/input_manager.dart';
-import 'package:pre_editor/editor/cursor/basic_cursor.dart';
-import 'package:pre_editor/editor/cursor/rich_text_cursor.dart';
-import 'package:pre_editor/editor/exception/editor_node_exception.dart';
-import 'package:pre_editor/editor/node/basic_node.dart';
-import 'package:pre_editor/editor/node/position_data.dart';
-import 'package:pre_editor/editor/node/rich_text_node/rich_text_node.dart';
-import 'package:pre_editor/editor/node/rich_text_node/rich_text_span.dart';
-import 'package:pre_editor/editor/widget/rich_text_widget.dart';
+import 'package:crayon/editor/core/command_invoker.dart';
+import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/core/controller.dart';
+import 'package:crayon/editor/core/entry_manager.dart';
+import 'package:crayon/editor/core/input_manager.dart';
+import 'package:crayon/editor/exception/editor_node_exception.dart';
+import 'package:crayon/editor/node/basic_node.dart';
+import 'package:crayon/editor/node/position_data.dart';
+import 'package:crayon/editor/widget/rich_text_widget.dart';
 
 import 'config/test_editor_node.dart';
 

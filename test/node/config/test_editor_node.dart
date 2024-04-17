@@ -1,7 +1,7 @@
 import 'package:flutter/src/widgets/framework.dart';
-import 'package:pre_editor/editor/core/context.dart';
-import 'package:pre_editor/editor/cursor/basic_cursor.dart';
-import 'package:pre_editor/editor/node/basic_node.dart';
+import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/cursor/basic_cursor.dart';
+import 'package:crayon/editor/node/basic_node.dart';
 
 class TestEditorNode extends EditorNode{
   @override

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "pre_editor" "\0"
+            VALUE "FileDescription", "crayon" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "pre_editor" "\0"
+            VALUE "InternalName", "crayon" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "pre_editor.exe" "\0"
-            VALUE "ProductName", "pre_editor" "\0"
+            VALUE "OriginalFilename", "crayon.exe" "\0"
+            VALUE "ProductName", "crayon" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
