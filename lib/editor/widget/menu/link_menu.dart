@@ -1,19 +1,24 @@
+import 'package:crayon/editor/node/basic_node.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../command/modify.dart';
 import '../../core/context.dart';
-import '../../core/controller.dart';
+import '../../core/editor_controller.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic_cursor.dart';
+import '../../node/position_data.dart';
 import '../../node/rich_text_node/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class LinkMenu extends StatefulWidget {
   final EditorContext editorContext;
   final MenuInfo info;
-  final String? initialUrl;
+  final UrlWithPosition? urlWithPosition;
 
-  const LinkMenu(this.editorContext, this.info, {super.key, this.initialUrl});
+  const LinkMenu(this.editorContext, this.info,
+      {super.key, this.urlWithPosition});
 
   @override
   State<LinkMenu> createState() => _LinkMenuState();
@@ -28,15 +33,17 @@ class _LinkMenuState extends State<LinkMenu> {
 
   MenuInfo get info => widget.info;
 
-  String get initialUrl => widget.initialUrl ?? '';
+  bool enableCancel = false;
 
-  late TextEditingController editingController =
-      TextEditingController(text: initialUrl);
+  late TextEditingController editingController;
 
   bool clickable = false;
 
   @override
   void initState() {
+    final urlWithPosition = widget.urlWithPosition;
+    editingController = TextEditingController(text: urlWithPosition?.url ?? '');
+    enableCancel = urlWithPosition != null;
     clickable = isTextALink(editingController.text);
     listeners.addCursorChangedListener(_onCursorChanged);
     editingController.addListener(() {
@@ -71,54 +78,92 @@ class _LinkMenuState extends State<LinkMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final h = size.height;
-    double dy = 18.0;
+    double dy = info.lineHeight;
     double dx = info.offset.dx / 2;
-    if (info.offset.dy + 18 >= h) {
-      dy = -18.0;
-    }
     return Stack(
       children: [
         Positioned(
-          child: Card(
-            elevation: 10,
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(6.0),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 280,
-                    height: 32,
-                    child: TextField(
-                      controller: editingController,
-                      cursorHeight: 14,
-                      cursorColor: Colors.blueAccent,
-                      decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blueAccent)),
-                          border: const OutlineInputBorder(),
-                          contentPadding: EdgeInsets.fromLTRB(4, 0, 4, 0)),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (e) =>
+                editorContext.updateEntryStatus(EntryStatus.onMenuHovering),
+            onExit: (e) => hideMenu(),
+            child: Card(
+              elevation: 10,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+              child: Container(
+                padding: EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 280,
+                      height: 32,
+                      child: TextField(
+                        controller: editingController,
+                        cursorHeight: 14,
+                        cursorColor: Colors.blueAccent,
+                        decoration: InputDecoration(
+                            focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.blueAccent)),
+                            border: const OutlineInputBorder(),
+                            contentPadding: EdgeInsets.fromLTRB(4, 0, 4, 0)),
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 24),
-                    child: OutlinedButton(
-                      child: Text('Confirm'),
-                      onPressed: clickable
-                          ? () {
-                              final text = editingController.text;
-                              onStyleEvent(editorContext, RichTextTag.link,
-                                  attributes: {'url': text});
-                              hideMenu();
-                            }
-                          : null,
+                    if (enableCancel)
+                      Padding(
+                        padding: EdgeInsets.only(left: 24),
+                        child: IconButton(
+                          icon: Icon(Icons.link_off_rounded),
+                          onPressed: () {
+                            final linkCursor = widget.urlWithPosition!.cursor;
+                            final r = controller
+                                .getNode(linkCursor.index)
+                                .onSelect(SelectingData(
+                                    SelectingPosition(
+                                        linkCursor.begin, linkCursor.end),
+                                    EventType.link,
+                                    extras: StyleExtra(false, {})));
+                            editorContext.execute(ModifyNodeWithoutChangeCursor(
+                                linkCursor.index, r.node));
+                            hideMenu();
+                          },
+                        ),
+                      ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 24),
+                      child: OutlinedButton(
+                        child: Text('Confirm'),
+                        onPressed: clickable
+                            ? () {
+                                final text = editingController.text;
+                                if (enableCancel) {
+                                  final linkCursor =
+                                      widget.urlWithPosition!.cursor;
+                                  final r = controller
+                                      .getNode(linkCursor.index)
+                                      .onSelect(SelectingData(
+                                          SelectingPosition(
+                                              linkCursor.begin, linkCursor.end),
+                                          EventType.link,
+                                          extras:
+                                              StyleExtra(true, {'url': text})));
+                                  editorContext.execute(
+                                      ModifyNodeWithoutChangeCursor(
+                                          linkCursor.index, r.node));
+                                } else {
+                                  onStyleEvent(editorContext, RichTextTag.link,
+                                      attributes: {'url': text});
+                                }
+                                hideMenu();
+                              }
+                            : null,
+                      ),
                     ),
-                  )
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -133,3 +178,52 @@ class _LinkMenuState extends State<LinkMenu> {
 bool isTextALink(String text) =>
     RegExp(r'https?://(?:www\.)?[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:/\S*)?')
         .hasMatch(text);
+
+class LinkHover extends StatefulWidget {
+  final PointerEnterEventListener? onEnter;
+
+  final PointerExitEventListener? onExit;
+
+  final VoidCallback? onTap;
+  final LinkHoverBuilder builder;
+
+  const LinkHover(
+      {super.key,
+      this.onEnter,
+      this.onExit,
+      this.onTap,
+      required this.builder});
+
+  @override
+  State<LinkHover> createState() => _LinkHoverState();
+}
+
+class _LinkHoverState extends State<LinkHover> {
+  bool hovered = false;
+
+  void refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (e) {
+        widget.onEnter?.call(e);
+        hovered = true;
+        refresh();
+      },
+      onExit: (e) {
+        widget.onExit?.call(e);
+        hovered = false;
+        refresh();
+      },
+      child: InkWell(
+        onTap: widget.onTap,
+        child: widget.builder.call(hovered),
+      ),
+    );
+  }
+}
+
+typedef LinkHoverBuilder = Widget Function(bool hovered);

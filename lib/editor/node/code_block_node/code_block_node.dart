@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 
-import '../../core/context.dart';
+import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../basic_node.dart';
+import '../position_data.dart';
 
 class CodeBlockNode extends EditorNode {
   final String language;
@@ -16,8 +17,9 @@ class CodeBlockNode extends EditorNode {
   // TODO: implement beginPosition
   NodePosition get beginPosition => throw UnimplementedError();
 
+
   @override
-  Widget build(EditorContext context, int index) {
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
     // TODO: implement build
     throw UnimplementedError();
   }
@@ -84,4 +86,5 @@ class CodeBlockNode extends EditorNode {
     // TODO: implement getInlineNodesFromPosition
     throw UnimplementedError();
   }
+
 }

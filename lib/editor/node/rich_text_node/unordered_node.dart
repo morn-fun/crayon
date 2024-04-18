@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RichText;
 
-import '../../core/context.dart';
+import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text_widget.dart';
+import '../../widget/rich_text.dart';
 import '../basic_node.dart';
+import '../position_data.dart';
 import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
@@ -59,23 +60,23 @@ class UnorderedNode extends RichTextNode {
       } else if (begin == beginPosition && end != endPosition) {
         return from([], id: newId ?? id);
       }
-      return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
+      return super.getFromPosition(begin, end, newId: newId ?? id);
     }
-    return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
+    return super.getFromPosition(begin, end, newId: newId ?? id);
   }
 
   @override
-  Widget build(EditorContext context, int index) {
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
     return Builder(builder: (c) {
       final theme = Theme.of(c);
       return Row(
         children: [
           buildMarker(18, theme),
           Expanded(
-              child: RichTextWidget(
-            context,
+              child: RichText(
+            controller,
             this,
-            index,
+            position,
           )),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,8 +1,9 @@
+import 'package:crayon/editor/extension/collection_extension.dart';
 import 'package:flutter/material.dart';
 import '../../../editor/extension/rich_editor_controller_extension.dart';
 
 import '../../core/context.dart';
-import '../../core/controller.dart';
+import '../../core/editor_controller.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic_cursor.dart';
@@ -29,28 +30,39 @@ class _TextMenuState extends State<TextMenu> {
 
   MenuInfo get info => widget.info;
 
+  BasicCursor get cursor => editorContext.cursor;
+
   Set<String> tagSets = {};
 
   @override
   void initState() {
-    listeners.addCursorChangedListener(_onCursorChanged);
+    listeners.addCursorChangedListener(onCursorChanged);
+    listeners.addNodesChangedListener(onNodesChanged);
     tagSets = controller.tagIntersection();
     super.initState();
   }
 
   @override
   void dispose() {
-    listeners.removeCursorChangedListener(_onCursorChanged);
+    listeners.removeCursorChangedListener(onCursorChanged);
+    listeners.removeNodesChangedListener(onNodesChanged);
     super.dispose();
   }
 
-  void _onCursorChanged(BasicCursor cursor) {
+  void onCursorChanged(BasicCursor cursor) {
     if (cursor is EditingCursor) {
       hideMenu();
       return;
     }
-    tagSets = controller.tagIntersection();
-    refresh();
+    final newTags = controller.tagIntersection();
+    if (!newTags.equalsTo(tagSets)) refresh();
+    tagSets = newTags;
+  }
+
+  void onNodesChanged() {
+    final newTags = controller.tagIntersection();
+    if (!newTags.equalsTo(tagSets)) refresh();
+    tagSets = newTags;
   }
 
   void refresh() {
@@ -61,13 +73,8 @@ class _TextMenuState extends State<TextMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final h = size.height;
-    double dy = 18.0;
+    double dy = info.lineHeight;
     double dx = info.offset.dx / 2;
-    if (info.offset.dy + 18 >= h) {
-      dy = -18.0;
-    }
     return Stack(
       children: [
         Positioned(
@@ -115,22 +122,23 @@ class _TextMenuState extends State<TextMenu> {
                         onStyleEvent(editorContext, RichTextTag.underline),
                     contains: tagSets.contains(RichTextTag.underline.name),
                   ),
-                  TextMenuItem(
-                    iconData: Icons.link_rounded,
-                    onTap: () {
-                      hideMenu();
-                      if (tagSets.contains(RichTextTag.link.name)) {
-                        onStyleEvent(editorContext, RichTextTag.link,
-                            attributes: {});
-                      } else {
-                        editorContext.updateEntryStatus(
-                            EntryStatus.readyToShowingLinkMenu);
-                        editorContext.showLinkMenu(
-                            Overlay.of(context), info, widget.link);
-                      }
-                    },
-                    contains: tagSets.contains(RichTextTag.link.name),
-                  ),
+                  if (cursor is SelectingNodeCursor)
+                    TextMenuItem(
+                      iconData: Icons.link_rounded,
+                      onTap: () {
+                        hideMenu();
+                        if (tagSets.contains(RichTextTag.link.name)) {
+                          onStyleEvent(editorContext, RichTextTag.link,
+                              attributes: {});
+                        } else {
+                          editorContext.updateEntryStatus(
+                              EntryStatus.readyToShowingLinkMenu);
+                          editorContext.showLinkMenu(
+                              Overlay.of(context), info, widget.link);
+                        }
+                      },
+                      contains: tagSets.contains(RichTextTag.link.name),
+                    ),
                   TextMenuItem(
                     iconData: Icons.code,
                     onTap: () => onStyleEvent(editorContext, RichTextTag.code),

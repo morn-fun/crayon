@@ -7,7 +7,7 @@ import '../cursor/basic_cursor.dart';
 import '../exception/command_exception.dart';
 import '../node/basic_node.dart';
 import 'command_invoker.dart';
-import 'controller.dart';
+import 'editor_controller.dart';
 import 'entry_manager.dart';
 import 'input_manager.dart';
 import 'listener_collection.dart';
@@ -76,6 +76,9 @@ class EditorContext {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
 
+  void updateInputConnectionAttribute(InputConnectionAttribute attribute) =>
+      inputManager.updateInputConnectionAttribute(attribute);
+
   void updateStatus(ControllerStatus status) => controller.updateStatus(status);
 
   void updateEntryStatus(EntryStatus status) =>
@@ -87,8 +90,13 @@ class EditorContext {
   void showTextMenu(OverlayState state, MenuInfo info, LayerLink link) =>
       entryManager.showTextMenu(state, info, link, this);
 
-  void showLinkMenu(OverlayState state, MenuInfo info, LayerLink link, {String? initialUrl}) =>
-      entryManager.showLinkMenu(state, info, link, this, initialUrl: initialUrl);
+  void showLinkMenu(OverlayState state, MenuInfo info, LayerLink link,
+          {UrlWithPosition? urlWithPosition}) =>
+      entryManager.showLinkMenu(state, info, link, this,
+          urlWithPosition: urlWithPosition);
 
-  void hideMenu() => entryManager.hideMenu();
+  void hideMenu() {
+    entryManager.hideMenu();
+    inputManager.requestFocus();
+  }
 }

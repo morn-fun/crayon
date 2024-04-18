@@ -8,7 +8,7 @@ import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
-import 'controller.dart';
+import 'editor_controller.dart';
 import 'entry_manager.dart';
 import 'logger.dart';
 

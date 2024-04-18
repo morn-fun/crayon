@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RichText;
 
-import '../../core/context.dart';
+import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text_widget.dart';
+import '../../widget/rich_text.dart';
 import '../basic_node.dart';
+import '../position_data.dart';
 import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
@@ -62,11 +63,11 @@ abstract class HeadNode extends RichTextNode {
       super.selectingTextSpan(begin, end, style: TextStyle(fontSize: fontSize));
 
   @override
-  Widget build(EditorContext context, int index) {
-    return RichTextWidget(
-      context,
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
+    return RichText(
+      controller,
       this,
-      index,
+      position,
       fontSize: fontSize,
     );
   }

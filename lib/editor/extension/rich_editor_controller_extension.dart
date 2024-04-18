@@ -1,5 +1,5 @@
 
-import '../core/controller.dart';
+import '../core/editor_controller.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';

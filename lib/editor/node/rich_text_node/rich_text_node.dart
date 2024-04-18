@@ -1,15 +1,15 @@
 import 'dart:collection';
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RichText;
+import '../../core/node_controller.dart';
 import '../../exception/string_exception.dart';
 import '../../extension/string_extension.dart';
 import '../../extension/collection_extension.dart';
-import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text_widget.dart';
+import '../../widget/rich_text.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
 import 'generator/depth.dart';
@@ -103,13 +103,13 @@ class RichTextNode extends EditorNode {
 
   @override
   RichTextNode frontPartNode(covariant RichTextNodePosition end,
-          {String? newId, bool trim = true}) =>
-      getFromPosition(beginPosition, end, newId: newId, trim: trim);
+          {String? newId}) =>
+      getFromPosition(beginPosition, end, newId: newId);
 
   @override
   RichTextNode rearPartNode(covariant RichTextNodePosition begin,
-          {String? newId, bool trim = true}) =>
-      getFromPosition(begin, endPosition, newId: newId, trim: trim);
+          {String? newId}) =>
+      getFromPosition(begin, endPosition, newId: newId);
 
   @override
   RichTextNode merge(EditorNode other, {String? newId}) {
@@ -138,31 +138,28 @@ class RichTextNode extends EditorNode {
       RichTextNodePosition(spans.length - 1, spans.last.textLength);
 
   @override
-  Widget build(EditorContext context, int index) =>
-      RichTextWidget(context, this, index);
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) =>
+      RichText(controller, this, position);
 
-  RichTextNode insert(int index, RichTextSpan span, {bool trim = false}) {
+  RichTextNode insert(int index, RichTextSpan span) {
     final copySpans = List.of(spans);
     copySpans.insert(index, span);
-    return from(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: id);
   }
 
   RichTextNode insertByPosition(
-      RichTextNodePosition position, RichTextSpan span,
-      {bool trim = false}) {
+      RichTextNodePosition position, RichTextSpan span) {
     final index = position.index;
     final currentSpan = spans[index];
     final copySpans = List.of(spans);
-    copySpans.replaceRange(index, index + 1,
-        currentSpan.insert(position.offset, span, trim: trim));
-    return from(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+    copySpans.replaceRange(
+        index, index + 1, currentSpan.insert(position.offset, span));
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: id);
   }
 
-  RichTextNode update(int index, RichTextSpan span, {bool trim = true}) {
+  RichTextNode update(int index, RichTextSpan span) {
     final copySpans = List.of(spans);
     copySpans[index] = span;
     int offset = index == 0 ? 0 : copySpans[index - 1].endOffset;
@@ -171,8 +168,7 @@ class RichTextNode extends EditorNode {
       copySpans[i] = n.copy(offset: to(offset));
       offset += n.textLength;
     }
-    return from(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: id);
   }
 
@@ -182,7 +178,7 @@ class RichTextNode extends EditorNode {
 
   RichTextNode replace(RichTextNodePosition begin, RichTextNodePosition end,
       List<RichTextSpan> spans,
-      {String? newId, bool trim = true}) {
+      {String? newId}) {
     RichTextNodePosition left = begin.isLowerThan(end) ? begin : end;
     RichTextNodePosition right = begin.isLowerThan(end) ? end : begin;
 
@@ -203,8 +199,7 @@ class RichTextNode extends EditorNode {
     if (rightSpan.text.isNotEmpty) newSpans.add(rightSpan);
     if (leftSpan.text.isNotEmpty) newSpans.insert(0, leftSpan);
     copySpans.insertAll(leftIndex, newSpans);
-    return from(
-        UnmodifiableListView(RichTextSpan.mergeList(copySpans, trim: trim)),
+    return from(UnmodifiableListView(RichTextSpan.mergeList(copySpans)),
         id: newId ?? id);
   }
 
@@ -257,7 +252,10 @@ class RichTextNode extends EditorNode {
   @override
   RichTextNode getFromPosition(
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
-      {String? newId, bool trim = false}) {
+      {String? newId}) {
+    if (begin == beginPosition && end == endPosition) {
+      return from(spans, id: newId ?? id, depth: depth);
+    }
     if (begin == end) {
       return from([], id: newId ?? id, depth: depth);
     }
@@ -279,10 +277,8 @@ class RichTextNode extends EditorNode {
       newSpans.removeLast();
       newSpans.insert(0, leftSpan);
       newSpans.add(rightSpan);
-      return from(
-          UnmodifiableListView(RichTextSpan.mergeList(newSpans, trim: trim)),
-          id: newId ?? id,
-          depth: depth);
+      return from(UnmodifiableListView(RichTextSpan.mergeList(newSpans)),
+          id: newId ?? id, depth: depth);
     }
   }
 
@@ -399,13 +395,22 @@ class RichTextNode extends EditorNode {
 
   @override
   EditorNode newNode({String? id, int? depth}) =>
-      from(spans, id: id ?? id, depth: depth ?? this.depth);
+      from(spans, id: id ?? this.id, depth: depth ?? this.depth);
+
+  bool get isEmpty {
+    if (spans.isEmpty) return true;
+    bool result = true;
+    for (var s in spans) {
+      if (s.text.isNotEmpty) return false;
+    }
+    return result;
+  }
 
   @override
   List<EditorNode> getInlineNodesFromPosition(
           covariant RichTextNodePosition begin,
           covariant RichTextNodePosition end) =>
-      [getFromPosition(begin, end, trim: true)];
+      [getFromPosition(begin, end)];
 }
 
 final _editingGenerator = <String, _NodeGeneratorWhileEditing>{

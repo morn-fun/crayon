@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:crayon/editor/extension/cursor_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-import '../core/command_invoker.dart';
-import '../core/context.dart';
-import '../core/controller.dart';
-import '../core/listener_collection.dart';
-import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import 'stateful_lifecycle_widget.dart';
+import '../../core/command_invoker.dart';
+import '../../core/context.dart';
+import '../../core/editor_controller.dart';
+import '../../core/listener_collection.dart';
+import '../../core/logger.dart';
+import '../../core/node_controller.dart';
+import '../../cursor/basic_cursor.dart';
+import '../../cursor/cursor_generator.dart';
+import '../stateful_lifecycle_widget.dart';
 
 class AutoScrollEditorList extends StatefulWidget {
   final EditorContext editorContext;
@@ -32,15 +35,16 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   final scrollOffsetListener = ScrollOffsetListener.create();
   late StreamSubscription<double> scrollOffsetSubscription;
   final key = GlobalKey();
-  final aliveIndexSet = <int>{};
+  final aliveIndexMap = <int, Set<String>>{};
 
-  CursorOffset lastEditingCursorOffset = CursorOffset(0, 0, 0);
+  CursorOffset lastEditingCursorOffset = CursorOffset(0, 0);
   double listOffsetY = 0;
   double maxExtent = 0;
   double minExtent = 0;
   bool isDealingWithOffset = false;
   bool isInPanGesture = false;
   final tag = 'AutoScrollEditorList';
+  late BasicCursor cursor = editorContext.cursor;
 
   @override
   void initState() {
@@ -62,11 +66,12 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   }
 
   void onCursorOffsetChanged(CursorOffset v) {
-    if(isDealingWithOffset) return;
+    if (isDealingWithOffset) return;
     if (lastEditingCursorOffset == v) return;
     final cursor = controller.cursor;
     if (cursor is! EditingCursor) return;
     lastEditingCursorOffset = v;
+    logger.i('last:$lastEditingCursorOffset');
     final box = renderBox;
     if (box == null) return;
     isDealingWithOffset = true;
@@ -79,6 +84,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       logger.i(
           'onCursorOffsetChanged down, v:$v, globalY:$globalY, top:$top, bottom:$bottom');
       scrollOffsetController.animateScroll(
+
           ///TODO:what is 18?
           offset: (globalY - bottom) + 18,
           duration: Duration(milliseconds: 1),
@@ -95,6 +101,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   }
 
   void onCursorChanged(BasicCursor cursor) {
+    this.cursor = cursor;
+    refresh();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
       if (cursor is! EditingCursor) return;
@@ -104,18 +112,22 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       if (index == lastIndex) return;
       final box = renderBox;
       if (box == null) return;
-      bool contains = aliveIndexSet.contains(cursor.index);
+      bool contains = isIndexAlive(cursor.index);
       if (contains) return;
       if (!mounted) return;
-      logger.i(
-          'onCursorChanged index:$index, lastIndex:$lastIndex  $cursor');
-      itemScrollController.jumpTo(index: cursor.index, alignment: index > lastIndex ? 1 : 0);
+      logger.i('onCursorChanged index:$index, lastIndex:$lastIndex  $cursor');
+      itemScrollController.jumpTo(
+          index: cursor.index, alignment: index > lastIndex ? 1 : 0);
     });
   }
 
   RenderBox? get renderBox {
     if (!mounted) return null;
     return key.currentContext?.findRenderObject() as RenderBox?;
+  }
+
+  void refresh() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -125,7 +137,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     Offset panOffset = Offset.zero;
     return GestureDetector(
       key: key,
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
         // logger.i('onTapDown:$d');
         controller
@@ -158,7 +170,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
           () {
             controller.notifyGesture(
                 GestureState(GestureType.panUpdate, d.globalPosition));
-            scrollList(d.globalPosition);
+            scrollList(d.globalPosition, d.delta);
           },
           tag: tag,
           duration: const Duration(milliseconds: 50),
@@ -192,11 +204,41 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                 final current = nodes[index];
                 return Container(
                   key: ValueKey(current.id),
-                  padding: EdgeInsets.only(left: current.depth * 12),
+                  padding: EdgeInsets.only(
+                      left: current.depth * 12, top: 4, bottom: 4, right: 4),
                   child: StatefulLifecycleWidget(
-                    onInit: () => aliveIndexSet.add(index),
-                    onDispose: () => aliveIndexSet.remove(index),
-                    child: current.build(editorContext, index),
+                    onInit: () {
+                      addIndex(index, current.id);
+                      logger.i(
+                          'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                    },
+                    onDispose: () {
+                      removeIndex(index, current.id);
+                      logger.i(
+                          'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                    },
+                    child: current.build(
+                        NodeController(
+                          nodeGetter: (i) => controller.getNode(i),
+                          onEditingPosition: (v) =>
+                              controller.updateCursor(EditingCursor(index, v)),
+                          onEditingOffsetChanged: (y) =>
+                              onCursorOffsetChanged(CursorOffset(index, y)),
+                          cursorGenerator: (p) => p.toCursor(index),
+                          onInputConnectionAttribute: (v) =>
+                              editorContext.updateInputConnectionAttribute(v),
+                          onOverlayEntryShow: (s) =>
+                              s.show(Overlay.of(context), editorContext),
+                          onPanUpdatePosition: (p) {
+                            final cursor =
+                                generateSelectingCursor(p, index, controller);
+                            if (cursor != null) controller.updateCursor(cursor);
+                          },
+                          entryManagerGetter: () => editorContext.entryManager,
+                          listeners: listeners,
+                        ),
+                        cursor.getSingleNodePosition(index, current),
+                        index),
                   ),
                 );
               },
@@ -206,7 +248,25 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     );
   }
 
-  void scrollList(Offset globalPosition) {
+  void addIndex(int index, String id) {
+    final set = aliveIndexMap[index] ?? {};
+    set.add(id);
+    aliveIndexMap[index] = set;
+  }
+
+  void removeIndex(int index, String id) {
+    final set = aliveIndexMap[index] ?? {};
+    set.remove(id);
+    if (set.isEmpty) {
+      aliveIndexMap.remove(index);
+    } else {
+      aliveIndexMap[index] = set;
+    }
+  }
+
+  bool isIndexAlive(int index) => aliveIndexMap[index] != null;
+
+  void scrollList(Offset globalPosition, Offset delta) {
     const moveDistance = 20.0;
     final pixel = listOffsetY;
     if (!isInPanGesture) return;
@@ -219,11 +279,15 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     final bottom = listPosition.dy + listSize.height;
     final upRange = _VerticalRange(top, top + detectedRange);
     final bottomRange = _VerticalRange(bottom - detectedRange, bottom);
-    if (upRange.isInRange(globalPosition.dy) && pixel > minExtent) {
+    if (upRange.isInRange(globalPosition.dy) &&
+        pixel > minExtent &&
+        delta.dy < 0) {
       animateTo(-moveDistance);
     }
 
-    if (bottomRange.isInRange(globalPosition.dy) && pixel < maxExtent) {
+    if (bottomRange.isInRange(globalPosition.dy) &&
+        pixel < maxExtent &&
+        delta.dy > 0) {
       animateTo(moveDistance);
     }
   }

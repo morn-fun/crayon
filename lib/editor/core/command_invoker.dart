@@ -1,7 +1,7 @@
 
 import '../command/basic_command.dart';
 import '../exception/command_exception.dart';
-import 'controller.dart';
+import 'editor_controller.dart';
 import 'logger.dart';
 
 class CommandInvoker {

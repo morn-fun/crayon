@@ -18,7 +18,7 @@ class EditingPosition<T extends NodePosition> extends SingleNodePosition<T> {
   }
 
   @override
-  SingleNodeCursor<T> toCursor(int index) => EditingCursor(index, position);
+  EditingCursor<T> toCursor(int index) => EditingCursor(index, position);
 }
 
 class SelectingPosition<T extends NodePosition> extends SingleNodePosition<T> {
@@ -35,7 +35,7 @@ class SelectingPosition<T extends NodePosition> extends SingleNodePosition<T> {
       SelectingPosition<E>(begin as E, end as E);
 
   @override
-  SingleNodeCursor<T> toCursor(int index) =>
+  SelectingNodeCursor<T> toCursor(int index) =>
       SelectingNodeCursor(index, begin, end);
 
   @override

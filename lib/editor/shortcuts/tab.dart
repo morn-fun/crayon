@@ -5,7 +5,7 @@ import '../../editor/extension/int_extension.dart';
 
 import '../command/selecting_nodes/depth.dart';
 import '../core/context.dart';
-import '../core/controller.dart';
+import '../core/editor_controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic_cursor.dart';
 import '../node/basic_node.dart';

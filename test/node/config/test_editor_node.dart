@@ -1,5 +1,6 @@
+import 'package:crayon/editor/core/node_controller.dart';
+import 'package:crayon/editor/node/position_data.dart';
 import 'package:flutter/src/widgets/framework.dart';
-import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/cursor/basic_cursor.dart';
 import 'package:crayon/editor/node/basic_node.dart';
 
@@ -9,7 +10,7 @@ class TestEditorNode extends EditorNode{
   NodePosition get beginPosition => throw UnimplementedError();
 
   @override
-  Widget build(EditorContext context, int index) {
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
     // TODO: implement build
     throw UnimplementedError();
   }

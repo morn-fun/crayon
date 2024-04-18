@@ -1,5 +1,5 @@
 import '../../core/command_invoker.dart';
-import '../../core/controller.dart';
+import '../../core/editor_controller.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../exception/editor_node_exception.dart';

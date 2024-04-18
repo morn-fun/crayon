@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../command/replace.dart';
 import '../../core/context.dart';
-import '../../core/controller.dart';
+import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';

@@ -1,7 +1,7 @@
 import '../../../editor/extension/rich_editor_controller_extension.dart';
 
 import '../../core/command_invoker.dart';
-import '../../core/controller.dart';
+import '../../core/editor_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../node/basic_node.dart';
 import '../basic_command.dart';

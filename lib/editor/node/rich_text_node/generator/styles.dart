@@ -63,7 +63,7 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
   bool coverTag = styleExtra.containsTag;
   final leftOffset = node.getOffset(left);
   final rightOffset = node.getOffset(right);
-  final selectingNode = node.getFromPosition(left, right, trim: true);
+  final selectingNode = node.getFromPosition(left, right);
   bool needAddTag = coverTag;
   if (!coverTag) {
     for (var span in selectingNode.spans) {

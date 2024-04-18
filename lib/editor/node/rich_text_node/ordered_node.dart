@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import '../../core/context.dart';
-import '../../core/controller.dart';
+import 'package:flutter/material.dart' hide RichText;
+import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text_widget.dart';
+import '../../widget/rich_text.dart';
 import '../basic_node.dart';
+import '../position_data.dart';
 import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
@@ -59,42 +59,43 @@ class OrderedNode extends RichTextNode {
       } else if (begin == beginPosition && end != endPosition) {
         return from([], id: newId ?? id);
       }
-      return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
+      return super.getFromPosition(begin, end, newId: newId ?? id);
     }
-    return super.getFromPosition(begin, end, newId: newId ?? id, trim: trim);
+    return super.getFromPosition(begin, end, newId: newId ?? id);
   }
 
   @override
-  Widget build(EditorContext context, int index) {
+  Widget build(
+      NodeController controller, SingleNodePosition? position, dynamic extras) {
     final size = 14.0;
     return Builder(builder: (c) {
       final theme = Theme.of(c);
       return Row(
         children: [
           Text(
-            '${generateOrderedNumber(getIndex(index, context.controller) + 1, depth)}. ',
+            '${generateOrderedNumber(getIndex(extras as int, controller) + 1, depth)}. ',
             style: TextStyle(
                 fontSize: size, color: theme.textTheme.displayMedium?.color),
           ),
-          Expanded(child: RichTextWidget(context, this, index)),
+          Expanded(child: RichText(controller, this, position)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );
     });
   }
 
-  int getIndex(int indexInController, RichEditorController controller) {
-    if (indexInController <= 0) return 0;
-    int lastIndex = indexInController - 1;
+  int getIndex(int i, NodeController controller) {
+    if (i <= 0) return 0;
+    int lastIndex = i - 1;
     final node = controller.getNode(lastIndex);
     int nodeDepth = node.depth;
     if (nodeDepth > depth) {
-      return getIndex(indexInController - 1, controller);
+      return getIndex(lastIndex, controller);
     } else if (nodeDepth < depth) {
       return 0;
     } else {
       if (node is! OrderedNode) return 0;
-      return getIndex(indexInController - 1, controller) + 1;
+      return getIndex(lastIndex, controller) + 1;
     }
   }
 }

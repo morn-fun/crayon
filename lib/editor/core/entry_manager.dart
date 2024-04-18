@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../cursor/basic_cursor.dart';
 import '../widget/menu/link_menu.dart';
 import '../widget/menu/optional_menu.dart';
 import '../widget/menu/text_menu.dart';
@@ -59,17 +60,17 @@ class EntryManager {
 
   void showLinkMenu(
       OverlayState state, MenuInfo info, LayerLink link, EditorContext context,
-      {String? initialUrl}) {
+      {UrlWithPosition? urlWithPosition}) {
     if (_status != EntryStatus.readyToShowingLinkMenu) return;
     removeEntry();
+    updateStatus(EntryStatus.showingLinkMenu);
     showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: LinkMenu(context, info, initialUrl: initialUrl),
+              child: LinkMenu(context, info, urlWithPosition: urlWithPosition),
               showWhenUnlinked: false,
               link: link,
             ));
     state.insert(showingEntry!);
-    updateStatus(EntryStatus.showingLinkMenu);
   }
 
   void hideLinkMenu() {
@@ -101,11 +102,13 @@ class EntryManager {
 class MenuInfo {
   final Offset offset;
   final String nodeId;
+  final double lineHeight;
 
-  MenuInfo(this.offset, this.nodeId);
+  MenuInfo(this.offset, this.nodeId, this.lineHeight);
 
   MenuInfo.zero()
       : offset = Offset.zero,
+        lineHeight = 0,
         nodeId = '';
 }
 
@@ -117,4 +120,50 @@ enum EntryStatus {
   showingTextMenu,
   readyToShowingLinkMenu,
   showingLinkMenu,
+  onMenuHovering,
+}
+
+abstract class EntryShower {
+  void show(OverlayState state, EditorContext context);
+}
+
+class OptionalEntryShower implements EntryShower {
+  final Offset offset;
+
+  OptionalEntryShower(this.offset);
+
+  @override
+  void show(OverlayState state, EditorContext context) =>
+      context.showOptionalMenu(offset, state);
+}
+
+class TextMenuEntryShower implements EntryShower {
+  final MenuInfo menuInfo;
+  final LayerLink layerLink;
+
+  TextMenuEntryShower(this.menuInfo, this.layerLink);
+
+  @override
+  void show(OverlayState state, EditorContext context) =>
+      context.showTextMenu(state, menuInfo, layerLink);
+}
+
+class LinkEntryShower implements EntryShower {
+  final MenuInfo menuInfo;
+  final LayerLink layerLink;
+  final UrlWithPosition? urlWithPosition;
+
+  LinkEntryShower(this.menuInfo, this.layerLink, {this.urlWithPosition});
+
+  @override
+  void show(OverlayState state, EditorContext context) =>
+      context.showLinkMenu(state, menuInfo, layerLink,
+          urlWithPosition: urlWithPosition);
+}
+
+class UrlWithPosition {
+  final String url;
+  final SelectingNodeCursor cursor;
+
+  UrlWithPosition(this.url, this.cursor);
 }

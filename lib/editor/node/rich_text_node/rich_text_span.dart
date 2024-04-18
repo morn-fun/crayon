@@ -42,39 +42,31 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan() => TextSpan(
-      text: text,
-      style: buildStyle());
+  InlineSpan buildSpan() => TextSpan(text: text, style: buildStyle());
 
-  List<InlineSpan> buildSelectingSpan(
-      int begin, int end) {
+  List<InlineSpan> buildSelectingSpan(int begin, int end) {
     assert(begin <= end);
     return [
       if (begin != 0)
-        TextSpan(
-            text: text.substring(0, begin),
-            style: buildStyle()),
+        TextSpan(text: text.substring(0, begin), style: buildStyle()),
       TextSpan(
           text: text.substring(begin, end),
           style: buildStyle().copyWith(backgroundColor: Colors.blue)),
       if (end != textLength)
-        TextSpan(
-            text: text.substring(end, textLength),
-            style: buildStyle()),
+        TextSpan(text: text.substring(end, textLength), style: buildStyle()),
     ];
   }
 
-  RichTextSpan merge(RichTextSpan other, {bool trim = true}) {
-    if (trim && other.isEmpty) return this;
-    if (trim && isEmpty) return other;
+  RichTextSpan merge(RichTextSpan other) {
+    if (other.isEmpty) return this;
+    if (isEmpty) return other;
     if (!tags.equalsTo(other.tags) || !attributes.equalsTo(other.attributes)) {
       throw UnableToMergeException(toString(), other.toString());
     }
     return copy(text: (t) => t + other.text);
   }
 
-  static List<RichTextSpan> mergeList(List<RichTextSpan> list,
-      {bool trim = true}) {
+  static List<RichTextSpan> mergeList(List<RichTextSpan> list) {
     if (list.length < 2) return List.of(list);
     List<RichTextSpan> result = [];
     var lastSpan = list.first;
@@ -82,7 +74,7 @@ class RichTextSpan extends SpanNode {
     for (var i = 1; i < list.length; ++i) {
       final span = list[i];
       try {
-        lastSpan = lastSpan.merge(span, trim: trim);
+        lastSpan = lastSpan.merge(span);
         if (i == list.length - 1) result.add(lastSpan);
       } on UnableToMergeException {
         result.add(lastSpan.copy(offset: to(offset)));
@@ -103,7 +95,7 @@ class RichTextSpan extends SpanNode {
     if (text.substring(offset, textLength).isNotEmpty) {
       list.add(copy(text: (t) => t.substring(offset, t.length)));
     }
-    return mergeList(list, trim: trim);
+    return mergeList(list);
   }
 
   TextStyle buildStyle() {
@@ -144,10 +136,7 @@ Map<String, TextStyle> tag2Style = {
   RichTextTag.italic.name: const TextStyle(fontStyle: FontStyle.italic),
   RichTextTag.underline.name:
       const TextStyle(decoration: TextDecoration.underline),
-  RichTextTag.link.name: const TextStyle(
-      color: Colors.blueAccent, decoration: TextDecoration.underline),
-  RichTextTag.code.name:
-      TextStyle(backgroundColor: Colors.grey.withOpacity(0.5)),
+  RichTextTag.link.name: const TextStyle(color: Colors.blueAccent),
 };
 
 enum RichTextTag { link, underline, bold, italic, lineThrough, code }

@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
-import '../core/context.dart';
+import '../core/node_controller.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import 'position_data.dart';
@@ -16,7 +16,7 @@ abstract class EditorNode {
 
   Map<String, dynamic> toJson();
 
-  Widget build(EditorContext context, int index);
+  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras);
 
   /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
   EditorNode frontPartNode(NodePosition end, {String? newId});
@@ -34,7 +34,8 @@ abstract class EditorNode {
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});
 
-  List<EditorNode> getInlineNodesFromPosition(NodePosition begin, NodePosition end);
+  List<EditorNode> getInlineNodesFromPosition(
+      NodePosition begin, NodePosition end);
 
   EditorNode newNode({String? id, int? depth});
 

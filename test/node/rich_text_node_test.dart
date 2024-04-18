@@ -1,20 +1,18 @@
 import 'dart:math';
 
+import 'package:crayon/editor/core/listener_collection.dart';
+import 'package:crayon/editor/core/node_controller.dart';
 import 'package:crayon/editor/cursor/basic_cursor.dart';
 import 'package:crayon/editor/cursor/rich_text_cursor.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_node.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:crayon/editor/widget/rich_text.dart';
+import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/core/command_invoker.dart';
-import 'package:crayon/editor/core/context.dart';
-import 'package:crayon/editor/core/controller.dart';
 import 'package:crayon/editor/core/entry_manager.dart';
-import 'package:crayon/editor/core/input_manager.dart';
 import 'package:crayon/editor/exception/editor_node_exception.dart';
 import 'package:crayon/editor/node/basic_node.dart';
 import 'package:crayon/editor/node/position_data.dart';
-import 'package:crayon/editor/widget/rich_text_widget.dart';
 
 import 'config/test_editor_node.dart';
 
@@ -86,10 +84,9 @@ void main() {
     assert(node2.spans.length == 1);
     assert(node2.spans.last.text == node1.spans.last.text);
 
-    final node3 = node1.rearPartNode(
-        RichTextNodePosition(node1.spans.length - 2,
-            node1.getSpan(node1.spans.length - 2).textLength),
-        trim: false);
+    final node3 = node1.rearPartNode(RichTextNodePosition(
+        node1.spans.length - 2,
+        node1.getSpan(node1.spans.length - 2).textLength));
     assert(node3.spans.length == 2);
     assert(node3.spans.first.textLength == 0);
     assert(node3.spans.last.text == node1.spans.last.text);
@@ -456,17 +453,26 @@ void main() {
 
   test('build', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
-    final controller = RichEditorController.fromNodes([newNode]);
-    final inputManager = InputManager(
-        controller: controller,
-        onCommand: (v) {},
-        focusCall: () {},
-        onEntryStatus: (s) {});
+    // final controller = RichEditorController.fromNodes([newNode]);
+    // final inputManager = InputManager(
+    //     controller: controller,
+    //     onCommand: (v) {},
+    //     focusCall: () {},
+    //     onEntryStatus: (s) {});
     final widget = newNode.build(
-        EditorContext(controller, inputManager, FocusNode(), CommandInvoker(),
-            EntryManager((s) {})),
-        0);
-    assert(widget is RichTextWidget);
+        NodeController(
+            onEditingPosition: (v) {},
+            onEditingOffsetChanged: (v) {},
+            onInputConnectionAttribute: (v) {},
+            onOverlayEntryShow: (s) {},
+            nodeGetter: (i) => throw Exception(),
+            entryManagerGetter: () => EntryManager((status) => null),
+            onPanUpdatePosition: (v) {},
+            cursorGenerator: (p) => p.toCursor(0),
+            listeners: ListenerCollection()),
+        EditingPosition(RichTextNodePosition(0, 0)),
+        null);
+    assert(widget is RichText);
   });
 
   test('insertByPosition', () {
@@ -487,14 +493,12 @@ void main() {
     assert(node3.spans.length == 3);
 
     final node4 = newNode.insertByPosition(
-        RichTextNodePosition(0, 1), RichTextSpan(text: '', tags: {'a'}),
-        trim: true);
+        RichTextNodePosition(0, 1), RichTextSpan(text: '', tags: {'a'}));
     assert(node4.text == 'aaabbb');
     assert(node4.spans.length == 1);
 
     final node5 = newNode.insertByPosition(
-        RichTextNodePosition(0, 1), RichTextSpan(text: 'AA', tags: {'a'}),
-        trim: true);
+        RichTextNodePosition(0, 1), RichTextSpan(text: 'AA', tags: {'a'}));
     assert(node5.text == 'aAAaabbb');
     assert(node5.spans.length == 3);
   });

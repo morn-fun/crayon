@@ -1,33 +1,69 @@
+import '../core/editor_controller.dart';
+import '../node/rich_text_node/rich_text_node.dart';
 import 'basic_cursor.dart';
 
 BasicCursor? generateSelectingCursor(
-    BasicCursor oldCursor, NodePosition endPosition, int index) {
+    NodePosition endPosition, int index, RichEditorController controller) {
+  final oldCursor = controller.cursor;
   BasicCursor? newCursor;
   if (oldCursor is EditingCursor) {
-    if (index == oldCursor.index) {
+    final oldIndex = oldCursor.index;
+    if (index == oldIndex) {
       newCursor = SelectingNodeCursor(index, oldCursor.position, endPosition);
     } else {
-      newCursor = SelectingNodesCursor(
-          IndexWithPosition(oldCursor.index, oldCursor.position),
-          IndexWithPosition(index, endPosition));
+      newCursor = getSelectingNodesCursor(
+          controller, oldIndex, index, oldCursor.position, endPosition);
     }
   } else if (oldCursor is SelectingNodeCursor) {
+    final oldIndex = oldCursor.index;
     if (index == oldCursor.index) {
       newCursor = SelectingNodeCursor(index, oldCursor.begin, endPosition);
     } else {
-      newCursor = SelectingNodesCursor(
-          IndexWithPosition(oldCursor.index, oldCursor.begin),
-          IndexWithPosition(index, endPosition));
+      newCursor = getSelectingNodesCursor(
+          controller, oldIndex, index, oldCursor.begin, endPosition);
     }
   } else if (oldCursor is SelectingNodesCursor) {
     if (oldCursor.beginIndex == index) {
       newCursor =
           SelectingNodeCursor(index, oldCursor.beginPosition, endPosition);
     } else {
-      newCursor = SelectingNodesCursor(
-          IndexWithPosition(oldCursor.beginIndex, oldCursor.beginPosition),
-          IndexWithPosition(index, endPosition));
+      newCursor = getSelectingNodesCursor(controller, oldCursor.beginIndex,
+          index, oldCursor.beginPosition, endPosition);
     }
+  }
+  return newCursor;
+}
+
+BasicCursor<NodePosition>? getSelectingNodesCursor(
+    RichEditorController controller,
+    int oldIndex,
+    int newIndex,
+    NodePosition oldPosition,
+    NodePosition newPosition) {
+  final oldNode = controller.getNode(oldIndex);
+  final node = controller.getNode(newIndex);
+  bool isOldNodeInLower = newIndex > oldIndex;
+
+  BasicCursor newCursor;
+  if (oldNode is RichTextNode && node is RichTextNode) {
+    newCursor = SelectingNodesCursor(IndexWithPosition(oldIndex, oldPosition),
+        IndexWithPosition(newIndex, newPosition));
+  } else if (oldNode is RichTextNode && node is! RichTextNode) {
+    newCursor = SelectingNodesCursor(
+        IndexWithPosition(oldIndex, oldPosition),
+        IndexWithPosition(newIndex,
+            isOldNodeInLower ? node.endPosition : node.beginPosition));
+  } else if (oldNode is! RichTextNode && node is RichTextNode) {
+    newCursor = SelectingNodesCursor(
+        IndexWithPosition(oldIndex,
+            isOldNodeInLower ? oldNode.beginPosition : oldNode.endPosition),
+        IndexWithPosition(newIndex, newPosition));
+  } else {
+    newCursor = SelectingNodesCursor(
+        IndexWithPosition(oldIndex,
+            isOldNodeInLower ? oldNode.beginPosition : oldNode.endPosition),
+        IndexWithPosition(newIndex,
+            isOldNodeInLower ? node.endPosition : node.beginPosition));
   }
   return newCursor;
 }

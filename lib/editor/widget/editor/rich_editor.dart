@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../core/command_invoker.dart';
-import '../core/context.dart';
-import '../core/controller.dart';
-import '../core/entry_manager.dart';
-import '../core/input_manager.dart';
-import '../core/logger.dart';
-import '../node/basic_node.dart';
-import '../core/shortcuts.dart';
-import '../../editor/exception/command_exception.dart';
+import '../../core/command_invoker.dart';
+import '../../core/context.dart';
+import '../../core/editor_controller.dart';
+import '../../core/entry_manager.dart';
+import '../../core/input_manager.dart';
+import '../../core/logger.dart';
+import '../../node/basic_node.dart';
+import '../../core/shortcuts.dart';
+import '../../exception/command_exception.dart';
 import 'auto_scroll_editor_list.dart';
 
 class RichEditor extends StatefulWidget {

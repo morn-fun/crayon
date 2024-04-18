@@ -47,7 +47,7 @@ void main() {
     final span4 = RichTextSpan();
     expect(() => span.merge(span2),
         throwsA(const TypeMatcher<UnableToMergeException>()));
-    expect(() => span3.merge(span4, trim: false),
+    expect(() => span3.merge(span4),
         throwsA(const TypeMatcher<UnableToMergeException>()));
     assert(span3.merge(span4) == span3);
     assert(span.merge(span3).textLength == span.textLength + span3.textLength);
@@ -74,7 +74,7 @@ void main() {
         RichTextSpan(text: '', offset: 0, tags: {RichTextTag.italic.name});
     final span6 =
         RichTextSpan(text: 'xxx', offset: 0, tags: {RichTextTag.bold.name});
-    list = RichTextSpan.mergeList([span, span2, span3, span4], trim: false);
+    list = RichTextSpan.mergeList([span, span2, span3, span4]);
     int offset = 0;
     for (var o in list) {
       assert(o.offset == offset);
@@ -96,7 +96,7 @@ void main() {
       offset += o.textLength;
     }
 
-    list = RichTextSpan.mergeList([span, span3, span5], trim: false);
+    list = RichTextSpan.mergeList([span, span3, span5]);
     assert(list.length == 1);
     offset = 0;
     for (var o in list) {
@@ -104,7 +104,7 @@ void main() {
       offset += o.textLength;
     }
 
-    list = RichTextSpan.mergeList([span, span3, span5, span6], trim: false);
+    list = RichTextSpan.mergeList([span, span3, span5, span6]);
     assert(list.length == 2);
     offset = 0;
     for (var o in list) {
