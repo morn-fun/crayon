@@ -9,7 +9,7 @@ import '../../core/copier.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text.dart';
+import '../../widget/nodes/rich_text.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
 import 'generator/depth.dart';
@@ -28,7 +28,7 @@ class RichTextNode extends EditorNode {
       : spans = _buildInitSpans(spans);
 
   RichTextNode from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      RichTextNode.from(spans, id: id, depth: depth ?? this.depth);
+      RichTextNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   static UnmodifiableListView<RichTextSpan> _buildInitSpans(
       List<RichTextSpan> spans) {
@@ -125,7 +125,7 @@ class RichTextNode extends EditorNode {
 
   @override
   Map<String, dynamic> toJson() =>
-      {'nodes': spans.map((e) => e.toJson()).toList()};
+      {'type': runtimeType, 'nodes': spans.map((e) => e.toJson()).toList()};
 
   @override
   String get text => spans.map((e) => e.text).join('');
@@ -138,7 +138,8 @@ class RichTextNode extends EditorNode {
       RichTextNodePosition(spans.length - 1, spans.last.textLength);
 
   @override
-  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) =>
+  Widget build(NodeController controller, SingleNodePosition? position,
+          dynamic extras) =>
       RichText(controller, this, position);
 
   RichTextNode insert(int index, RichTextSpan span) {
@@ -284,7 +285,7 @@ class RichTextNode extends EditorNode {
 
   NodeWithPosition delete(covariant RichTextNodePosition position) {
     if (position == beginPosition) {
-      throw DeleteRequiresNewLineException(runtimeType);
+      throw DeleteRequiresNewLineException(position);
     }
     final index = position.index;
     final lastIndex = index - 1;

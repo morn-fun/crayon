@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:crayon/editor/command/modify.dart';
 import 'package:crayon/editor/extension/cursor_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -70,8 +71,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     if (lastEditingCursorOffset == v) return;
     final cursor = controller.cursor;
     if (cursor is! EditingCursor) return;
+    logger.i('last:$lastEditingCursorOffset,  current:$v');
     lastEditingCursorOffset = v;
-    logger.i('last:$lastEditingCursorOffset');
     final box = renderBox;
     if (box == null) return;
     isDealingWithOffset = true;
@@ -105,6 +106,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     refresh();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
+      logger.i(
+          'onCursorChanged alive :${aliveIndexMap.length},  dealing:$isDealingWithOffset,  last:$lastEditingCursorOffset   ,cursor:$cursor');
       if (cursor is! EditingCursor) return;
       if (isDealingWithOffset) return;
       final index = cursor.index;
@@ -112,12 +115,11 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       if (index == lastIndex) return;
       final box = renderBox;
       if (box == null) return;
+      if (!mounted) return;
       bool contains = isIndexAlive(cursor.index);
       if (contains) return;
-      if (!mounted) return;
       logger.i('onCursorChanged index:$index, lastIndex:$lastIndex  $cursor');
-      itemScrollController.jumpTo(
-          index: cursor.index, alignment: index > lastIndex ? 1 : 0);
+      itemScrollController.jumpTo(index: cursor.index, alignment: 0);
     });
   }
 
@@ -209,34 +211,38 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                   child: StatefulLifecycleWidget(
                     onInit: () {
                       addIndex(index, current.id);
-                      logger.i(
-                          'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                      // logger.i(
+                      //     'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
                     },
                     onDispose: () {
                       removeIndex(index, current.id);
-                      logger.i(
-                          'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                      // logger.i(
+                      //     'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
                     },
                     child: current.build(
                         NodeController(
-                          nodeGetter: (i) => controller.getNode(i),
-                          onEditingPosition: (v) =>
-                              controller.updateCursor(EditingCursor(index, v)),
-                          onEditingOffsetChanged: (y) =>
-                              onCursorOffsetChanged(CursorOffset(index, y)),
-                          cursorGenerator: (p) => p.toCursor(index),
-                          onInputConnectionAttribute: (v) =>
-                              editorContext.updateInputConnectionAttribute(v),
-                          onOverlayEntryShow: (s) =>
-                              s.show(Overlay.of(context), editorContext),
-                          onPanUpdatePosition: (p) {
-                            final cursor =
-                                generateSelectingCursor(p, index, controller);
-                            if (cursor != null) controller.updateCursor(cursor);
-                          },
-                          entryManagerGetter: () => editorContext.entryManager,
-                          listeners: listeners,
-                        ),
+                            nodeGetter: (i) => controller.getNode(i),
+                            onEditingPosition: (v) => controller
+                                .updateCursor(EditingCursor(index, v)),
+                            onEditingOffsetChanged: (y) =>
+                                onCursorOffsetChanged(CursorOffset(index, y)),
+                            cursorGenerator: (p) => p.toCursor(index),
+                            onInputConnectionAttribute: (v) =>
+                                editorContext.updateInputConnectionAttribute(v),
+                            onOverlayEntryShow: (s) =>
+                                s.show(Overlay.of(context), editorContext),
+                            onPanUpdatePosition: (p) {
+                              final cursor =
+                                  generateSelectingCursor(p, index, controller);
+                              if (cursor != null) {
+                                controller.updateCursor(cursor);
+                              }
+                            },
+                            entryManagerGetter: () =>
+                                editorContext.entryManager,
+                            listeners: listeners,
+                            onNodeChanged: (n) => editorContext.execute(
+                                ModifyNodeWithoutChangeCursor(index, n))),
                         cursor.getSingleNodePosition(index, current),
                         index),
                   ),

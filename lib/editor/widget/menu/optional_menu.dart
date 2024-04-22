@@ -9,6 +9,7 @@ import '../../core/listener_collection.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../node/basic_node.dart';
+import '../../node/code_block_node/code_block_node.dart';
 import '../../node/rich_text_node/head_node.dart';
 import '../../node/rich_text_node/ordered_node.dart';
 import '../../node/rich_text_node/rich_text_node.dart';
@@ -281,14 +282,15 @@ final defaultMenus = [
       (n) => [OrderedNode.from(n.spans, id: n.id, depth: n.depth)]),
   MenuItemInfo.normal('无序列表', Icons.list_rounded, _textColor,
       (n) => [UnorderedNode.from(n.spans, id: n.id, depth: n.depth)]),
-  MenuItemInfo.normal('代码块', Icons.question_mark_rounded, Colors.red, null),
+  MenuItemInfo.normal('代码块', Icons.code, _codeColor,
+      (n) => [CodeBlockNode.from([], id: n.id, depth: n.depth)]),
   MenuItemInfo.normal('引用', Icons.question_mark_rounded, Colors.red, null),
   MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
   MenuItemInfo.normal('链接', Icons.question_mark_rounded, Colors.red, null),
 ];
 
 const _textColor = Colors.brown;
-// const _codeColor = Colors.cyan;
+const _codeColor = Colors.cyan;
 // const _linkColor = Colors.blue;
 // const _quoteColor = Colors.yellow;
 

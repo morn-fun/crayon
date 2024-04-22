@@ -22,15 +22,15 @@ class UnableToMergeException implements EditorNodeException {
 }
 
 class DeleteRequiresNewLineException implements EditorNodeException {
-  final Type type;
+  final NodePosition position;
 
-  DeleteRequiresNewLineException(this.type);
+  DeleteRequiresNewLineException(this.position);
 
-  String get message => 'the $type is requiring a new line';
+  String get message => 'the $position is requiring a new line';
 
   @override
   String toString() {
-    return 'DeleteRequiresNewLineException{type: $type}';
+    return 'DeleteRequiresNewLineException{position: $position}';
   }
 }
 

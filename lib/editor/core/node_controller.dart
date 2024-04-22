@@ -17,6 +17,7 @@ class NodeController {
   final CursorGenerator cursorGenerator;
   final ListenerCollection listeners;
   final NodeGetter nodeGetter;
+  final ValueChanged<EditorNode> onNodeChanged;
 
   NodeController({
     required this.onEditingPosition,
@@ -28,6 +29,7 @@ class NodeController {
     required this.cursorGenerator,
     required this.onEditingOffsetChanged,
     required this.nodeGetter,
+    required this.onNodeChanged,
   });
 
   void notifyEditingPosition(NodePosition position) =>
@@ -43,6 +45,8 @@ class NodeController {
 
   void showOverlayEntry(EntryShower shower) => onOverlayEntryShow.call(shower);
 
+  void updateNode(EditorNode node) => onNodeChanged.call(node);
+
   EntryStatus get entryStatus => entryManager.status;
 
   EntryManager get entryManager => entryManagerGetter.call();
@@ -53,8 +57,35 @@ class NodeController {
       entryManager.updateStatus(status);
 
   SingleNodeCursor toCursor(SingleNodePosition p) => cursorGenerator.call(p);
-}
 
+  NodeController copy({
+    ValueChanged<NodePosition>? onEditingPosition,
+    ValueChanged<InputConnectionAttribute>? onInputConnectionAttribute,
+    ValueChanged<NodePosition>? onPanUpdatePosition,
+    ValueChanged<double>? onEditingOffsetChanged,
+    ValueChanged<EntryShower>? onOverlayEntryShow,
+    ValueGetter<EntryManager>? entryManagerGetter,
+    CursorGenerator? cursorGenerator,
+    ListenerCollection? listeners,
+    NodeGetter? nodeGetter,
+    ValueChanged<EditorNode>? onNodeChanged,
+    VoidCallback? focusCallback,
+  }) =>
+      NodeController(
+        onEditingPosition: onEditingPosition ?? this.onEditingPosition,
+        onInputConnectionAttribute:
+            onInputConnectionAttribute ?? this.onInputConnectionAttribute,
+        onOverlayEntryShow: onOverlayEntryShow ?? this.onOverlayEntryShow,
+        onPanUpdatePosition: onPanUpdatePosition ?? this.onPanUpdatePosition,
+        entryManagerGetter: entryManagerGetter ?? this.entryManagerGetter,
+        listeners: listeners ?? this.listeners,
+        cursorGenerator: cursorGenerator ?? this.cursorGenerator,
+        onEditingOffsetChanged:
+            onEditingOffsetChanged ?? this.onEditingOffsetChanged,
+        nodeGetter: nodeGetter ?? this.nodeGetter,
+        onNodeChanged: onNodeChanged ?? this.onNodeChanged,
+      );
+}
 
 typedef NodeGetter = EditorNode Function(int index);
 

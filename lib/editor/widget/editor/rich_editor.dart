@@ -9,6 +9,7 @@ import '../../node/basic_node.dart';
 import '../../core/shortcuts.dart';
 import '../../exception/command_exception.dart';
 import 'auto_scroll_editor_list.dart';
+import 'shared_editor_context_widget.dart';
 
 class RichEditor extends StatefulWidget {
   final List<EditorNode> nodes;
@@ -108,7 +109,10 @@ class _RichEditorPageState extends State<RichEditor> {
         actions: getActions(editorContext),
         child: Focus(
           focusNode: focusNode,
-          child: AutoScrollEditorList(editorContext: editorContext),
+          child: ShareEditorContextWidget(
+            child: AutoScrollEditorList(editorContext: editorContext),
+            context: editorContext,
+          ),
         ),
       ),
     );

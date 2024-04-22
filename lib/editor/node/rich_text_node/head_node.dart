@@ -4,7 +4,7 @@ import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text.dart';
+import '../../widget/nodes/rich_text.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
 import 'rich_text_node.dart';
@@ -79,6 +79,9 @@ class H1Node extends HeadNode {
   @override
   H1Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
       H1Node.from(spans, id: id, depth: depth ?? this.depth);
+
+  @override
+  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
 }
 
 class H2Node extends HeadNode {
@@ -87,6 +90,9 @@ class H2Node extends HeadNode {
   @override
   H2Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
       H2Node.from(spans, id: id, depth: depth ?? this.depth);
+
+  @override
+  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
 }
 
 class H3Node extends HeadNode {
@@ -95,4 +101,7 @@ class H3Node extends HeadNode {
   @override
   H3Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
       H3Node.from(spans, id: id, depth: depth ?? this.depth);
+
+  @override
+  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
 }

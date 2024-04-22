@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: Scaffold(
-        appBar: AppBar(title: const Text('Pre Editor')),
+        appBar: AppBar(title: const Text('Crayon')),
         body: RichEditor(nodes: _nodes),
       ),
     );

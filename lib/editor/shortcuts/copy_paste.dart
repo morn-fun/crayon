@@ -1,3 +1,4 @@
+import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,8 +12,10 @@ import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
 import '../node/basic_node.dart';
 import '../node/position_data.dart';
+import '../node/rich_text_node/head_node.dart';
 import '../node/rich_text_node/rich_text_node.dart';
 import '../node/rich_text_node/rich_text_span.dart';
+import '../node/rich_text_node/unordered_node.dart';
 
 class CopyIntent extends Intent {
   const CopyIntent();
@@ -79,7 +82,31 @@ class PasteAction extends ContextAction<PasteIntent> {
         nodes.add(n.newNode(id: randomNodeId));
       }
     } else {
-      nodes.add(RichTextNode.from([RichTextSpan(text: text)]));
+      _copiedNodes.clear();
+      final stringList = text.split(RegExp(r'\r\n|\r|\n'));
+      final keys = _string2generator.keys.toList();
+      for (var s in stringList) {
+        if (s.startsWith(orderedRegExp)) {
+          nodes.add(OrderedNode.from(
+              [RichTextSpan(text: s.replaceFirst(orderedRegExp, ''))]));
+        } else {
+          int i = 0;
+          bool isSpecialNode = false;
+          while (i < keys.length) {
+            final frontText = keys[i];
+            if (s.startsWith(frontText)) {
+              nodes.add(_string2generator[frontText]!
+                  .call(s.replaceFirst(frontText, '')));
+              isSpecialNode = true;
+              i = keys.length;
+            }
+            i++;
+          }
+          if (!isSpecialNode) {
+            nodes.add(RichTextNode.from([RichTextSpan(text: s)]));
+          }
+        }
+      }
     }
     final cursor = editorContext.cursor;
     final controller = editorContext.controller;
@@ -111,3 +138,14 @@ class PasteAction extends ContextAction<PasteIntent> {
     }
   }
 }
+
+RegExp orderedRegExp = RegExp(r'^(\+)?\d+(\.)$');
+
+typedef _NodeGenerator = EditorNode Function(String v);
+
+final Map<String, _NodeGenerator> _string2generator = {
+  '-': (n) => UnorderedNode.from([RichTextSpan(text: n)]),
+  '#': (n) => H1Node.from([RichTextSpan(text: n)]),
+  '##': (n) => H2Node.from([RichTextSpan(text: n)]),
+  '###': (n) => H3Node.from([RichTextSpan(text: n)]),
+};

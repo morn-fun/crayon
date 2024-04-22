@@ -6,7 +6,7 @@ import 'package:crayon/editor/cursor/basic_cursor.dart';
 import 'package:crayon/editor/cursor/rich_text_cursor.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_node.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
-import 'package:crayon/editor/widget/rich_text.dart';
+import 'package:crayon/editor/widget/nodes/rich_text.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/core/entry_manager.dart';
@@ -461,15 +461,17 @@ void main() {
     //     onEntryStatus: (s) {});
     final widget = newNode.build(
         NodeController(
-            onEditingPosition: (v) {},
-            onEditingOffsetChanged: (v) {},
-            onInputConnectionAttribute: (v) {},
-            onOverlayEntryShow: (s) {},
-            nodeGetter: (i) => throw Exception(),
-            entryManagerGetter: () => EntryManager((status) => null),
-            onPanUpdatePosition: (v) {},
-            cursorGenerator: (p) => p.toCursor(0),
-            listeners: ListenerCollection()),
+          onEditingPosition: (v) {},
+          onEditingOffsetChanged: (v) {},
+          onInputConnectionAttribute: (v) {},
+          onOverlayEntryShow: (s) {},
+          nodeGetter: (i) => throw Exception(),
+          entryManagerGetter: () => EntryManager((status) => null),
+          onPanUpdatePosition: (v) {},
+          cursorGenerator: (p) => p.toCursor(0),
+          listeners: ListenerCollection(),
+          onNodeChanged: (n) {},
+        ),
         EditingPosition(RichTextNodePosition(0, 0)),
         null);
     assert(widget is RichText);

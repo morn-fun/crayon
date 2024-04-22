@@ -4,7 +4,7 @@ import '../../core/node_controller.dart';
 import '../../cursor/basic_cursor.dart';
 import '../../cursor/rich_text_cursor.dart';
 import '../../exception/editor_node_exception.dart';
-import '../../widget/rich_text.dart';
+import '../../widget/nodes/rich_text.dart';
 import '../basic_node.dart';
 import '../position_data.dart';
 import 'rich_text_node.dart';
@@ -108,4 +108,7 @@ class UnorderedNode extends RichTextNode {
       decoration: decoration,
     );
   }
+
+  @override
+  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
 }

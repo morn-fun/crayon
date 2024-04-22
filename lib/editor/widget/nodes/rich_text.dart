@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import '../core/entry_manager.dart';
-import '../core/listener_collection.dart';
-import '../core/node_controller.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-import '../extension/offset_extension.dart';
-import '../extension/painter_extension.dart';
+import '../../../../editor/extension/render_box_extension.dart';
+import '../../core/entry_manager.dart';
+import '../../core/listener_collection.dart';
+import '../../core/node_controller.dart';
+import '../../cursor/basic_cursor.dart';
+import '../../exception/editor_node_exception.dart';
+import '../../extension/offset_extension.dart';
+import '../../extension/painter_extension.dart';
 
-import '../core/input_manager.dart';
-import '../core/logger.dart';
-import '../cursor/rich_text_cursor.dart';
-import '../node/position_data.dart';
-import '../node/rich_text_node/rich_text_node.dart';
-import '../shortcuts/arrows/arrows.dart';
-import 'editing_cursor.dart';
+import '../../core/input_manager.dart';
+import '../../core/logger.dart';
+import '../../cursor/rich_text_cursor.dart';
+import '../../node/position_data.dart';
+import '../../node/rich_text_node/rich_text_node.dart';
+import '../../shortcuts/arrows/arrows.dart';
+import '../editing_cursor.dart';
+import '../painter.dart';
 
 class RichText extends StatefulWidget {
   const RichText(
@@ -238,15 +240,8 @@ class _RichTextState extends State<RichText> {
             url, controller.toCursor(position) as SelectingNodeCursor)));
   }
 
-  bool containsOffset(Offset global) {
-    final box = renderBox;
-    if (box == null) return false;
-    final widgetPosition = box.localToGlobal(Offset.zero);
-    final size = box.size;
-    final localPosition =
-        global.translate(-widgetPosition.dx, -widgetPosition.dy);
-    return size.contains(localPosition);
-  }
+  bool containsOffset(Offset global) =>
+      renderBox?.containsOffset(global) ?? false;
 
   void updatePainter() {
     painter.text = textSpan;
@@ -317,7 +312,7 @@ class _RichTextState extends State<RichText> {
                   height: painter.height,
                   width: painter.width,
                   // child: RichText(text: textSpan),
-                  child: CustomPaint(painter: _TextPainter(painter)),
+                  child: CustomPaint(painter: RichTextPainter(painter)),
                 ),
                 ValueListenableBuilder(
                     valueListenable: editingCursorNotifier,
@@ -343,8 +338,16 @@ class _RichTextState extends State<RichText> {
                     valueListenable: selectingCursorNotifier,
                     builder: (ctx, v, c) {
                       if (v == null) return Container();
+                      final left = v.left;
+                      final right = v.right;
+                      if (left is! RichTextNodePosition ||
+                          right is! RichTextNodePosition) {
+                        return Container();
+                      }
+                      final begin = node.getOffset(left);
+                      final end = node.getOffset(right);
                       return Stack(
-                          children: painter.buildSelectedAreas(v, node));
+                          children: painter.buildSelectedAreas(begin, end));
                     }),
                 ValueListenableBuilder(
                     valueListenable: nodeChangedNotifier,
@@ -375,15 +378,8 @@ class _RichTextState extends State<RichText> {
     );
   }
 
-  TextPosition buildTextPosition(Offset globalPosition) {
-    final box = renderBox;
-    if (box == null) return const TextPosition(offset: 0);
-    final widgetPosition = box.localToGlobal(Offset.zero);
-    final localPosition =
-        globalPosition.translate(-widgetPosition.dx, -widgetPosition.dy);
-    logger.i('$tag, buildTextPosition, localPosition:$localPosition');
-    return painter.getPositionForOffset(localPosition);
-  }
+  TextPosition buildTextPosition(Offset p) =>
+      painter.buildTextPosition(p, renderBox);
 
   void onGesture(GestureState s) {
     switch (s.type) {
@@ -403,7 +399,7 @@ class _RichTextState extends State<RichText> {
     if (!containsOffset(globalOffset)) return;
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
-    logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
+    // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     controller.notifyEditingPosition(richPosition);
     controller.notifyEditingOffset(globalOffset.dy);
     updateInputAttribute(richPosition);
@@ -413,10 +409,11 @@ class _RichTextState extends State<RichText> {
     if (position is EditingPosition) {
       final p = position.position;
       if (p is RichTextNodePosition) updateInputAttribute(p);
-    } else if (position is SelectingPosition) {
-      final p = position.left;
-      if (p is RichTextNodePosition) updateInputAttribute(p);
     }
+    // else if (position is SelectingPosition) {
+    //   final p = position.left;
+    //   if (p is RichTextNodePosition) updateInputAttribute(p);
+    // }
   }
 
   void updateInputAttribute(RichTextNodePosition position) {
@@ -431,21 +428,4 @@ class _RichTextState extends State<RichText> {
         box.getTransformTo(null),
         box.size));
   }
-}
-
-class _TextPainter extends CustomPainter {
-  final TextPainter _painter;
-
-  _TextPainter(this._painter);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
-    Paint backgroundPaint = Paint()..color = Colors.transparent;
-    canvas.drawRect(background, backgroundPaint);
-    _painter.paint(canvas, Offset.zero);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

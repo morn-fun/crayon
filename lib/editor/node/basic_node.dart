@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
+import 'package:uuid/uuid.dart';
 import '../core/node_controller.dart';
 import '../cursor/basic_cursor.dart';
 import '../exception/editor_node_exception.dart';
@@ -48,8 +47,10 @@ abstract class EditorNode {
   String get text;
 }
 
-String get randomNodeId =>
-    '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
+String get randomNodeId => _uuid.v1();
+
+const _uuid = Uuid();
+
 
 class NodeWithPosition<T extends NodePosition> {
   final EditorNode node;
