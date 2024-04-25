@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../command/modify.dart';
 import '../command/replace.dart';
 import '../command/selecting_nodes/delete.dart';
+import '../command/selecting_nodes/depth.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
@@ -37,8 +38,10 @@ class DeleteAction extends ContextAction<DeleteIntent> {
         final lastNode = controller.getNode(index - 1);
         try {
           final newNode = lastNode.merge(node);
-          editorContext.execute(ReplaceNode(Replace(index - 1, index + 1,
-              [newNode], EditingCursor(index - 1, lastNode.endPosition))));
+          final newNodes = [newNode];
+          correctDepth(controller, index + 1, newNode.depth, newNodes, limitChildren: false);
+          editorContext.execute(ReplaceNode(Replace(index - 1, index + newNodes.length,
+              newNodes, EditingCursor(index - 1, lastNode.endPosition))));
         } on UnableToMergeException catch (e) {
           logger.e('$runtimeType, $e');
           editorContext.execute(ModifyNode(

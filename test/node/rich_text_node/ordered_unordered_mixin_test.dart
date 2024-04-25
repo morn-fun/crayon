@@ -8,7 +8,7 @@ import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
 import 'package:crayon/editor/node/rich_text_node/unordered_node.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'config/const_texts.dart';
+import '../config/const_texts.dart';
 
 void main() {
   test('onEdit', () {

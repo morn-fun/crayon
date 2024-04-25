@@ -85,24 +85,16 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
       } else if (cursor is SelectingNodesCursor) {
         editorContext.execute(DecreaseNodesDepth(cursor));
       }
-    }  on DepthNeedDecreaseMoreException catch (e) {
+    } on DepthNeedDecreaseMoreException catch (e) {
       logger.e('$runtimeType, ${e.message}');
       if (cursor is! SingleNodeCursor) return;
+      final controller = editorContext.controller;
       int index = cursor.index;
       final node = controller.getNode(index);
       final nodes = <EditorNode>[node.newNode(depth: node.depth.decrease())];
-      index++;
-      while (index < controller.nodeLength) {
-        final n = controller.getNode(index);
-        if (n.depth - e.depth >= 1) {
-          nodes.add(n.newNode(depth: n.depth.decrease()));
-        } else {
-          break;
-        }
-        index++;
-      }
-      editorContext.execute(
-          ReplaceNode(Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
+      correctDepth(controller, index + 1, e.depth, nodes);
+      editorContext.execute(ReplaceNode(
+          Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
     }
   }
 }

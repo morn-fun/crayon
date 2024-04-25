@@ -18,7 +18,9 @@ class IncreaseNodesDepth implements BasicCommand {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     int lastIndex = leftCursor.index;
-    int lastDepth = lastIndex > 0 ? controller.getNode(lastIndex - 1).depth : 0;
+    int lastDepth = lastIndex > 0 ? controller
+        .getNode(lastIndex - 1)
+        .depth : 0;
     final leftNode = controller.getNode(leftCursor.index);
     int depth = leftNode.depth;
     if (lastDepth < depth) {
@@ -52,7 +54,7 @@ class DecreaseNodesDepth implements BasicCommand {
     while (l < r) {
       final node = controller.getNode(l);
       final newNode =
-          node.depth > 0 ? node.newNode(depth: node.depth.decrease()) : node;
+      node.depth > 0 ? node.newNode(depth: node.depth.decrease()) : node;
       newNodes.add(newNode);
       l++;
     }
@@ -65,18 +67,24 @@ class DecreaseNodesDepth implements BasicCommand {
       newNodes.add(nodePosition.node);
     } on DepthNeedDecreaseMoreException catch (e) {
       newNodes.add(lastNode.newNode(depth: lastNode.depth.decrease()));
-      int index = r + 1;
-      while (index < controller.nodeLength) {
-        final n = controller.getNode(index);
-        if (n.depth - e.depth > 1) {
-          newNodes.add(n.newNode(depth: n.depth.decrease()));
-        } else {
-          break;
-        }
-        index++;
-      }
+      correctDepth(controller, r + 1, e.depth, newNodes);
     }
     return controller.replace(Replace(leftCursor.index,
         leftCursor.index + newNodes.length, newNodes, cursor));
+  }
+}
+
+void correctDepth(RichEditorController controller, int start, int depth,
+    List<EditorNode> nodes, {bool limitChildren = true}) {
+  int index = start;
+  while (index < controller.nodeLength) {
+    final n = controller.getNode(index);
+    final different = limitChildren ? 0 : 1;
+    if (n.depth - depth > different) {
+      nodes.add(n.newNode(depth: n.depth.decrease()));
+    } else {
+      break;
+    }
+    index++;
   }
 }

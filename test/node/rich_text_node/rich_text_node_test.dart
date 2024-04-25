@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/cursor/basic_cursor.dart';
 import 'package:crayon/editor/cursor/rich_text_cursor.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_node.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
@@ -12,8 +11,8 @@ import 'package:crayon/editor/exception/editor_node_exception.dart';
 import 'package:crayon/editor/node/basic_node.dart';
 import 'package:crayon/editor/node/position_data.dart';
 
-import 'config/const_texts.dart';
-import 'config/test_editor_node.dart';
+import '../config/const_texts.dart';
+import '../config/test_editor_node.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 
@@ -29,9 +28,6 @@ void main() {
 
     return RichTextNode.from(spans);
   }
-
-  String spanText(TextSpan span) =>
-      (span.children ?? []).map((e) => (e as TextSpan).text ?? '').join();
 
   test('frontPartNode', () {
     final newNode = basicNode();
@@ -284,33 +280,6 @@ void main() {
     assert(node4.spans.length == 2);
   });
 
-  test('selectingTextSpan', () {
-    final newNode = basicNode(texts: ['aaaaaa', 'bbbbbb', 'cccccc']);
-    final s1 = newNode.selectingTextSpan(
-        RichTextNodePosition(0, 0), RichTextNodePosition(0, 5));
-    assert(spanText(s1) == newNode.text);
-
-    final s2 = newNode.selectingTextSpan(
-        RichTextNodePosition(0, 0), RichTextNodePosition(1, 5));
-    assert(spanText(s2) == newNode.text);
-
-    final s3 = newNode.selectingTextSpan(
-        RichTextNodePosition(1, 0), RichTextNodePosition(0, 5));
-    assert(spanText(s3) == newNode.text);
-
-    final s4 = newNode.selectingTextSpan(
-        RichTextNodePosition(1, 0), RichTextNodePosition(2, 5));
-    assert(spanText(s4) == newNode.text);
-
-    final s5 = newNode.selectingTextSpan(
-        RichTextNodePosition(2, 0), RichTextNodePosition(2, 5));
-    assert(spanText(s5) == newNode.text);
-
-    final s6 = newNode.selectingTextSpan(
-        RichTextNodePosition(0, 0), RichTextNodePosition(2, 5));
-    assert(spanText(s6) == newNode.text);
-  });
-
   test('buildTextSpan', () {
     final newNode = basicNode(texts: ['aaaaaa', 'bbbbbb', 'cccccc']);
     final span1 = newNode.buildTextSpan();
@@ -336,56 +305,6 @@ void main() {
         assert(style == mergeStyle);
       }
     }
-  });
-
-  test('buildTextSpanWithCursor', () {
-    final newNode = basicNode();
-    final editing1 = newNode.buildTextSpanWithCursor(
-        EditingCursor(0, RichTextNodePosition(0, 0)), 0);
-    assert(newNode.text == spanText(editing1));
-
-    final editing2 = newNode.buildTextSpanWithCursor(
-        EditingCursor(0, RichTextNodePosition(0, 0)), 1);
-    assert(newNode.text == spanText(editing2));
-
-    final none = newNode.buildTextSpanWithCursor(NoneCursor(), 0);
-    assert(newNode.text == spanText(none));
-
-    final selectingNode1 = newNode.buildTextSpanWithCursor(
-        SelectingNodeCursor(
-            0, RichTextNodePosition(0, 0), RichTextNodePosition(0, 5)),
-        0);
-    assert(newNode.text == spanText(selectingNode1));
-
-    final selectingNode2 = newNode.buildTextSpanWithCursor(
-        SelectingNodeCursor(
-            0, RichTextNodePosition(0, 0), RichTextNodePosition(0, 5)),
-        2);
-    assert(newNode.text == spanText(selectingNode2));
-
-    final selectingNodes1 = newNode.buildTextSpanWithCursor(
-        SelectingNodesCursor(IndexWithPosition(0, RichTextNodePosition(0, 0)),
-            IndexWithPosition(3, RichTextNodePosition(0, 5))),
-        0);
-    assert(newNode.text == spanText(selectingNodes1));
-
-    final selectingNodes2 = newNode.buildTextSpanWithCursor(
-        SelectingNodesCursor(IndexWithPosition(0, RichTextNodePosition(0, 0)),
-            IndexWithPosition(3, RichTextNodePosition(0, 5))),
-        2);
-    assert(newNode.text == spanText(selectingNodes2));
-
-    final selectingNodes3 = newNode.buildTextSpanWithCursor(
-        SelectingNodesCursor(IndexWithPosition(0, RichTextNodePosition(0, 0)),
-            IndexWithPosition(3, RichTextNodePosition(0, 5))),
-        3);
-    assert(newNode.text == spanText(selectingNodes3));
-
-    final selectingNodes4 = newNode.buildTextSpanWithCursor(
-        SelectingNodesCursor(IndexWithPosition(0, RichTextNodePosition(0, 0)),
-            IndexWithPosition(3, RichTextNodePosition(0, 5))),
-        4);
-    assert(newNode.text == spanText(selectingNodes4));
   });
 
   test('merge', () {

@@ -42,7 +42,7 @@ abstract class HeadNode extends RichTextNode {
         left,
         RichTextNode.from(right.spans, id: right.id, depth: right.depth)
       ], right.beginPosition);
-    } else if (type == EventType.delete) {}
+    }
     return super.onSelect(data);
   }
 
@@ -51,19 +51,8 @@ abstract class HeadNode extends RichTextNode {
       super.buildTextSpan(style: TextStyle(fontSize: fontSize));
 
   @override
-  TextSpan buildTextSpanWithCursor(BasicCursor<NodePosition> cursor, int index,
-          {TextStyle? style}) =>
-      super.buildTextSpanWithCursor(cursor, index,
-          style: TextStyle(fontSize: fontSize));
-
-  @override
-  TextSpan selectingTextSpan(
-          RichTextNodePosition begin, RichTextNodePosition end,
-          {TextStyle? style}) =>
-      super.selectingTextSpan(begin, end, style: TextStyle(fontSize: fontSize));
-
-  @override
-  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(
+      NodeController controller, SingleNodePosition? position, dynamic extras) {
     return RichText(
       controller,
       this,
@@ -78,10 +67,7 @@ class H1Node extends HeadNode {
 
   @override
   H1Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      H1Node.from(spans, id: id, depth: depth ?? this.depth);
-
-  @override
-  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
+      H1Node.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 }
 
 class H2Node extends HeadNode {
@@ -89,10 +75,7 @@ class H2Node extends HeadNode {
 
   @override
   H2Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      H2Node.from(spans, id: id, depth: depth ?? this.depth);
-
-  @override
-  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
+      H2Node.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 }
 
 class H3Node extends HeadNode {
@@ -100,8 +83,5 @@ class H3Node extends HeadNode {
 
   @override
   H3Node from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      H3Node.from(spans, id: id, depth: depth ?? this.depth);
-
-  @override
-  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
+      H3Node.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 }
