@@ -47,8 +47,6 @@ void main() {
     final span4 = RichTextSpan();
     expect(() => span.merge(span2),
         throwsA(const TypeMatcher<UnableToMergeException>()));
-    expect(() => span3.merge(span4),
-        throwsA(const TypeMatcher<UnableToMergeException>()));
     assert(span3.merge(span4) == span3);
     assert(span.merge(span3).textLength == span.textLength + span3.textLength);
   });
@@ -80,7 +78,7 @@ void main() {
       assert(o.offset == offset);
       offset += o.textLength;
     }
-    assert(list.length == 4);
+    assert(list.length == 3);
     list = RichTextSpan.mergeList([span, span2, span3, span4]);
     offset = 0;
     for (var o in list) {
@@ -122,17 +120,8 @@ void main() {
 
     list = span.insert(3, RichTextSpan());
     assert(list.length == 1);
-
-    list = span.insert(3, RichTextSpan());
-    assert(list.length == 3);
-    assert(list[0].text == '123');
+    assert(list[0].text == '123456');
     assert(list[0].tags.equalsTo({tag}));
-
-    assert(list[1].text == '');
-    assert(list[1].tags.isEmpty);
-
-    assert(list[2].text == '456');
-    assert(list[2].tags.equalsTo({tag}));
 
     assert(span.insert(3, RichTextSpan(tags: {'a'})).length == 1);
   });

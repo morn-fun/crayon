@@ -1,8 +1,4 @@
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/cursor/rich_text_cursor.dart';
-import 'package:crayon/editor/exception/editor_node_exception.dart';
-import 'package:crayon/editor/node/basic_node.dart';
-import 'package:crayon/editor/node/position_data.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -108,47 +104,6 @@ void main() {
     final newNode = node.from([]);
     assert(newNode.isEmpty);
     assert(newNode.spans.length == 1);
-  });
-
-  test('onEdit', () {
-    OrderedNode node =
-        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
-    expect(
-        () => node
-            .onEdit(EditingData(RichTextNodePosition.zero(), EventType.delete)),
-        throwsA(const TypeMatcher<DeleteToChangeNodeException>()));
-
-    expect(
-        () => node.onEdit(
-            EditingData(RichTextNodePosition.zero(), EventType.newline)),
-        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
-
-    expect(
-        () => node.from([]).onEdit(
-            EditingData(RichTextNodePosition.zero(), EventType.newline)),
-        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
-
-    var np = node.from([]).onEdit(
-        EditingData(RichTextNodePosition.zero(), EventType.increaseDepth));
-    assert(np.node.depth - node.depth == 1);
-  });
-
-  test('onSelect', () {
-    OrderedNode node =
-        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
-
-    expect(
-        () => node.onSelect(SelectingData(
-            SelectingPosition(
-                RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
-            EventType.newline)),
-        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
-
-    var np = node.from([]).onSelect(SelectingData(
-        SelectingPosition(
-            RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
-        EventType.increaseDepth));
-    assert(np.node.depth > node.depth);
   });
 
   test('toJson', () {

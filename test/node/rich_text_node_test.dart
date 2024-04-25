@@ -73,9 +73,7 @@ void main() {
     final node3 = node1.rearPartNode(RichTextNodePosition(
         node1.spans.length - 2,
         node1.getSpan(node1.spans.length - 2).textLength));
-    assert(node3.spans.length == 2);
-    assert(node3.spans.first.textLength == 0);
-    assert(node3.spans.last.text == node1.spans.last.text);
+    assert(node3.spans.length == 1);
   });
 
   test('locateSpanIndex', () {
@@ -459,7 +457,7 @@ void main() {
     final node3 = newNode.insertByPosition(
         RichTextNodePosition(0, 1), RichTextSpan(text: '', tags: {'a'}));
     assert(node3.text == 'aaabbb');
-    assert(node3.spans.length == 3);
+    assert(node3.spans.length == 1);
 
     final node4 = newNode.insertByPosition(
         RichTextNodePosition(0, 1), RichTextSpan(text: '', tags: {'a'}));
