@@ -32,6 +32,19 @@ class NodeController {
     required this.onNodeChanged,
   });
 
+  static NodeController empty = NodeController(
+    onEditingPosition: (v) {},
+    onEditingOffsetChanged: (v) {},
+    onInputConnectionAttribute: (v) {},
+    onOverlayEntryShow: (s) {},
+    nodeGetter: (i) => throw Exception(),
+    entryManagerGetter: () => EntryManager((status) => null),
+    onPanUpdatePosition: (v) {},
+    cursorGenerator: (p) => p.toCursor(0),
+    listeners: ListenerCollection(),
+    onNodeChanged: (n) {},
+  );
+
   void notifyEditingPosition(NodePosition position) =>
       onEditingPosition.call(position);
 

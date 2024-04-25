@@ -123,7 +123,7 @@ void main() {
     list = span.insert(3, RichTextSpan());
     assert(list.length == 1);
 
-    list = span.insert(3, RichTextSpan(), trim: false);
+    list = span.insert(3, RichTextSpan());
     assert(list.length == 3);
     assert(list[0].text == '123');
     assert(list[0].tags.equalsTo({tag}));
@@ -134,7 +134,6 @@ void main() {
     assert(list[2].text == '456');
     assert(list[2].tags.equalsTo({tag}));
 
-    assert(span.insert(3, RichTextSpan(tags: {'a'}), trim: false).length == 3);
     assert(span.insert(3, RichTextSpan(tags: {'a'})).length == 1);
   });
 

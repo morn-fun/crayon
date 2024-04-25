@@ -125,7 +125,7 @@ class RichTextNode extends EditorNode {
 
   @override
   Map<String, dynamic> toJson() =>
-      {'type': runtimeType, 'nodes': spans.map((e) => e.toJson()).toList()};
+      {'type': '$runtimeType', 'nodes': spans.map((e) => e.toJson()).toList()};
 
   @override
   String get text => spans.map((e) => e.text).join('');

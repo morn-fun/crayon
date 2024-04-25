@@ -50,21 +50,6 @@ class OrderedNode extends RichTextNode {
   }
 
   @override
-  RichTextNode getFromPosition(
-      covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
-      {String? newId, bool trim = false}) {
-    if (begin == end) {
-      if (begin != beginPosition && end == endPosition) {
-        return from([], id: newId ?? id);
-      } else if (begin == beginPosition && end != endPosition) {
-        return from([], id: newId ?? id);
-      }
-      return super.getFromPosition(begin, end, newId: newId ?? id);
-    }
-    return super.getFromPosition(begin, end, newId: newId ?? id);
-  }
-
-  @override
   Widget build(
       NodeController controller, SingleNodePosition? position, dynamic extras) {
     final size = 14.0;
@@ -98,9 +83,6 @@ class OrderedNode extends RichTextNode {
       return getIndex(lastIndex, controller) + 1;
     }
   }
-
-  @override
-  Map<String, dynamic> toJson() => {...super.toJson(), 'type': runtimeType};
 }
 
 String generateOrderedNumber(int index, int depth) {

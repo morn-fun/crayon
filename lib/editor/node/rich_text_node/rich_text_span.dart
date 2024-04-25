@@ -86,7 +86,7 @@ class RichTextSpan extends SpanNode {
     return result;
   }
 
-  List<RichTextSpan> insert(int offset, RichTextSpan span, {bool trim = true}) {
+  List<RichTextSpan> insert(int offset, RichTextSpan span) {
     List<RichTextSpan> list = [];
     if (text.substring(0, offset).isNotEmpty) {
       list.add(copy(text: (t) => t.substring(0, offset)));

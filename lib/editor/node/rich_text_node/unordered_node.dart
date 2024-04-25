@@ -53,7 +53,7 @@ class UnorderedNode extends RichTextNode {
   @override
   RichTextNode getFromPosition(
       covariant RichTextNodePosition begin, covariant RichTextNodePosition end,
-      {String? newId, bool trim = false}) {
+      {String? newId}) {
     if (begin == end) {
       if (begin != beginPosition && end == endPosition) {
         return from([], id: newId ?? id);

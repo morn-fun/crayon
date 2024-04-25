@@ -1,5 +1,14 @@
+import 'package:crayon/editor/core/node_controller.dart';
+import 'package:crayon/editor/cursor/rich_text_cursor.dart';
+import 'package:crayon/editor/exception/editor_node_exception.dart';
+import 'package:crayon/editor/node/basic_node.dart';
+import 'package:crayon/editor/node/position_data.dart';
+import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
+
+import 'config/const_texts.dart';
 
 void main() {
   test('test pre text RegExp', () {
@@ -79,5 +88,102 @@ void main() {
     assert(generateOrderedNumber(78, 2) == 'bz');
     assert(generateOrderedNumber(1, 5) == 'a');
     assert(generateOrderedNumber(78, 5) == 'bz');
+
+    expect(() => generateOrderedNumber(-1, 1),
+        throwsA(const TypeMatcher<Exception>()));
+    expect(() => generateOrderedNumber(-1, 2),
+        throwsA(const TypeMatcher<Exception>()));
+  });
+
+  test('from', () {
+    OrderedNode node =
+        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+    assert(node.spans.length == constTexts.length);
+    for (var i = 0; i < node.spans.length; ++i) {
+      final span = node.spans[i];
+      final text = constTexts[i];
+      assert(span.text == text);
+    }
+
+    final newNode = node.from([]);
+    assert(newNode.isEmpty);
+    assert(newNode.spans.length == 1);
+  });
+
+  test('onEdit', () {
+    OrderedNode node =
+        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+    expect(
+        () => node
+            .onEdit(EditingData(RichTextNodePosition.zero(), EventType.delete)),
+        throwsA(const TypeMatcher<DeleteToChangeNodeException>()));
+
+    expect(
+        () => node.onEdit(
+            EditingData(RichTextNodePosition.zero(), EventType.newline)),
+        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
+
+    expect(
+        () => node.from([]).onEdit(
+            EditingData(RichTextNodePosition.zero(), EventType.newline)),
+        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
+
+    var np = node.from([]).onEdit(
+        EditingData(RichTextNodePosition.zero(), EventType.increaseDepth));
+    assert(np.node.depth - node.depth == 1);
+  });
+
+  test('onSelect', () {
+    OrderedNode node =
+        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingPosition(
+                RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
+            EventType.newline)),
+        throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
+
+    var np = node.from([]).onSelect(SelectingData(
+        SelectingPosition(
+            RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
+        EventType.increaseDepth));
+    assert(np.node.depth > node.depth);
+  });
+
+  test('toJson', () {
+    OrderedNode node =
+        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+    final json = node.toJson();
+    assert(json['type'] == 'OrderedNode');
+  });
+
+  testWidgets('build', (tester) async {
+    OrderedNode node =
+        OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+
+    var widget = node.build(NodeController.empty, null, 0);
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: widget,
+    ));
+
+    widget = node.build(
+        NodeController.empty.copy(nodeGetter: (i) => node.from([], depth: 0)),
+        null,
+        1);
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: widget,
+    ));
+
+    widget = node.build(
+        NodeController.empty.copy(nodeGetter: (i) => node.from([], depth: 2)),
+        null,
+        3);
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: widget,
+    ));
   });
 }

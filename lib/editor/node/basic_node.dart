@@ -100,7 +100,6 @@ class SelectingData<T extends NodePosition> {
 enum EventType {
   typing,
   delete,
-  enter,
   increaseDepth,
   decreaseDepth,
   selectAll,

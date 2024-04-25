@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/core/node_controller.dart';
 import 'package:crayon/editor/cursor/basic_cursor.dart';
 import 'package:crayon/editor/cursor/rich_text_cursor.dart';
@@ -9,29 +8,16 @@ import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
 import 'package:crayon/editor/widget/nodes/rich_text.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/core/entry_manager.dart';
 import 'package:crayon/editor/exception/editor_node_exception.dart';
 import 'package:crayon/editor/node/basic_node.dart';
 import 'package:crayon/editor/node/position_data.dart';
 
+import 'config/const_texts.dart';
 import 'config/test_editor_node.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 
 void main() {
-  const constTexts = [
-    'Thank you - 谢谢',
-    'How are you? - 你好吗？',
-    'I love you - 我爱你',
-    'What\'s your name? - 你叫什么名字？',
-    'Where are you from? - 你从哪里来？',
-    'Excuse me - 对不起 / 不好意思',
-    'How much is it? - 多少钱？',
-    'I\'m sorry - 对不起',
-    'Good morning - 早上好',
-    'I don\'t understand - 我不懂',
-  ];
-
   RichTextNode basicNode({List<String>? texts, SpanGenerator? generator}) {
     final spans = <RichTextSpan>[];
     for (var text in (texts ?? constTexts)) {
@@ -453,27 +439,8 @@ void main() {
 
   test('build', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
-    // final controller = RichEditorController.fromNodes([newNode]);
-    // final inputManager = InputManager(
-    //     controller: controller,
-    //     onCommand: (v) {},
-    //     focusCall: () {},
-    //     onEntryStatus: (s) {});
-    final widget = newNode.build(
-        NodeController(
-          onEditingPosition: (v) {},
-          onEditingOffsetChanged: (v) {},
-          onInputConnectionAttribute: (v) {},
-          onOverlayEntryShow: (s) {},
-          nodeGetter: (i) => throw Exception(),
-          entryManagerGetter: () => EntryManager((status) => null),
-          onPanUpdatePosition: (v) {},
-          cursorGenerator: (p) => p.toCursor(0),
-          listeners: ListenerCollection(),
-          onNodeChanged: (n) {},
-        ),
-        EditingPosition(RichTextNodePosition(0, 0)),
-        null);
+    final widget = newNode.build(NodeController.empty,
+        EditingPosition(RichTextNodePosition(0, 0)), null);
     assert(widget is RichText);
   });
 
