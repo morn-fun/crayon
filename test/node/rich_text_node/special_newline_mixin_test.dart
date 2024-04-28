@@ -3,7 +3,7 @@ import 'package:crayon/editor/exception/editor_node_exception.dart';
 import 'package:crayon/editor/node/basic_node.dart';
 import 'package:crayon/editor/node/position_data.dart';
 import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
-import 'package:crayon/editor/node/rich_text_node/ordered_unordered_mixin.dart';
+import 'package:crayon/editor/node/rich_text_node/special_newline_mixin.dart';
 import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
 import 'package:crayon/editor/node/rich_text_node/unordered_node.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +12,7 @@ import '../config/const_texts.dart';
 
 void main() {
   test('onEdit', () {
-    OrderedUnorderedMixin node =
+    SpecialNewlineMixin node =
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
         () => node
@@ -57,7 +57,7 @@ void main() {
   });
 
   test('onSelect', () {
-    OrderedUnorderedMixin node =
+    SpecialNewlineMixin node =
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
 
     expect(

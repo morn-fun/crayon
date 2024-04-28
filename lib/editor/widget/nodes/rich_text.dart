@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../../../../editor/extension/render_box_extension.dart';
 import '../../core/entry_manager.dart';
@@ -298,79 +300,82 @@ class _RichTextState extends State<RichText> {
         }
         return CompositedTransformTarget(
           link: layerLink,
-          child: SizedBox(
-            key: key,
-            height: painter.height,
-            width: painter.width,
-            child: Stack(
-              children: [
-                ValueListenableBuilder(
-                    valueListenable: nodeChangedNotifier,
-                    builder: (ctx, v, c) =>
-                        Stack(children: painter.buildInlineCodes(v))),
-                SizedBox(
-                  height: painter.height,
-                  width: painter.width,
-                  // child: RichText(text: textSpan),
-                  child: CustomPaint(painter: RichTextPainter(painter)),
-                ),
-                ValueListenableBuilder(
-                    valueListenable: editingCursorNotifier,
-                    builder: (ctx, v, c) {
-                      if (v == null) return Container();
-                      final offset =
-                          painter.getOffsetFromTextOffset(node.getOffset(v));
-                      final textPosition =
-                          TextPosition(offset: node.getOffset(v));
-                      final h = painter.getFullHeightForCaret(
-                              textPosition, Rect.zero) ??
-                          widget.fontSize;
-                      return Positioned(
-                        left: offset.dx,
-                        top: offset.dy,
-                        child: EditingCursorWidget(
-                          cursorColor: Colors.black,
-                          cursorHeight: h,
-                        ),
-                      );
-                    }),
-                ValueListenableBuilder(
-                    valueListenable: selectingCursorNotifier,
-                    builder: (ctx, v, c) {
-                      if (v == null) return Container();
-                      final left = v.left;
-                      final right = v.right;
-                      if (left is! RichTextNodePosition ||
-                          right is! RichTextNodePosition) {
-                        return Container();
-                      }
-                      final begin = node.getOffset(left);
-                      final end = node.getOffset(right);
-                      return Stack(
-                          children: painter.buildSelectedAreas(begin, end));
-                    }),
-                ValueListenableBuilder(
-                    valueListenable: nodeChangedNotifier,
-                    builder: (ctx, v, c) {
-                      return Stack(
-                          children:
-                              painter.buildLinkGestures(v, onEnter: (o, s, p) {
-                        final url = s.attributes['url'] ?? '';
-                        controller.updateEntryStatus(EntryStatus.idle);
-                        confirmToShowLinkMenu(o, url, p);
-                      }, onExit: (e) {
-                        Future.delayed(Duration(milliseconds: 200), () {
-                          if (controller.entryStatus ==
-                                  EntryStatus.showingLinkMenu &&
-                              mounted) {
-                            controller.entryManager.hideMenu();
-                          }
-                        });
-                      }, onTap: (s) {
-                        logger.i('$tag,  tapped:${s.text}');
-                      }));
-                    }),
-              ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: SizedBox(
+              key: key,
+              height: max(painter.height, widget.fontSize),
+              width: painter.width,
+              child: Stack(
+                children: [
+                  ValueListenableBuilder(
+                      valueListenable: nodeChangedNotifier,
+                      builder: (ctx, v, c) =>
+                          Stack(children: painter.buildInlineCodes(v))),
+                  SizedBox(
+                    height: painter.height,
+                    width: painter.width,
+                    // child: RichText(text: textSpan),
+                    child: CustomPaint(painter: RichTextPainter(painter)),
+                  ),
+                  ValueListenableBuilder(
+                      valueListenable: editingCursorNotifier,
+                      builder: (ctx, v, c) {
+                        if (v == null) return Container();
+                        final offset =
+                            painter.getOffsetFromTextOffset(node.getOffset(v));
+                        final textPosition =
+                            TextPosition(offset: node.getOffset(v));
+                        final h = painter.getFullHeightForCaret(
+                                textPosition, Rect.zero) ??
+                            widget.fontSize;
+                        return Positioned(
+                          left: offset.dx,
+                          top: offset.dy,
+                          child: EditingCursorWidget(
+                            cursorColor: Colors.black,
+                            cursorHeight: h,
+                          ),
+                        );
+                      }),
+                  ValueListenableBuilder(
+                      valueListenable: selectingCursorNotifier,
+                      builder: (ctx, v, c) {
+                        if (v == null) return Container();
+                        final left = v.left;
+                        final right = v.right;
+                        if (left is! RichTextNodePosition ||
+                            right is! RichTextNodePosition) {
+                          return Container();
+                        }
+                        final begin = node.getOffset(left);
+                        final end = node.getOffset(right);
+                        return Stack(
+                            children: painter.buildSelectedAreas(begin, end));
+                      }),
+                  ValueListenableBuilder(
+                      valueListenable: nodeChangedNotifier,
+                      builder: (ctx, v, c) {
+                        return Stack(
+                            children:
+                                painter.buildLinkGestures(v, onEnter: (o, s, p) {
+                          final url = s.attributes['url'] ?? '';
+                          controller.updateEntryStatus(EntryStatus.idle);
+                          confirmToShowLinkMenu(o, url, p);
+                        }, onExit: (e) {
+                          Future.delayed(Duration(milliseconds: 200), () {
+                            if (controller.entryStatus ==
+                                    EntryStatus.showingLinkMenu &&
+                                mounted) {
+                              controller.entryManager.hideMenu();
+                            }
+                          });
+                        }, onTap: (s) {
+                          logger.i('$tag,  tapped:${s.text}');
+                        }));
+                      }),
+                ],
+              ),
             ),
           ),
         );

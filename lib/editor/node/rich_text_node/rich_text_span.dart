@@ -42,20 +42,8 @@ class RichTextSpan extends SpanNode {
   int get endOffset => offset + textLength;
 
   @override
-  InlineSpan buildSpan() => TextSpan(text: text, style: buildStyle());
-
-  List<InlineSpan> buildSelectingSpan(int begin, int end) {
-    assert(begin <= end);
-    return [
-      if (begin != 0)
-        TextSpan(text: text.substring(0, begin), style: buildStyle()),
-      TextSpan(
-          text: text.substring(begin, end),
-          style: buildStyle().copyWith(backgroundColor: Colors.blue)),
-      if (end != textLength)
-        TextSpan(text: text.substring(end, textLength), style: buildStyle()),
-    ];
-  }
+  InlineSpan buildSpan({TextStyle? style}) =>
+      TextSpan(text: text, style: buildStyle(style: style));
 
   RichTextSpan merge(RichTextSpan other) {
     if (other.isEmpty) return this;
@@ -98,8 +86,8 @@ class RichTextSpan extends SpanNode {
     return mergeList(list);
   }
 
-  TextStyle buildStyle() {
-    var style = const TextStyle(color: Colors.black);
+  TextStyle buildStyle({TextStyle? style}) {
+    var newStyle = style ?? const TextStyle(color: Colors.black);
     Set<TextDecoration> decorations = {};
     for (final tag in tags) {
       final s = tag2Style[tag];
@@ -107,9 +95,12 @@ class RichTextSpan extends SpanNode {
       if (decoration != null) {
         decorations.add(decoration);
       }
-      style = style.merge(s);
+      newStyle = newStyle.merge(s);
     }
-    return style.copyWith(
+    if (newStyle.decoration != null) {
+      decorations.add(newStyle.decoration!);
+    }
+    return newStyle.copyWith(
         decoration: TextDecoration.combine(decorations.toList()));
   }
 

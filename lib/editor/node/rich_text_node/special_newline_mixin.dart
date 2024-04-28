@@ -3,7 +3,7 @@ import '../../exception/editor_node_exception.dart';
 import '../basic_node.dart';
 import 'rich_text_node.dart';
 
-mixin OrderedUnorderedMixin on RichTextNode {
+mixin SpecialNewlineMixin on RichTextNode {
   @override
   NodeWithPosition onEdit(EditingData data) {
     final d = data.as<RichTextNodePosition>();

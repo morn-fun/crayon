@@ -44,6 +44,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   double minExtent = 0;
   bool isDealingWithOffset = false;
   bool isInPanGesture = false;
+  bool needTapDownWhilePanGesture = false;
+  Offset panOffset = Offset.zero;
   final tag = 'AutoScrollEditorList';
   late BasicCursor cursor = editorContext.cursor;
 
@@ -135,8 +137,6 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   @override
   Widget build(BuildContext context) {
     final nodes = controller.nodes;
-    bool needTapDownWhilePanGesture = false;
-    Offset panOffset = Offset.zero;
     return GestureDetector(
       key: key,
       behavior: HitTestBehavior.deferToChild,
@@ -153,8 +153,10 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       onPanEnd: (d) {
         isInPanGesture = false;
         // logger.i('onPanEnd:$d');
-        controller
-            .notifyGesture(GestureState(GestureType.panUpdate, panOffset));
+        if(d.velocity != Velocity.zero){
+          controller
+              .notifyGesture(GestureState(GestureType.panUpdate, panOffset));
+        }
       },
       onPanDown: (d) {
         // logger.i('onPanDown:$d');
@@ -206,8 +208,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                 final current = nodes[index];
                 return Container(
                   key: ValueKey(current.id),
-                  padding: EdgeInsets.only(
-                      left: current.depth * 12, top: 4, bottom: 4, right: 4),
+                  padding: EdgeInsets.only(left: current.depth * 12, right: 4),
                   child: StatefulLifecycleWidget(
                     onInit: () {
                       addIndex(index, current.id);

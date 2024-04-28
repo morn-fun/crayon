@@ -46,7 +46,7 @@ NodeWithPosition typingWhileEditing(
 NodeWithPosition typingWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
-  final newNode = node.replace(p.left, p.right, [], newLine: false);
+  final newNode = node.replace(p.left, p.right, []);
   return typingWhileEditing(
       EditingData(p.left, EventType.typing, extras: data.extras), newNode);
 }

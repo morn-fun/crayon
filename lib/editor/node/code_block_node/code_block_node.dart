@@ -56,6 +56,10 @@ class CodeBlockNode extends EditorNode {
       getFromPosition(beginPosition, end, newId: newId);
 
   @override
+  EditorNode rearPartNode(covariant CodeBlockPosition begin, {String? newId}) =>
+      getFromPosition(begin, endPosition, newId: newId);
+
+  @override
   EditorNode getFromPosition(
       covariant CodeBlockPosition begin, covariant CodeBlockPosition end,
       {String? newId}) {
@@ -91,7 +95,7 @@ class CodeBlockNode extends EditorNode {
 
   CodeBlockNode replace(
       CodeBlockPosition begin, CodeBlockPosition end, List<String> codes,
-      {String? newId, bool newLine = true}) {
+      {String? newId}) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
 
@@ -109,16 +113,11 @@ class CodeBlockNode extends EditorNode {
       copyCodes.removeRange(leftIndex, rightIndex + 1);
     }
     final newCodes = List.of(codes);
-    if (newLine) {
-      newCodes.add(rightCode);
-      newCodes.insert(0, leftCode);
+    if (newCodes.isEmpty) {
+      newCodes.add(leftCode + rightCode);
     } else {
-      if (newCodes.isEmpty) {
-        newCodes.add(leftCode + rightCode);
-      } else {
-        newCodes[0] = leftCode + newCodes.first;
-        newCodes[newCodes.length - 1] = newCodes.last + rightCode;
-      }
+      newCodes[0] = leftCode + newCodes.first;
+      newCodes[newCodes.length - 1] = newCodes.last + rightCode;
     }
     copyCodes.insertAll(leftIndex, newCodes);
     return from(copyCodes, id: newId);
@@ -136,8 +135,7 @@ class CodeBlockNode extends EditorNode {
       oldCodes.addAll(newCodes);
       return from(oldCodes, id: newId);
     } else {
-      throw UnableToMergeException(
-          runtimeType.toString(), other.runtimeType.toString());
+      throw UnableToMergeException('$runtimeType', '${other.runtimeType}');
     }
   }
 
@@ -215,10 +213,6 @@ class CodeBlockNode extends EditorNode {
     }
     return generator.call(data.as<CodeBlockPosition>(), this);
   }
-
-  @override
-  EditorNode rearPartNode(covariant CodeBlockPosition begin, {String? newId}) =>
-      getFromPosition(begin, endPosition, newId: newId);
 
   @override
   String get text => codes.join('\n');

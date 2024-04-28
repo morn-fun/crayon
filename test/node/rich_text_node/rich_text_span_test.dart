@@ -27,17 +27,6 @@ void main() {
     }
   });
 
-  test('buildSelectingSpan', () {
-    final span = RichTextSpan(
-        text: '123456', offset: 0, tags: {RichTextTag.lineThrough.name});
-    final spans1 = span.buildSelectingSpan(0, 1);
-    assert(spans1.length == 2);
-    final spans2 = span.buildSelectingSpan(3, 6);
-    assert(spans2.length == 2);
-    final spans3 = span.buildSelectingSpan(2, 4);
-    assert(spans3.length == 3);
-  });
-
   test('merge', () {
     final span =
         RichTextSpan(text: '123', offset: 0, tags: {RichTextTag.italic.name});

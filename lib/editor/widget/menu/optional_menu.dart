@@ -12,7 +12,9 @@ import '../../node/basic_node.dart';
 import '../../node/code_block_node/code_block_node.dart';
 import '../../node/rich_text_node/head_node.dart';
 import '../../node/rich_text_node/ordered_node.dart';
+import '../../node/rich_text_node/quote_node.dart';
 import '../../node/rich_text_node/rich_text_node.dart';
+import '../../node/rich_text_node/todo_node.dart';
 import '../../node/rich_text_node/unordered_node.dart';
 
 ///TODO:auto scroll with arrow
@@ -284,15 +286,19 @@ final defaultMenus = [
       (n) => [UnorderedNode.from(n.spans, id: n.id, depth: n.depth)]),
   MenuItemInfo.normal('代码块', Icons.code, _codeColor,
       (n) => [CodeBlockNode.from([], id: n.id, depth: n.depth)]),
-  MenuItemInfo.normal('引用', Icons.question_mark_rounded, Colors.red, null),
+  MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
+      (n) => [QuoteNode.from([], id: n.id, depth: n.depth)]),
   MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
   MenuItemInfo.normal('链接', Icons.question_mark_rounded, Colors.red, null),
+  MenuItemInfo.readable('常用'),
+  MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
+      (n) => [TodoNode.from([], id: n.id, depth: n.depth)]),
 ];
 
 const _textColor = Colors.brown;
 const _codeColor = Colors.cyan;
 // const _linkColor = Colors.blue;
-// const _quoteColor = Colors.yellow;
+const _quoteColor = Colors.yellow;
 
 class MenuItemInfo {
   final String text;

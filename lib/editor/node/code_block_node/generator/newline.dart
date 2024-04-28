@@ -23,27 +23,8 @@ NodeWithPosition newlineWhileEditing(
 NodeWithPosition newlineWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
-  final left = p.left;
-  final right = p.right;
-
-  final copyCodes = List.of(node.codes);
-  final leftIndex = left.index;
-  final rightIndex = right.index;
-  var leftCode = copyCodes[leftIndex];
-  var rightCode = copyCodes[rightIndex];
-  leftCode = leftCode.substring(0, left.offset);
-  rightCode = rightCode.substring(right.offset);
-  final tab = getTab(leftCode);
-  if (leftIndex == rightIndex) {
-    copyCodes.removeAt(leftIndex);
-  } else {
-    copyCodes.removeRange(leftIndex, rightIndex + 1);
-  }
-  final newCodes = [leftCode, tab + rightCode];
-  copyCodes.insertAll(leftIndex, newCodes);
-  final newNode = node.from(copyCodes);
-  final newPosition = CodeBlockPosition(p.left.index + 1, tab.length);
-  return NodeWithPosition(newNode, EditingPosition(newPosition));
+  final newNode = node.replace(p.left, p.right, []);
+  return newlineWhileEditing(EditingData(p.left, EventType.newline), newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

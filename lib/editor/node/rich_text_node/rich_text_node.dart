@@ -35,12 +35,9 @@ class RichTextNode extends EditorNode {
     return UnmodifiableListView(spans);
   }
 
-  TextSpan buildTextSpan({TextStyle? style}) {
-    return TextSpan(
-        children:
-            List.generate(spans.length, (index) => spans[index].buildSpan()),
-        style: style);
-  }
+  TextSpan buildTextSpan() => TextSpan(
+      children:
+          List.generate(spans.length, (index) => spans[index].buildSpan()));
 
   @override
   RichTextNode frontPartNode(covariant RichTextNodePosition end,
@@ -388,5 +385,5 @@ typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
     SelectingData<RichTextNodePosition> data, RichTextNode node);
 
 abstract class SpanNode {
-  InlineSpan buildSpan();
+  InlineSpan buildSpan({TextStyle? style});
 }

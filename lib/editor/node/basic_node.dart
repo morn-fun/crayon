@@ -15,7 +15,8 @@ abstract class EditorNode {
 
   Map<String, dynamic> toJson();
 
-  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras);
+  Widget build(
+      NodeController controller, SingleNodePosition? position, dynamic extras);
 
   /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
   EditorNode frontPartNode(NodePosition end, {String? newId});
@@ -23,15 +24,15 @@ abstract class EditorNode {
   /// if the [begin] position is same to [endPosition], you should return a empty RichTextNode
   EditorNode rearPartNode(NodePosition begin, {String? newId});
 
+  EditorNode getFromPosition(NodePosition begin, NodePosition end,
+      {String? newId});
+
   NodeWithPosition onEdit(EditingData data);
 
   NodeWithPosition onSelect(SelectingData data);
 
   /// if cannot merge, this function will throw an exception [UnableToMergeException]
   EditorNode merge(EditorNode other, {String? newId});
-
-  EditorNode getFromPosition(NodePosition begin, NodePosition end,
-      {String? newId});
 
   List<EditorNode> getInlineNodesFromPosition(
       NodePosition begin, NodePosition end);
@@ -50,7 +51,6 @@ abstract class EditorNode {
 String get randomNodeId => _uuid.v1();
 
 const _uuid = Uuid();
-
 
 class NodeWithPosition<T extends NodePosition> {
   final EditorNode node;

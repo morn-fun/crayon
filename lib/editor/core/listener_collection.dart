@@ -187,6 +187,11 @@ class GestureState {
   final Offset globalOffset;
 
   GestureState(this.type, this.globalOffset);
+
+  @override
+  String toString() {
+    return 'GestureState{type: $type, globalOffset: $globalOffset}';
+  }
 }
 
 enum GestureType { tap, panUpdate, hover }

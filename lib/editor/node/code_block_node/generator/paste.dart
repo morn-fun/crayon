@@ -32,7 +32,7 @@ NodeWithPosition pasteWhileSelecting(
   final nodes = data.extras;
   final p = data.position;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
-    final newNode = node.replace(p.left, p.right, [], newLine: false);
+    final newNode = node.replace(p.left, p.right, []);
     return NodeWithPosition(newNode, EditingPosition(p.left));
   }
   final newCodes = nodes.map((e) => e.text).toList();
@@ -40,6 +40,6 @@ NodeWithPosition pasteWhileSelecting(
   final lastCodeLength = newCodes.last.length;
   final newPosition = CodeBlockPosition(p.left.index + newCodes.length - 1,
       oneLine ? p.left.offset + lastCodeLength : lastCodeLength);
-  final newNode = node.replace(p.left, p.right, newCodes, newLine: false);
+  final newNode = node.replace(p.left, p.right, newCodes);
   return NodeWithPosition(newNode, EditingPosition(newPosition));
 }

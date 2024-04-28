@@ -7,7 +7,9 @@ import '../../basic_node.dart';
 import '../../position_data.dart';
 import '../head_node.dart';
 import '../ordered_node.dart';
+import '../quote_node.dart';
 import '../rich_text_node.dart';
+import '../todo_node.dart';
 import '../unordered_node.dart';
 
 NodeWithPosition typingRichTextNodeWhileEditing(
@@ -105,4 +107,7 @@ final Map<String, RichTextNodeGenerator> _string2generator = {
   '#': (n) => H1Node.from(n.spans, id: n.id, depth: n.depth),
   '##': (n) => H2Node.from(n.spans, id: n.id, depth: n.depth),
   '###': (n) => H3Node.from(n.spans, id: n.id, depth: n.depth),
+  '>': (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth),
+  '[ ]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth),
+  '[x]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth, done: true),
 };

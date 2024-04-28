@@ -2,16 +2,16 @@ import 'package:flutter/material.dart' hide RichText;
 import '../../core/node_controller.dart';
 import '../../widget/nodes/rich_text.dart';
 import '../position_data.dart';
-import 'ordered_unordered_mixin.dart';
+import 'special_newline_mixin.dart';
 import 'rich_text_node.dart';
 import 'rich_text_span.dart';
 
-class OrderedNode extends RichTextNode with OrderedUnorderedMixin {
+class OrderedNode extends RichTextNode with SpecialNewlineMixin {
   OrderedNode.from(super.spans, {super.id, super.depth}) : super.from();
 
   @override
   RichTextNode from(List<RichTextSpan> spans, {String? id, int? depth}) =>
-      OrderedNode.from(spans, id: id, depth: depth ?? this.depth);
+      OrderedNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
   Widget build(
