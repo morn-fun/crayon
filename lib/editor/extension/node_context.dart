@@ -1,10 +1,11 @@
-import '../core/editor_controller.dart';
+import 'package:crayon/editor/core/context.dart';
+
 import '../cursor/basic.dart';
 import '../node/basic.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 
-extension RichEditorControllerExtension on RichEditorController {
+extension NodeContextExtension on NodeContext {
   List<EditorNode> listNeedRefreshDepth(int startIndex, int startDepth) {
     final newList = <EditorNode>[];
     int index = startIndex + 1;

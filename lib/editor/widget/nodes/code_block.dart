@@ -10,7 +10,7 @@ import '../../core/logger.dart';
 import '../../core/node_controller.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
-import '../../node/code_block/code_block_node.dart';
+import '../../node/code_block/code_block.dart';
 import '../../cursor/node_position.dart';
 
 import '../../shortcuts/arrows/arrows.dart';

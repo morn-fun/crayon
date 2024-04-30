@@ -9,23 +9,26 @@ import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/rich_text.dart';
 import '../../node/basic.dart';
-import '../../node/code_block/code_block_node.dart';
-import '../../node/rich_text/head_node.dart';
-import '../../node/rich_text/ordered_node.dart';
-import '../../node/rich_text/quote_node.dart';
-import '../../node/rich_text/rich_text_node.dart';
-import '../../node/rich_text/todo_node.dart';
-import '../../node/rich_text/unordered_node.dart';
+import '../../node/code_block/code_block.dart';
+import '../../node/rich_text/head.dart';
+import '../../node/rich_text/ordered.dart';
+import '../../node/rich_text/quote.dart';
+import '../../node/rich_text/rich_text.dart';
+import '../../node/rich_text/task.dart';
+import '../../node/rich_text/unordered.dart';
+import '../../node/table/table.dart';
 
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final Offset offset;
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
+  final ListenerCollection listeners;
 
   const OptionalMenu({
     super.key,
     required this.offset,
-    required this.editorContext,
+    required this.nodeContext,
+    required this.listeners,
   });
 
   @override
@@ -35,11 +38,9 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   Offset get offset => widget.offset;
 
-  EditorContext get editorContext => widget.editorContext;
+  NodeContext get nodeContext => widget.nodeContext;
 
-  RichEditorController get controller => editorContext.controller;
-
-  ListenerCollection get listeners => controller.listeners;
+  ListenerCollection get listeners => widget.listeners;
 
   final ValueNotifier<int> currentIndex = ValueNotifier(1);
   bool isCheckingText = false;
@@ -50,8 +51,8 @@ class _OptionalMenuState extends State<OptionalMenu> {
 
   @override
   void initState() {
-    final cursor = controller.cursor as EditingCursor;
-    nodeId = controller.getNode(cursor.index).id;
+    final cursor = nodeContext.cursor as EditingCursor;
+    nodeId = nodeContext.getNode(cursor.index).id;
     listeners.addCursorChangedListener(_onCursorChanged);
     listeners.addNodeChangedListener(nodeId, _onNodeChanged);
     listeners.addOptionalMenuListener(_onOptionalMenuSelected);
@@ -72,15 +73,15 @@ class _OptionalMenuState extends State<OptionalMenu> {
       hideMenu();
       return;
     }
-    final node = controller.getNode(cursor.index);
+    final node = nodeContext.getNode(cursor.index);
     if (node.id != nodeId) return;
     checkText(node, cursor);
   }
 
-  void hideMenu() => editorContext.hideMenu();
+  void hideMenu() => nodeContext.hideMenu();
 
   void _onNodeChanged(EditorNode node) {
-    final cursor = controller.cursor;
+    final cursor = nodeContext.cursor;
     if (cursor is! EditingCursor) return;
     checkText(node, cursor);
   }
@@ -124,9 +125,9 @@ class _OptionalMenuState extends State<OptionalMenu> {
 
   void _onItemSelected(MenuItemInfo current) {
     hideMenu();
-    final cursor = controller.cursor;
+    final cursor = nodeContext.cursor;
     if (cursor is! EditingCursor) return;
-    final node = controller.getNode(cursor.index);
+    final node = nodeContext.getNode(cursor.index);
     if (node.id != nodeId) return;
     if (node is! RichTextNode) return;
     if (current.generator == null) return;
@@ -134,7 +135,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     ///TODO:avoid hardcode here
     final nodes = current.generator!
         .call(node.rearPartNode(cursor.position as RichTextNodePosition));
-    editorContext.execute(ReplaceNode(Replace(
+    nodeContext.execute(ReplaceNode(Replace(
       cursor.index,
       cursor.index + 1,
       nodes,
@@ -289,15 +290,17 @@ final defaultMenus = [
   MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
       (n) => [QuoteNode.from([], id: n.id, depth: n.depth)]),
   MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
-  MenuItemInfo.normal('链接', Icons.question_mark_rounded, Colors.red, null),
+  MenuItemInfo.normal('链接', Icons.question_mark_rounded, _linkColor, null),
   MenuItemInfo.readable('常用'),
   MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
       (n) => [TodoNode.from([], id: n.id, depth: n.depth)]),
+  MenuItemInfo.normal('表格', Icons.table_chart_rounded, _textColor,
+      (n) => [TableNode.from([], [], id: n.id, depth: n.depth)]),
 ];
 
 const _textColor = Colors.brown;
 const _codeColor = Colors.cyan;
-// const _linkColor = Colors.blue;
+const _linkColor = Colors.blue;
 const _quoteColor = Colors.yellow;
 
 class MenuItemInfo {

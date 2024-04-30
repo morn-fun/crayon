@@ -29,7 +29,11 @@ class EntryManager {
     if (_status != EntryStatus.readyToShowingOptionalMenu) return;
     removeEntry();
     showingEntry = OverlayEntry(
-        builder: (_) => OptionalMenu(offset: offset, editorContext: context));
+        builder: (_) => OptionalMenu(
+              offset: offset,
+              nodeContext: context,
+              listeners: context.listeners,
+            ));
     state.insert(showingEntry!);
     updateStatus(EntryStatus.showingOptionalMenu);
   }
@@ -45,7 +49,7 @@ class EntryManager {
     removeEntry();
     showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: TextMenu(context, info, link),
+              child: TextMenu(context, info, link, context.listeners),
               showWhenUnlinked: false,
               link: link,
             ));

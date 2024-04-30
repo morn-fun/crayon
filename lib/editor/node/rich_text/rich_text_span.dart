@@ -5,7 +5,7 @@ import '../../../editor/extension/collection.dart';
 
 import '../../core/copier.dart';
 import '../../exception/editor_node.dart';
-import 'rich_text_node.dart';
+import 'rich_text.dart';
 
 class RichTextSpan extends SpanNode {
   final UnmodifiableMapView<String, String> attributes;

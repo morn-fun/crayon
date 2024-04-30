@@ -1,4 +1,5 @@
 import '../../core/command_invoker.dart';
+import '../../core/context.dart';
 import '../../core/editor_controller.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
@@ -13,11 +14,11 @@ class PasteWhileSelectingNodes implements BasicCommand {
   PasteWhileSelectingNodes(this.cursor, this.nodes);
 
   @override
-  UpdateControllerOperation? run(RichEditorController controller) {
+  UpdateControllerOperation? run(NodeContext nodeContext) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
-    final leftNode = controller.getNode(leftCursor.index);
-    final rightNode = controller.getNode(rightCursor.index);
+    final leftNode = nodeContext.getNode(leftCursor.index);
+    final rightNode = nodeContext.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
     final right =
         rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
@@ -25,14 +26,14 @@ class PasteWhileSelectingNodes implements BasicCommand {
       final newNode = left.merge(right);
       try {
         final r = newNode.onEdit(
-            EditingData(left.endPosition, EventType.paste, extras: nodes));
-        return controller.replace(Replace(
+            EditingData(left.endPosition, EventType.paste, nodeContext.listeners, extras: nodes));
+        return nodeContext.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,
             [r.node],
             r.position.toCursor(leftCursor.index)));
       } on UnablePasteException catch (e) {
-        return controller.replace(Replace(
+        return nodeContext.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,
             e.nodes,
@@ -43,7 +44,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
       final newNodes = List.of(nodes);
       newNodes.insert(0, left);
       newNodes.add(right);
-      return controller.replace(Replace(
+      return nodeContext.replace(Replace(
           leftCursor.index,
           rightCursor.index + 1,
           newNodes,

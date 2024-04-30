@@ -5,7 +5,7 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 
 NodeWithPosition typingWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
@@ -48,5 +48,7 @@ NodeWithPosition typingWhileSelecting(
   final p = data.position;
   final newNode = node.replace(p.left, p.right, []);
   return typingWhileEditing(
-      EditingData(p.left, EventType.typing, extras: data.extras), newNode);
+      EditingData(p.left, EventType.typing, data.listeners,
+          extras: data.extras),
+      newNode);
 }

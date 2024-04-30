@@ -14,49 +14,48 @@ class NewlineIntent extends Intent {
 }
 
 class NewlineAction extends ContextAction<NewlineIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  NewlineAction(this.editorContext);
+  NewlineAction(this.nodeContext);
 
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final c = editorContext.cursor;
-    final controller = editorContext.controller;
+    final c = nodeContext.cursor;
     if (c is EditingCursor) {
       try {
-        editorContext.onNodeEditing(c, EventType.newline);
+        nodeContext.onNodeEditing(c, EventType.newline);
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;
-        final current = controller.getNode(index);
+        final current = nodeContext.getNode(index);
         final left = current.frontPartNode(c.position);
         final right = current.rearPartNode(c.position, newId: randomNodeId);
-        editorContext.execute(ReplaceNode(Replace(index, index + 1,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1,
             [left, right], EditingCursor(index + 1, right.beginPosition))));
       } on NewlineRequiresNewSpecialNode catch (e) {
         int index = c.index;
-        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
             EditingCursor(index + e.newNodes.length - 1, e.position))));
       }
     } else if (c is SelectingNodeCursor) {
       try {
-        editorContext.onNodeEditing(c, EventType.newline);
+        nodeContext.onNodeEditing(c, EventType.newline);
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;
-        final current = controller.getNode(index);
+        final current = nodeContext.getNode(index);
         final left = current.frontPartNode(c.left);
         final right = current.rearPartNode(c.right, newId: randomNodeId);
-        editorContext.execute(ReplaceNode(Replace(index, index + 1,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1,
             [left, right], EditingCursor(index + 1, right.beginPosition))));
       } on NewlineRequiresNewSpecialNode catch (e) {
         int index = c.index;
-        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
             EditingCursor(index + e.newNodes.length - 1, e.position))));
       }
     } else if (c is SelectingNodesCursor) {
-      editorContext.execute(InsertNewLineWhileSelectingNodes(c));
+      nodeContext.execute(InsertNewLineWhileSelectingNodes(c));
     }
   }
 }

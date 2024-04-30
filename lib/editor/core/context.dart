@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../cursor/node_position.dart';
 
 import '../command/basic.dart';
-import '../command/modify.dart';
+import '../command/modification.dart';
 import '../cursor/basic.dart';
 import '../exception/command.dart';
 import '../node/basic.dart';
+import '../shortcuts/arrows/arrows.dart';
 import 'command_invoker.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';
@@ -13,7 +14,7 @@ import 'input_manager.dart';
 import 'listener_collection.dart';
 import 'logger.dart';
 
-class EditorContext {
+class EditorContext implements NodeContext {
   final RichEditorController controller;
   final InputManager inputManager;
   final FocusNode focusNode;
@@ -28,23 +29,25 @@ class EditorContext {
     this.entryManager,
   );
 
+  @override
   void execute(BasicCommand command) {
     try {
-      invoker.execute(command, controller);
+      invoker.execute(command, this);
     } on PerformCommandException catch (e) {
       logger.e('$e');
     }
   }
 
+  @override
   void onNodeEditing(SingleNodeCursor cursor, EventType type, {dynamic extra}) {
     if (cursor is EditingCursor) {
       final r = controller
           .getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type, extras: extra));
+          .onEdit(EditingData(cursor.position, type, listeners, extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     } else if (cursor is SelectingNodeCursor) {
       final r = controller.getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end), type,
+          SelectingPosition(cursor.begin, cursor.end), type, listeners,
           extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     }
@@ -66,6 +69,7 @@ class EditorContext {
     }
   }
 
+  @override
   BasicCursor get cursor => controller.cursor;
 
   ListenerCollection get listeners => controller.listeners;
@@ -95,8 +99,71 @@ class EditorContext {
       entryManager.showLinkMenu(state, info, link, this,
           urlWithPosition: urlWithPosition);
 
+  @override
   void hideMenu() {
     entryManager.hideMenu();
     inputManager.requestFocus();
   }
+
+  @override
+  EditorNode getNode(int index) => controller.getNode(index);
+
+  @override
+  int get nodeLength => controller.nodeLength;
+
+  @override
+  List<EditorNode> get nodes => controller.nodes;
+
+  @override
+  Iterable<EditorNode> getRange(int begin, int end) =>
+      controller.getRange(begin, end);
+
+  @override
+  void updateCursor(BasicCursor cursor, {bool notify = true}) =>
+      controller.updateCursor(cursor, notify: notify);
+
+  @override
+  SelectingNodesCursor<NodePosition> get selectAllCursor =>
+      controller.selectAllCursor;
+
+  @override
+  void onArrowAccept(AcceptArrowData data) => controller.onArrowAccept(data);
+
+  @override
+  UpdateControllerOperation? update(Update data, {bool record = true}) =>
+      controller.update(data, record: record);
+
+  @override
+  UpdateControllerOperation? replace(Replace data, {bool record = true}) =>
+      controller.replace(data, record: record);
+}
+
+abstract class NodeContext {
+  EditorNode getNode(int index);
+
+  BasicCursor get cursor;
+
+  List<EditorNode> get nodes;
+
+  Iterable<EditorNode> getRange(int begin, int end);
+
+  void execute(BasicCommand command);
+
+  int get nodeLength => nodes.length;
+
+  void onNodeEditing(SingleNodeCursor cursor, EventType type, {dynamic extra});
+
+  void updateCursor(BasicCursor cursor, {bool notify = true});
+
+  SelectingNodesCursor get selectAllCursor;
+
+  void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
+
+  UpdateControllerOperation? update(Update data, {bool record = true});
+
+  UpdateControllerOperation? replace(Replace data, {bool record = true});
+
+  ListenerCollection get listeners;
+
+  void hideMenu();
 }

@@ -1,4 +1,5 @@
 import '../../core/command_invoker.dart';
+import '../../core/context.dart';
 import '../../core/editor_controller.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
@@ -14,7 +15,7 @@ class UpdateSelectingNodes implements BasicCommand {
   UpdateSelectingNodes(this.cursor, this.type, {this.extra});
 
   @override
-  UpdateControllerOperation? run(RichEditorController controller) {
+  UpdateControllerOperation? run(NodeContext nodeContext) {
     final left = cursor.left;
     final right = cursor.right;
     List<EditorNode> nodes = [];
@@ -22,21 +23,27 @@ class UpdateSelectingNodes implements BasicCommand {
     late SingleNodePosition leftPosition;
     late SingleNodePosition rightPosition;
     while (i <= right.index) {
-      final node = controller.getNode(i);
+      final node = nodeContext.getNode(i);
       NodeWithPosition np;
       if (i == left.index) {
         np = node.onSelect(SelectingData(
-            SelectingPosition(left.position, node.endPosition), type,
+            SelectingPosition(left.position, node.endPosition),
+            type,
+            nodeContext.listeners,
             extras: extra));
         leftPosition = np.position;
       } else if (i == right.index) {
         np = node.onSelect(SelectingData(
-            SelectingPosition(node.beginPosition, right.position), type,
+            SelectingPosition(node.beginPosition, right.position),
+            type,
+            nodeContext.listeners,
             extras: extra));
         rightPosition = np.position;
       } else {
         np = node.onSelect(SelectingData(
-            SelectingPosition(node.beginPosition, node.endPosition), type,
+            SelectingPosition(node.beginPosition, node.endPosition),
+            type,
+            nodeContext.listeners,
             extras: extra));
       }
       nodes.add(np.node);
@@ -47,7 +54,7 @@ class UpdateSelectingNodes implements BasicCommand {
             left.index, _getBySingleNodePosition(leftPosition, true)),
         IndexWithPosition(
             right.index, _getBySingleNodePosition(rightPosition, false)));
-    return controller
+    return nodeContext
         .replace(Replace(left.index, right.index + 1, nodes, newCursor));
   }
 

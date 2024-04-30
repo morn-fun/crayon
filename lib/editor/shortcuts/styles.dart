@@ -6,7 +6,7 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../cursor/rich_text.dart';
 import '../node/basic.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 
 class UnderlineIntent extends Intent {
@@ -26,57 +26,56 @@ class LineThroughIntent extends Intent {
 }
 
 class UnderlineAction extends ContextAction<UnderlineIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  UnderlineAction(this.editorContext);
+  UnderlineAction(this.nodeContext);
 
   @override
   void invoke(UnderlineIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(editorContext, RichTextTag.underline);
+    onStyleEvent(nodeContext, RichTextTag.underline);
   }
 }
 
 class BoldAction extends ContextAction<BoldIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  BoldAction(this.editorContext);
+  BoldAction(this.nodeContext);
 
   @override
   void invoke(BoldIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(editorContext, RichTextTag.bold);
+    onStyleEvent(nodeContext, RichTextTag.bold);
   }
 }
 
 class ItalicAction extends ContextAction<ItalicIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  ItalicAction(this.editorContext);
+  ItalicAction(this.nodeContext);
 
   @override
   void invoke(ItalicIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(editorContext, RichTextTag.italic);
+    onStyleEvent(nodeContext, RichTextTag.italic);
   }
 }
 
 class LineThroughAction extends ContextAction<LineThroughIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  LineThroughAction(this.editorContext);
+  LineThroughAction(this.nodeContext);
 
   @override
   void invoke(LineThroughIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(editorContext, RichTextTag.lineThrough);
+    onStyleEvent(nodeContext, RichTextTag.lineThrough);
   }
 }
 
-void onStyleEvent(EditorContext context, RichTextTag tag,
+void onStyleEvent(NodeContext context, RichTextTag tag,
     {Map<String, String>? attributes}) {
   final cursor = context.cursor;
-  final controller = context.controller;
   try {
     final type = EventType.values.byName(tag.name);
     if (cursor is SingleNodeCursor) {
@@ -87,7 +86,7 @@ void onStyleEvent(EditorContext context, RichTextTag tag,
       int i = left.index;
       bool coverTag = false;
       while (i <= right.index) {
-        final node = controller.getNode(i);
+        final node = context.getNode(i);
         if (node is RichTextNode) {
           late RichTextNode newNode;
           if (i == left.index) {

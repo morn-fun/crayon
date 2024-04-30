@@ -11,7 +11,7 @@ import '../../exception/string.dart';
 import '../../widget/nodes/code_block.dart';
 import '../basic.dart';
 import '../../cursor/node_position.dart';
-import '../rich_text/rich_text_node.dart';
+import '../rich_text/rich_text.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
 import 'generator/newline.dart';
@@ -35,11 +35,11 @@ class CodeBlockNode extends EditorNode {
           language: language ?? this.language);
 
   @override
-  CodeBlockPosition get beginPosition => CodeBlockPosition.zero(inEdge: true);
+  CodeBlockPosition get beginPosition => CodeBlockPosition.zero(atEdge: true);
 
   @override
   CodeBlockPosition get endPosition =>
-      CodeBlockPosition(codes.length - 1, codes.last.length, inEdge: true);
+      CodeBlockPosition(codes.length - 1, codes.last.length, atEdge: true);
 
   static UnmodifiableListView<String> _buildInitCodes(List<String> codes) {
     if (codes.isEmpty) return UnmodifiableListView(['']);

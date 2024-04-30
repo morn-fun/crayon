@@ -1,7 +1,7 @@
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 
 NodeWithPosition selectAllWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
@@ -24,8 +24,8 @@ NodeWithPosition selectAllWhileSelecting(
   final right = p.right;
   final begin = node.beginPosition;
   final end = node.endPosition;
-  final notEdgeBegin = begin.copy(inEdge: false);
-  final notEdgeEnd = end.copy(inEdge: false);
+  final notEdgeBegin = begin.copy(atEdge: false);
+  final notEdgeEnd = end.copy(atEdge: false);
   if (left == notEdgeBegin && right == notEdgeEnd) {
     return NodeWithPosition(
         node, SelectingPosition(node.beginPosition, node.endPosition));

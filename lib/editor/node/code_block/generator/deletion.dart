@@ -1,4 +1,4 @@
-import 'package:crayon/editor/node/rich_text/rich_text_node.dart';
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 
 import '../../../../editor/extension/string.dart';
 import '../../../../editor/extension/unmodifiable.dart';
@@ -6,12 +6,12 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 
 NodeWithPosition deleteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
-  if (p == node.beginPosition.copy(inEdge: false) || p == node.beginPosition) {
+  if (p == node.beginPosition.copy(atEdge: false) || p == node.beginPosition) {
     return NodeWithPosition(
         node, SelectingPosition(node.beginPosition, node.endPosition));
   }

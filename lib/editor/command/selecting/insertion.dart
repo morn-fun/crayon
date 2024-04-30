@@ -1,4 +1,5 @@
 import '../../core/command_invoker.dart';
+import '../../core/context.dart';
 import '../../core/editor_controller.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
@@ -12,9 +13,9 @@ class InsertNodes implements BasicCommand {
   InsertNodes(this.cursor, this.nodes) : assert(nodes.isNotEmpty);
 
   @override
-  UpdateControllerOperation? run(RichEditorController controller) {
+  UpdateControllerOperation? run(NodeContext nodeContext) {
     int index = cursor.index;
-    final current = controller.getNode(index);
+    final current = nodeContext.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position, newId: randomNodeId);
     final copyNodes = List.of(nodes);
@@ -34,6 +35,6 @@ class InsertNodes implements BasicCommand {
       newCursor = EditingCursor(
           index + copyNodes.length - 1, copyNodes.last.endPosition);
     }
-    return controller.replace(Replace(index, index + 1, copyNodes, newCursor));
+    return nodeContext.replace(Replace(index, index + 1, copyNodes, newCursor));
   }
 }

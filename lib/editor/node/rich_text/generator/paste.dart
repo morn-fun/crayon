@@ -3,7 +3,7 @@ import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../rich_text_node.dart';
+import '../rich_text.dart';
 
 NodeWithPosition pasteWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {

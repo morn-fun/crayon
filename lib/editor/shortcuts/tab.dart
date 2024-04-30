@@ -20,36 +20,36 @@ class ShiftTabIntent extends Intent {
 }
 
 class TabAction extends ContextAction<TabIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  TabAction(this.editorContext);
+  TabAction(this.nodeContext);
 
   @override
   void invoke(TabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = editorContext.cursor;
-    final controller = editorContext.controller;
+    final cursor = nodeContext.cursor;
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
-        final node = controller.getNode(index);
-        int lastDepth = index == 0 ? 0 : controller.getNode(index - 1).depth;
+        final node = nodeContext.getNode(index);
+        int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
         final r = node.onEdit(EditingData(
-            cursor.position, EventType.increaseDepth,
+            cursor.position, EventType.increaseDepth, nodeContext.listeners,
             extras: lastDepth));
-        editorContext.execute(ReplaceNode(
+        nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        int lastDepth = index == 0 ? 0 : controller.getNode(index - 1).depth;
-        final r = controller.getNode(cursor.index).onSelect(SelectingData(
+        int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
+        final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
             SelectingPosition(cursor.begin, cursor.end),
             EventType.increaseDepth,
+            nodeContext.listeners,
             extras: lastDepth));
-        editorContext.execute(ReplaceNode(
+        nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodesCursor) {
-        editorContext.execute(IncreaseNodesDepth(cursor));
+        nodeContext.execute(IncreaseNodesDepth(cursor));
       }
     } on DepthNotAbleToIncreaseException catch (e) {
       logger.e('$runtimeType, ${e.message}');
@@ -58,42 +58,42 @@ class TabAction extends ContextAction<TabIntent> {
 }
 
 class ShiftTabAction extends ContextAction<ShiftTabIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  ShiftTabAction(this.editorContext);
+  ShiftTabAction(this.nodeContext);
 
   @override
   void invoke(ShiftTabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = editorContext.cursor;
-    final controller = editorContext.controller;
+    final cursor = nodeContext.cursor;
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
-        final node = controller.getNode(index);
-        final r =
-            node.onEdit(EditingData(cursor.position, EventType.decreaseDepth));
-        editorContext.execute(ReplaceNode(
+        final node = nodeContext.getNode(index);
+        final r = node.onEdit(EditingData(
+            cursor.position, EventType.decreaseDepth, nodeContext.listeners));
+        nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        final r = controller.getNode(index).onSelect(SelectingData(
+        final r = nodeContext.getNode(index).onSelect(SelectingData(
             SelectingPosition(cursor.begin, cursor.end),
-            EventType.decreaseDepth));
-        editorContext.execute(ReplaceNode(
+            EventType.decreaseDepth,
+            nodeContext.listeners));
+        nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodesCursor) {
-        editorContext.execute(DecreaseNodesDepth(cursor));
+        nodeContext.execute(DecreaseNodesDepth(cursor));
       }
     } on DepthNeedDecreaseMoreException catch (e) {
       logger.e('$runtimeType, ${e.message}');
       if (cursor is! SingleNodeCursor) return;
-      final controller = editorContext.controller;
       int index = cursor.index;
-      final node = controller.getNode(index);
+      final node = nodeContext.getNode(index);
       final nodes = <EditorNode>[node.newNode(depth: node.depth.decrease())];
-      correctDepth(controller, index + 1, e.depth, nodes);
-      editorContext.execute(ReplaceNode(
+      correctDepth(nodeContext.nodeLength, (i) => nodeContext.getNode(i),
+          index + 1, e.depth, nodes);
+      nodeContext.execute(ReplaceNode(
           Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
     }
   }

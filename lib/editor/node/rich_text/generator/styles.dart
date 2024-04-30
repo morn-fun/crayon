@@ -5,7 +5,7 @@ import '../../../cursor/rich_text.dart';
 import '../../../shortcuts/styles.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../rich_text_node.dart';
+import '../rich_text.dart';
 import '../rich_text_span.dart';
 
 NodeWithPosition styleRichTextNodeWhileEditing(

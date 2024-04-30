@@ -14,7 +14,7 @@ import '../../core/input_manager.dart';
 import '../../core/logger.dart';
 import '../../cursor/rich_text.dart';
 import '../../cursor/node_position.dart';
-import '../../node/rich_text/rich_text_node.dart';
+import '../../node/rich_text/rich_text.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';

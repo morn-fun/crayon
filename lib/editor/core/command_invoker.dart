@@ -1,5 +1,7 @@
+
 import '../command/basic.dart';
 import '../exception/command.dart';
+import 'context.dart';
 import 'editor_controller.dart';
 import 'logger.dart';
 
@@ -7,24 +9,24 @@ class CommandInvoker {
   final List<UpdateControllerOperation> _undoOperations = [];
   final List<UpdateControllerOperation> _redoOperations = [];
 
-  final _tag = 'RichEditorController';
+  final tag = 'RichEditorController';
 
-  void execute(BasicCommand command, RichEditorController controller,
+  void execute(BasicCommand command, NodeContext context,
       {bool noThrottle = false}) {
     try {
-      logger.i('$_tag, execute 【$command】');
-      final c = command.run(controller);
+      logger.i('$tag, execute 【$command】');
+      final c = command.run(context);
       final enableThrottle = c?.enableThrottle ?? true;
       if (noThrottle || !enableThrottle) {
         _addToUndoCommands(c);
       } else {
         Throttle.execute(() {
           _addToUndoCommands(c);
-        }, tag: _tag);
+        }, tag: tag);
       }
       _redoOperations.clear();
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, '$_tag, execute', e);
+      throw PerformCommandException(command.runtimeType, '$tag, execute', e);
     }
   }
 
@@ -35,7 +37,7 @@ class CommandInvoker {
     try {
       _addToRedoCommands(command.update(controller));
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, '$_tag, undo', e);
+      throw PerformCommandException(command.runtimeType, '$tag, undo', e);
     }
   }
 
@@ -46,7 +48,7 @@ class CommandInvoker {
     try {
       _addToUndoCommands(command.update(controller));
     } catch (e) {
-      throw PerformCommandException(command.runtimeType, '$_tag, redo', e);
+      throw PerformCommandException(command.runtimeType, '$tag, redo', e);
     }
   }
 

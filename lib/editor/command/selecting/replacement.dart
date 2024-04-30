@@ -1,4 +1,5 @@
 import '../../core/command_invoker.dart';
+import '../../core/context.dart';
 import '../../core/editor_controller.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
@@ -15,24 +16,26 @@ class ReplaceSelectingNodes implements BasicCommand {
   ReplaceSelectingNodes(this.cursor, this.type, this.extra);
 
   @override
-  UpdateControllerOperation? run(RichEditorController controller) {
+  UpdateControllerOperation? run(NodeContext nodeContext) {
     final left = cursor.left;
     final right = cursor.right;
-    final leftNode = controller.getNode(left.index);
-    final rightNode = controller.getNode(right.index);
+    final leftNode = nodeContext.getNode(left.index);
+    final rightNode = nodeContext.getNode(right.index);
     final newLeftNP = leftNode.onSelect(SelectingData(
-        SelectingPosition(left.position, leftNode.endPosition), type,
+        SelectingPosition(left.position, leftNode.endPosition),
+        type,
+        nodeContext.listeners,
         extras: extra));
     final newRight =
         rightNode.rearPartNode(right.position, newId: randomNodeId);
     final newCursor = newLeftNP.position.toCursor(left.index);
     try {
       final newNode = newLeftNP.node.merge(newRight);
-      return controller
+      return nodeContext
           .replace(Replace(left.index, right.index + 1, [newNode], newCursor));
     } on UnableToMergeException catch (e) {
       logger.e('$runtimeType error: $e');
-      return controller.replace(Replace(
+      return nodeContext.replace(Replace(
           left.index, right.index + 1, [newLeftNP.node, newRight], newCursor));
     }
   }

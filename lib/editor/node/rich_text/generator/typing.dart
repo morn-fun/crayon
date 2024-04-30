@@ -5,12 +5,12 @@ import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../head_node.dart';
-import '../ordered_node.dart';
-import '../quote_node.dart';
-import '../rich_text_node.dart';
-import '../todo_node.dart';
-import '../unordered_node.dart';
+import '../head.dart';
+import '../ordered.dart';
+import '../quote.dart';
+import '../rich_text.dart';
+import '../task.dart';
+import '../unordered.dart';
 
 NodeWithPosition typingRichTextNodeWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {
@@ -63,7 +63,8 @@ NodeWithPosition typingRichTextNodeWhileSelecting(
   final nodeAfterMerge = newLeft.merge(newRight);
   try {
     return typingRichTextNodeWhileEditing(
-        EditingData(newLeft.endPosition, EventType.typing, extras: data.extras),
+        EditingData(newLeft.endPosition, EventType.typing, data.listeners,
+            extras: data.extras),
         nodeAfterMerge);
   } on TypingRequiredOptionalMenuException catch (e) {
     return e.nodeWithPosition;

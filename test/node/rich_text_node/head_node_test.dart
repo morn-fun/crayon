@@ -1,9 +1,10 @@
+import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/core/node_controller.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
 import 'package:crayon/editor/cursor/node_position.dart';
-import 'package:crayon/editor/node/rich_text/head_node.dart';
+import 'package:crayon/editor/node/rich_text/head.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,12 +53,12 @@ void main() {
     H1Node node =
         H1Node.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
-        () => node.onEdit(
-            EditingData(RichTextNodePosition.zero(), EventType.newline)),
+        () => node.onEdit(EditingData(RichTextNodePosition.zero(),
+            EventType.newline, ListenerCollection())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
-    var np = node.from([]).onEdit(
-        EditingData(RichTextNodePosition.zero(), EventType.increaseDepth));
+    var np = node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
+        EventType.increaseDepth, ListenerCollection()));
     assert(np.node.depth - node.depth == 1);
   });
 
@@ -69,13 +70,15 @@ void main() {
         () => node.onSelect(SelectingData(
             SelectingPosition(
                 RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
-            EventType.newline)),
+            EventType.newline,
+            ListenerCollection())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onSelect(SelectingData(
         SelectingPosition(
             RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
-        EventType.increaseDepth));
+        EventType.increaseDepth,
+        ListenerCollection()));
     assert(np.node.depth > node.depth);
   });
 

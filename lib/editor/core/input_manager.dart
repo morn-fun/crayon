@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 
 import '../command/basic.dart';
-import '../command/modify.dart';
+import '../command/modification.dart';
 import '../command/replace.dart';
-import '../command/selecting/replace.dart';
+import '../command/selecting/replacement.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
@@ -98,8 +98,9 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     if (c is EditingCursor) {
       final node = controller.getNode(c.index);
       try {
-        final newOne = node
-            .onEdit(EditingData(c.position, EventType.typing, extras: delta));
+        final newOne = node.onEdit(EditingData(
+            c.position, EventType.typing, controller.listeners,
+            extras: delta));
         return ModifyNode(newOne.toCursor(c.index), newOne.node);
       } on TypingToChangeNodeException catch (e) {
         final index = c.index;
@@ -114,7 +115,9 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       final node = controller.getNode(c.index);
       try {
         final newOne = node.onSelect(SelectingData(
-            SelectingPosition(c.begin, c.end), EventType.typing,
+            SelectingPosition(c.begin, c.end),
+            EventType.typing,
+            controller.listeners,
             extras: delta));
         return ModifyNode(newOne.toCursor(c.index), newOne.node);
       } on TypingToChangeNodeException catch (e) {

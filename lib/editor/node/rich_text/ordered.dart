@@ -3,7 +3,7 @@ import '../../core/node_controller.dart';
 import '../../widget/nodes/rich_text.dart';
 import '../../cursor/node_position.dart';
 import 'special_newline_mixin.dart';
-import 'rich_text_node.dart';
+import 'rich_text.dart';
 import 'rich_text_span.dart';
 
 class OrderedNode extends RichTextNode with SpecialNewlineMixin {

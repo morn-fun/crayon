@@ -1,7 +1,7 @@
 import '../../../cursor/rich_text.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../rich_text_node.dart';
+import '../rich_text.dart';
 
 NodeWithPosition deleteRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node) {

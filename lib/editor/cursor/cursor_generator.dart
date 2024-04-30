@@ -1,5 +1,5 @@
 import '../core/editor_controller.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text.dart';
 import 'basic.dart';
 
 BasicCursor? generateSelectingCursor(

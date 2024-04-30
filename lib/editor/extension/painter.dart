@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../cursor/rich_text.dart';
 import '../cursor/node_position.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 
 extension PainterExtension on TextPainter {

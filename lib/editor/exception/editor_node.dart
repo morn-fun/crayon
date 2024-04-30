@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';
 import '../node/basic.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'basic.dart';
 
@@ -219,4 +219,27 @@ class EmptyNodeToSelectAllException implements EditorNodeException {
   EmptyNodeToSelectAllException(this.id);
 
   String get message => 'the node:$id is empty, to select all';
+}
+
+class GetFromPositionButAcquireMoreNodes implements EditorNodeException {
+  final Type type;
+  final List<EditorNode> nodes;
+  final NodePosition begin;
+  final NodePosition end;
+
+  GetFromPositionButAcquireMoreNodes(
+      this.type, this.nodes, this.begin, this.end);
+
+  String get message =>
+      'get node from position [begin:$begin,  end:$end] in $type, but acquire more nodes:${nodes.length}';
+}
+
+class NodeUnsupportedException implements EditorNodeException {
+  final Type type;
+  final String operation;
+  final dynamic extras;
+
+  NodeUnsupportedException(this.type, this.operation, this.extras);
+
+  String get message => 'the node $type not supported for $operation with $extras';
 }

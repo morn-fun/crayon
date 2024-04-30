@@ -1,8 +1,9 @@
 import 'dart:math';
 
+import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/core/node_controller.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
-import 'package:crayon/editor/node/rich_text/rich_text_node.dart';
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/widget/nodes/rich_text.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
@@ -547,7 +548,8 @@ void main() {
     final newNode = basicNode();
     for (var t in EventType.values) {
       try {
-        newNode.onEdit(EditingData(RichTextNodePosition.zero(), t));
+        newNode.onEdit(
+            EditingData(RichTextNodePosition.zero(), t, ListenerCollection()));
       } catch (e) {
         print('e:$e');
       }
@@ -562,7 +564,8 @@ void main() {
         newNode.onSelect(SelectingData(
             SelectingPosition(
                 RichTextNodePosition.zero(), RichTextNodePosition(1, 1)),
-            t));
+            t,
+            ListenerCollection()));
       } catch (e) {
         print('e:$e');
       }

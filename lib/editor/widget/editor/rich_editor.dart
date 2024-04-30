@@ -43,7 +43,7 @@ class _RichEditorPageState extends State<RichEditor> {
         controller: controller,
         onCommand: (c) {
           try {
-            invoker.execute(c, controller);
+            invoker.execute(c, editorContext);
           } on PerformCommandException catch (e) {
             logger.e('$e');
           }

@@ -4,21 +4,21 @@ import 'basic.dart';
 class CodeBlockPosition implements NodePosition {
   final int index;
   final int offset;
-  final bool inEdge;
+  final bool atEdge;
 
-  CodeBlockPosition(this.index, this.offset, {this.inEdge = false});
+  CodeBlockPosition(this.index, this.offset, {this.atEdge = false});
 
-  CodeBlockPosition.empty({this.inEdge = false})
+  CodeBlockPosition.empty({this.atEdge = false})
       : index = -1,
         offset = -1;
 
-  CodeBlockPosition.zero({this.inEdge = false})
+  CodeBlockPosition.zero({this.atEdge = false})
       : index = 0,
         offset = 0;
 
-  CodeBlockPosition copy({int? index, int? offset, bool? inEdge}) =>
+  CodeBlockPosition copy({int? index, int? offset, bool? atEdge}) =>
       CodeBlockPosition(index ?? this.index, offset ?? this.offset,
-          inEdge: inEdge ?? this.inEdge);
+          atEdge: atEdge ?? this.atEdge);
 
   @override
   bool isLowerThan(NodePosition other) {
@@ -39,13 +39,13 @@ class CodeBlockPosition implements NodePosition {
           runtimeType == other.runtimeType &&
           index == other.index &&
           offset == other.offset &&
-          inEdge == other.inEdge;
+          atEdge == other.atEdge;
 
   @override
-  int get hashCode => index.hashCode ^ offset.hashCode ^ inEdge.hashCode;
+  int get hashCode => index.hashCode ^ offset.hashCode ^ atEdge.hashCode;
 
   @override
   String toString() {
-    return 'CodeBlockPosition{index: $index, offset: $offset, inEdge: $inEdge}';
+    return 'CodeBlockPosition{index: $index, offset: $offset, atEdge: $atEdge}';
   }
 }

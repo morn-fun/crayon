@@ -1,23 +1,22 @@
-import 'package:crayon/editor/node/basic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../command/modify.dart';
+import '../../command/modification.dart';
 import '../../core/context.dart';
-import '../../core/editor_controller.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/node_position.dart';
+import '../../node/basic.dart';
 import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class LinkMenu extends StatefulWidget {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
   final MenuInfo info;
   final UrlWithPosition? urlWithPosition;
 
-  const LinkMenu(this.editorContext, this.info,
+  const LinkMenu(this.nodeContext, this.info,
       {super.key, this.urlWithPosition});
 
   @override
@@ -25,11 +24,9 @@ class LinkMenu extends StatefulWidget {
 }
 
 class _LinkMenuState extends State<LinkMenu> {
-  EditorContext get editorContext => widget.editorContext;
+  NodeContext get nodeContext => widget.nodeContext;
 
-  RichEditorController get controller => editorContext.controller;
-
-  ListenerCollection get listeners => controller.listeners;
+  ListenerCollection get listeners => nodeContext.listeners;
 
   MenuInfo get info => widget.info;
 
@@ -74,7 +71,7 @@ class _LinkMenuState extends State<LinkMenu> {
     if (mounted) setState(() {});
   }
 
-  void hideMenu() => editorContext.hideMenu();
+  void hideMenu() => nodeContext.hideMenu();
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +82,10 @@ class _LinkMenuState extends State<LinkMenu> {
         Positioned(
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
-            onEnter: (e) =>
-                editorContext.updateEntryStatus(EntryStatus.onMenuHovering),
+
+            ///TODO:complete the logic here
+            // onEnter: (e) =>
+            //     nodeContext.updateEntryStatus(EntryStatus.onMenuHovering),
             onExit: (e) => hideMenu(),
             child: Card(
               elevation: 10,
@@ -119,14 +118,15 @@ class _LinkMenuState extends State<LinkMenu> {
                           icon: Icon(Icons.link_off_rounded),
                           onPressed: () {
                             final linkCursor = widget.urlWithPosition!.cursor;
-                            final r = controller
+                            final r = nodeContext
                                 .getNode(linkCursor.index)
                                 .onSelect(SelectingData(
                                     SelectingPosition(
                                         linkCursor.begin, linkCursor.end),
                                     EventType.link,
+                                    listeners,
                                     extras: StyleExtra(false, {})));
-                            editorContext.execute(ModifyNodeWithoutChangeCursor(
+                            nodeContext.execute(ModifyNodeWithoutChangeCursor(
                                 linkCursor.index, r.node));
                             hideMenu();
                           },
@@ -142,19 +142,20 @@ class _LinkMenuState extends State<LinkMenu> {
                                 if (enableCancel) {
                                   final linkCursor =
                                       widget.urlWithPosition!.cursor;
-                                  final r = controller
+                                  final r = nodeContext
                                       .getNode(linkCursor.index)
                                       .onSelect(SelectingData(
                                           SelectingPosition(
                                               linkCursor.begin, linkCursor.end),
                                           EventType.link,
+                                          listeners,
                                           extras:
                                               StyleExtra(true, {'url': text})));
-                                  editorContext.execute(
+                                  nodeContext.execute(
                                       ModifyNodeWithoutChangeCursor(
                                           linkCursor.index, r.node));
                                 } else {
-                                  onStyleEvent(editorContext, RichTextTag.link,
+                                  onStyleEvent(nodeContext, RichTextTag.link,
                                       attributes: {'url': text});
                                 }
                                 hideMenu();

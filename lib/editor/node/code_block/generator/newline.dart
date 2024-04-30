@@ -3,7 +3,7 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 
 NodeWithPosition newlineWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
@@ -24,7 +24,7 @@ NodeWithPosition newlineWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final newNode = node.replace(p.left, p.right, []);
-  return newlineWhileEditing(EditingData(p.left, EventType.newline), newNode);
+  return newlineWhileEditing(EditingData(p.left, EventType.newline, data.listeners), newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

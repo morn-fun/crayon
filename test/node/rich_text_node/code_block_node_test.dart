@@ -1,5 +1,5 @@
 import 'package:crayon/editor/cursor/code_block.dart';
-import 'package:crayon/editor/node/code_block/code_block_node.dart';
+import 'package:crayon/editor/node/code_block/code_block.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../config/const_texts.dart';
@@ -12,10 +12,10 @@ void main() {
     final node = basicNode();
     assert(node.beginPosition.offset == 0);
     assert(node.beginPosition.index == 0);
-    assert(node.beginPosition.inEdge == true);
+    assert(node.beginPosition.atEdge == true);
     assert(node.endPosition.offset == constTexts.last.length);
     assert(node.endPosition.index == constTexts.length - 1);
-    assert(node.endPosition.inEdge == true);
+    assert(node.endPosition.atEdge == true);
   });
 
   test('getFromPosition', () {

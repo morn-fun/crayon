@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 
-import 'editor/node/rich_text/rich_text_node.dart';
+import 'editor/node/rich_text/rich_text.dart';
 import 'editor/widget/editor/rich_editor.dart';
 
 void main() {

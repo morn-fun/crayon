@@ -1,7 +1,7 @@
 import '../../cursor/rich_text.dart';
 import '../../exception/editor_node.dart';
 import '../basic.dart';
-import 'rich_text_node.dart';
+import 'rich_text.dart';
 
 mixin SpecialNewlineMixin on RichTextNode {
   @override

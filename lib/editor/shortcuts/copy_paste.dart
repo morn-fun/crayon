@@ -1,8 +1,8 @@
-import 'package:crayon/editor/node/rich_text/ordered_node.dart';
+import 'package:crayon/editor/node/rich_text/ordered.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../command/modify.dart';
+import '../command/modification.dart';
 import '../command/replace.dart';
 import '../command/selecting/paste.dart';
 import '../core/context.dart';
@@ -12,10 +12,10 @@ import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
-import '../node/rich_text/head_node.dart';
-import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/head.dart';
+import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
-import '../node/rich_text/unordered_node.dart';
+import '../node/rich_text/unordered.dart';
 
 class CopyIntent extends Intent {
   const CopyIntent();
@@ -26,18 +26,17 @@ class PasteIntent extends Intent {
 }
 
 class CopyAction extends ContextAction<CopyIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  CopyAction(this.editorContext);
+  CopyAction(this.nodeContext);
 
   @override
   void invoke(CopyIntent intent, [BuildContext? context]) async {
     logger.i('$runtimeType is invoking!');
-    final cursor = editorContext.cursor;
+    final cursor = nodeContext.cursor;
     if (cursor is EditingCursor) return;
-    final controller = editorContext.controller;
     if (cursor is SelectingNodeCursor) {
-      final node = controller.getNode(cursor.index);
+      final node = nodeContext.getNode(cursor.index);
       final newNode =
           node.getFromPosition(cursor.begin, cursor.end, newId: randomNodeId);
       _copiedNodes.clear();
@@ -45,12 +44,12 @@ class CopyAction extends ContextAction<CopyIntent> {
     } else if (cursor is SelectingNodesCursor) {
       final List<EditorNode> nodes = [];
       final left = cursor.left, right = cursor.right;
-      var beginNode = controller.getNode(left.index);
-      var endNode = controller.getNode(right.index);
+      var beginNode = nodeContext.getNode(left.index);
+      var endNode = nodeContext.getNode(right.index);
       beginNode = beginNode.rearPartNode(left.position, newId: randomNodeId);
       endNode = endNode.frontPartNode(right.position, newId: randomNodeId);
       nodes.add(beginNode);
-      nodes.addAll(controller.getRange(left.index + 1, right.index));
+      nodes.addAll(nodeContext.getRange(left.index + 1, right.index));
       nodes.add(endNode);
       _copiedNodes.clear();
       _copiedNodes.addAll(nodes);
@@ -65,9 +64,9 @@ final List<EditorNode> _copiedNodes = [];
 const _specialEdge = '\u{200C}';
 
 class PasteAction extends ContextAction<PasteIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  PasteAction(this.editorContext);
+  PasteAction(this.nodeContext);
 
   @override
   void invoke(PasteIntent intent, [BuildContext? context]) async {
@@ -108,33 +107,35 @@ class PasteAction extends ContextAction<PasteIntent> {
         }
       }
     }
-    final cursor = editorContext.cursor;
-    final controller = editorContext.controller;
+    final cursor = nodeContext.cursor;
     if (cursor is EditingCursor) {
       final index = cursor.index;
-      final node = controller.getNode(index);
+      final node = nodeContext.getNode(index);
       try {
-        final r = node.onEdit(
-            EditingData(cursor.position, EventType.paste, extras: nodes));
-        editorContext.execute(ModifyNode(r.position.toCursor(index), r.node));
+        final r = node.onEdit(EditingData(
+            cursor.position, EventType.paste, nodeContext.listeners,
+            extras: nodes));
+        nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
       } on UnablePasteException catch (e) {
-        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       }
     } else if (cursor is SelectingNodeCursor) {
       final index = cursor.index;
-      final node = controller.getNode(index);
+      final node = nodeContext.getNode(index);
       try {
         final r = node.onSelect(SelectingData(
-            SelectingPosition(cursor.left, cursor.right), EventType.paste,
+            SelectingPosition(cursor.left, cursor.right),
+            EventType.paste,
+            nodeContext.listeners,
             extras: nodes));
-        editorContext.execute(ModifyNode(r.position.toCursor(index), r.node));
+        nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
       } on UnablePasteException catch (e) {
-        editorContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       }
     } else if (cursor is SelectingNodesCursor) {
-      editorContext.execute(PasteWhileSelectingNodes(cursor, nodes));
+      nodeContext.execute(PasteWhileSelectingNodes(cursor, nodes));
     }
   }
 }

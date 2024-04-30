@@ -12,38 +12,38 @@ class SelectAllIntent extends Intent {
 }
 
 class SelectAllAction extends ContextAction<SelectAllIntent> {
-  final EditorContext editorContext;
+  final NodeContext nodeContext;
 
-  SelectAllAction(this.editorContext);
+  SelectAllAction(this.nodeContext);
 
   @override
   void invoke(SelectAllIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final controller = editorContext.controller;
-    final cursor = editorContext.cursor;
+    final cursor = nodeContext.cursor;
     if (cursor is EditingCursor) {
       try {
-        final r = controller
-            .getNode(cursor.index)
-            .onEdit(EditingData(cursor.position, EventType.selectAll));
-        controller.updateCursor(r.toCursor(cursor.index));
+        final r = nodeContext.getNode(cursor.index).onEdit(EditingData(
+            cursor.position, EventType.selectAll, nodeContext.listeners));
+        nodeContext.updateCursor(r.toCursor(cursor.index));
       } on EmptyNodeToSelectAllException {
-        controller.updateCursor(controller.selectAllCursor);
+        nodeContext.updateCursor(nodeContext.selectAllCursor);
       }
     } else if (cursor is SelectingNodeCursor) {
-      final node = controller.getNode(cursor.index);
+      final node = nodeContext.getNode(cursor.index);
       if (node.beginPosition == cursor.begin &&
           node.endPosition == cursor.end) {
-        controller.updateCursor(controller.selectAllCursor);
+        nodeContext.updateCursor(nodeContext.selectAllCursor);
       } else {
         final r = node.onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end), EventType.selectAll));
-        controller.updateCursor(r.toCursor(cursor.index));
+            SelectingPosition(cursor.begin, cursor.end),
+            EventType.selectAll,
+            nodeContext.listeners));
+        nodeContext.updateCursor(r.toCursor(cursor.index));
       }
     } else if (cursor is SelectingNodesCursor) {
-      final allNodesCursor = controller.selectAllCursor;
+      final allNodesCursor = nodeContext.selectAllCursor;
       if (cursor == allNodesCursor) return;
-      controller.updateCursor(allNodesCursor);
+      nodeContext.updateCursor(allNodesCursor);
     }
   }
 }

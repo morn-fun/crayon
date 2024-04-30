@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:crayon/editor/command/modify.dart';
+import 'package:crayon/editor/command/modification.dart';
 import 'package:crayon/editor/extension/cursor.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';

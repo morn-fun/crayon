@@ -3,7 +3,7 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 
 NodeWithPosition pasteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {

@@ -4,7 +4,7 @@ import '../../../cursor/code_block.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
-import '../code_block_node.dart';
+import '../code_block.dart';
 import '../../../../editor/extension/unmodifiable.dart';
 
 NodeWithPosition increaseDepthWhileEditing(
