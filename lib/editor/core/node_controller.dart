@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../cursor/basic_cursor.dart';
-import '../node/basic_node.dart';
-import '../node/position_data.dart';
+import '../cursor/basic.dart';
+import '../node/basic.dart';
+import '../cursor/node_position.dart';
 import 'entry_manager.dart';
 import 'input_manager.dart';
 import 'listener_collection.dart';

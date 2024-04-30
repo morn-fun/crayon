@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../command/selecting_nodes/update.dart';
+import '../command/selecting/update.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import '../cursor/rich_text_cursor.dart';
-import '../node/basic_node.dart';
-import '../node/rich_text_node/rich_text_node.dart';
-import '../node/rich_text_node/rich_text_span.dart';
+import '../cursor/basic.dart';
+import '../cursor/rich_text.dart';
+import '../node/basic.dart';
+import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text_span.dart';
 
 class UnderlineIntent extends Intent {
   const UnderlineIntent();

@@ -1,15 +1,15 @@
 import 'dart:math';
 
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/cursor/rich_text_cursor.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_node.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:crayon/editor/cursor/rich_text.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_node.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/widget/nodes/rich_text.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/exception/editor_node_exception.dart';
-import 'package:crayon/editor/node/basic_node.dart';
-import 'package:crayon/editor/node/position_data.dart';
+import 'package:crayon/editor/exception/editor_node.dart';
+import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/cursor/node_position.dart';
 
 import '../config/const_texts.dart';
 import '../config/test_editor_node.dart';

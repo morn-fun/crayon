@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-import '../node/basic_node.dart';
+import '../cursor/basic.dart';
+import '../exception/editor_node.dart';
+import '../node/basic.dart';
 import '../shortcuts/arrows/arrows.dart';
-import '../widget/menu/optional_menu.dart';
+import '../widget/menu/optional.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';
 import 'logger.dart';

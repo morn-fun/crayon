@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
 import '../../core/logger.dart';
-import '../../cursor/basic_cursor.dart';
-import '../../exception/editor_node_exception.dart';
+import '../../cursor/basic.dart';
+import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
 class LeftArrowAction extends ContextAction<LeftArrowIntent> {

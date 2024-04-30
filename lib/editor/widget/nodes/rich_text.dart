@@ -1,20 +1,20 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import '../../../../editor/extension/render_box_extension.dart';
+import '../../../../editor/extension/render_box.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../core/node_controller.dart';
-import '../../cursor/basic_cursor.dart';
-import '../../exception/editor_node_exception.dart';
-import '../../extension/offset_extension.dart';
-import '../../extension/painter_extension.dart';
+import '../../cursor/basic.dart';
+import '../../exception/editor_node.dart';
+import '../../extension/offset.dart';
+import '../../extension/painter.dart';
 
 import '../../core/input_manager.dart';
 import '../../core/logger.dart';
-import '../../cursor/rich_text_cursor.dart';
-import '../../node/position_data.dart';
-import '../../node/rich_text_node/rich_text_node.dart';
+import '../../cursor/rich_text.dart';
+import '../../cursor/node_position.dart';
+import '../../node/rich_text/rich_text_node.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';
@@ -357,8 +357,8 @@ class _RichTextState extends State<RichText> {
                       valueListenable: nodeChangedNotifier,
                       builder: (ctx, v, c) {
                         return Stack(
-                            children:
-                                painter.buildLinkGestures(v, onEnter: (o, s, p) {
+                            children: painter.buildLinkGestures(v,
+                                onEnter: (o, s, p) {
                           final url = s.attributes['url'] ?? '';
                           controller.updateEntryStatus(EntryStatus.idle);
                           confirmToShowLinkMenu(o, url, p);

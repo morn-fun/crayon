@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/exception/editor_node_exception.dart';
-import 'package:crayon/editor/extension/collection_extension.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:crayon/editor/exception/editor_node.dart';
+import 'package:crayon/editor/extension/collection.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 
 void main() {
   test('copyTest', () {

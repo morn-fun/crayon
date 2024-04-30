@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:crayon/editor/command/modify.dart';
-import 'package:crayon/editor/extension/cursor_extension.dart';
+import 'package:crayon/editor/extension/cursor.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -11,7 +11,7 @@ import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
 import '../../core/node_controller.dart';
-import '../../cursor/basic_cursor.dart';
+import '../../cursor/basic.dart';
 import '../../cursor/cursor_generator.dart';
 import '../stateful_lifecycle_widget.dart';
 
@@ -153,7 +153,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       onPanEnd: (d) {
         isInPanGesture = false;
         // logger.i('onPanEnd:$d');
-        if(d.velocity != Velocity.zero){
+        if (d.velocity != Velocity.zero) {
           controller
               .notifyGesture(GestureState(GestureType.panUpdate, panOffset));
         }

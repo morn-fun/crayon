@@ -1,13 +1,13 @@
 import 'package:flutter/services.dart';
 
-import '../command/basic_command.dart';
+import '../command/basic.dart';
 import '../command/modify.dart';
 import '../command/replace.dart';
-import '../command/selecting_nodes/replace.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-import '../node/basic_node.dart';
-import '../node/position_data.dart';
+import '../command/selecting/replace.dart';
+import '../cursor/basic.dart';
+import '../exception/editor_node.dart';
+import '../node/basic.dart';
+import '../cursor/node_position.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';
 import 'logger.dart';

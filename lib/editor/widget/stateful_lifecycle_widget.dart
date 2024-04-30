@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 
 class StatefulLifecycleWidget extends StatefulWidget {
-
   final Widget child;
   final VoidCallback? onInit;
   final VoidCallback? onDispose;
 
-  const StatefulLifecycleWidget({super.key, required this.child, this.onInit, this.onDispose});
+  const StatefulLifecycleWidget(
+      {super.key, required this.child, this.onInit, this.onDispose});
 
   @override
-  State<StatefulLifecycleWidget> createState() => _StatefulLifecycleWidgetState();
+  State<StatefulLifecycleWidget> createState() =>
+      _StatefulLifecycleWidgetState();
 }
 
 class _StatefulLifecycleWidgetState extends State<StatefulLifecycleWidget> {
-
-
   @override
   void initState() {
     widget.onInit?.call();

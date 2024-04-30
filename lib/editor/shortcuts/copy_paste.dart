@@ -1,21 +1,21 @@
-import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
+import 'package:crayon/editor/node/rich_text/ordered_node.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../command/modify.dart';
 import '../command/replace.dart';
-import '../command/selecting_nodes/paste.dart';
+import '../command/selecting/paste.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-import '../node/basic_node.dart';
-import '../node/position_data.dart';
-import '../node/rich_text_node/head_node.dart';
-import '../node/rich_text_node/rich_text_node.dart';
-import '../node/rich_text_node/rich_text_span.dart';
-import '../node/rich_text_node/unordered_node.dart';
+import '../cursor/basic.dart';
+import '../exception/editor_node.dart';
+import '../node/basic.dart';
+import '../cursor/node_position.dart';
+import '../node/rich_text/head_node.dart';
+import '../node/rich_text/rich_text_node.dart';
+import '../node/rich_text/rich_text_span.dart';
+import '../node/rich_text/unordered_node.dart';
 
 class CopyIntent extends Intent {
   const CopyIntent();

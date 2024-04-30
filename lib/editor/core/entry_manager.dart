@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../cursor/basic_cursor.dart';
-import '../widget/menu/link_menu.dart';
-import '../widget/menu/optional_menu.dart';
-import '../widget/menu/text_menu.dart';
+import '../cursor/basic.dart';
+import '../widget/menu/link.dart';
+import '../widget/menu/optional.dart';
+import '../widget/menu/rich_text.dart';
 import 'context.dart';
 
 class EntryManager {

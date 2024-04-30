@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/extension/collection_extension.dart';
+import 'package:crayon/editor/extension/collection.dart';
 
 void main() {
   test('set equals', () {

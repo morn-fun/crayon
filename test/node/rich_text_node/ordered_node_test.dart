@@ -1,8 +1,8 @@
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
+import 'package:crayon/editor/node/rich_text/ordered_node.dart';
 
 import '../config/const_texts.dart';
 

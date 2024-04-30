@@ -5,8 +5,8 @@ import 'package:flutter_highlight/themes/atelier-heath-dark.dart';
 import 'package:flutter_highlight/themes/atelier-heath-light.dart';
 import 'package:highlight/highlight.dart' show Node, highlight;
 
-import '../../../../editor/extension/render_box_extension.dart';
-import '../../../../editor/extension/painter_extension.dart';
+import '../../../../editor/extension/render_box.dart';
+import '../../../../editor/extension/painter.dart';
 import '../../core/input_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';

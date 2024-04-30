@@ -1,16 +1,17 @@
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/node/position_data.dart';
+import 'package:crayon/editor/cursor/node_position.dart';
 import 'package:flutter/src/widgets/framework.dart';
-import 'package:crayon/editor/cursor/basic_cursor.dart';
-import 'package:crayon/editor/node/basic_node.dart';
+import 'package:crayon/editor/cursor/basic.dart';
+import 'package:crayon/editor/node/basic.dart';
 
-class TestEditorNode extends EditorNode{
+class TestEditorNode extends EditorNode {
   @override
   // TODO: implement beginPosition
   NodePosition get beginPosition => throw UnimplementedError();
 
   @override
-  Widget build(NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(
+      NodeController controller, SingleNodePosition? position, dynamic extras) {
     // TODO: implement build
     throw UnimplementedError();
   }
@@ -26,7 +27,8 @@ class TestEditorNode extends EditorNode{
   }
 
   @override
-  EditorNode getFromPosition(NodePosition begin, NodePosition end, {String? newId}) {
+  EditorNode getFromPosition(NodePosition begin, NodePosition end,
+      {String? newId}) {
     // TODO: implement getFromPosition
     throw UnimplementedError();
   }
@@ -72,7 +74,8 @@ class TestEditorNode extends EditorNode{
   }
 
   @override
-  List<EditorNode> getInlineNodesFromPosition(NodePosition begin, NodePosition end) {
+  List<EditorNode> getInlineNodesFromPosition(
+      NodePosition begin, NodePosition end) {
     // TODO: implement getInlineNodesFromPosition
     throw UnimplementedError();
   }

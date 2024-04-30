@@ -1,6 +1,5 @@
-
-import '../command/basic_command.dart';
-import '../exception/command_exception.dart';
+import '../command/basic.dart';
+import '../exception/command.dart';
 import 'editor_controller.dart';
 import 'logger.dart';
 
@@ -51,8 +50,8 @@ class CommandInvoker {
     }
   }
 
-  void insertUndoCommand(
-      UpdateControllerOperation c, bool record, RichEditorController controller) {
+  void insertUndoCommand(UpdateControllerOperation c, bool record,
+      RichEditorController controller) {
     final command = c.update(controller);
     if (record) _addToUndoCommands(command);
   }

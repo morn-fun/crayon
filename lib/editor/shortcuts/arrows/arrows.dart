@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../cursor/basic_cursor.dart';
+import '../../cursor/basic.dart';
 
 enum ArrowType {
   current,
@@ -101,5 +101,3 @@ class UpWordSelectionArrowIntent extends Intent {
 class DownWordSelectionArrowIntent extends Intent {
   const DownWordSelectionArrowIntent();
 }
-
-

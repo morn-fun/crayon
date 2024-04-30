@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../command/modify.dart';
 import '../command/replace.dart';
-import '../command/selecting_nodes/delete.dart';
-import '../command/selecting_nodes/depth.dart';
+import '../command/selecting/delete.dart';
+import '../command/selecting/depth.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/editor_node_exception.dart';
-import '../node/basic_node.dart';
-import '../node/position_data.dart';
+import '../cursor/basic.dart';
+import '../exception/editor_node.dart';
+import '../node/basic.dart';
+import '../cursor/node_position.dart';
 
 class DeleteIntent extends Intent {
   const DeleteIntent();
@@ -39,9 +39,13 @@ class DeleteAction extends ContextAction<DeleteIntent> {
         try {
           final newNode = lastNode.merge(node);
           final newNodes = [newNode];
-          correctDepth(controller, index + 1, newNode.depth, newNodes, limitChildren: false);
-          editorContext.execute(ReplaceNode(Replace(index - 1, index + newNodes.length,
-              newNodes, EditingCursor(index - 1, lastNode.endPosition))));
+          correctDepth(controller, index + 1, newNode.depth, newNodes,
+              limitChildren: false);
+          editorContext.execute(ReplaceNode(Replace(
+              index - 1,
+              index + newNodes.length,
+              newNodes,
+              EditingCursor(index - 1, lastNode.endPosition))));
         } on UnableToMergeException catch (e) {
           logger.e('$runtimeType, $e');
           editorContext.execute(ModifyNode(
@@ -49,9 +53,9 @@ class DeleteAction extends ContextAction<DeleteIntent> {
                   index - 1, lastNode.beginPosition, lastNode.endPosition),
               node));
         }
-      } on DeleteToChangeNodeException catch(e){
-        editorContext.execute(ReplaceNode(Replace(index, index + 1,
-            [e.node], EditingCursor(index, e.position))));
+      } on DeleteToChangeNodeException catch (e) {
+        editorContext.execute(ReplaceNode(Replace(
+            index, index + 1, [e.node], EditingCursor(index, e.position))));
       }
     } else if (cursor is SelectingNodeCursor) {
       final r = controller.getNode(cursor.index).onSelect(SelectingData(

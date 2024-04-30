@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import '../cursor/basic_cursor.dart';
-import '../node/basic_node.dart';
+import '../cursor/basic.dart';
+import '../node/basic.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'listener_collection.dart';
 import 'command_invoker.dart';
@@ -26,10 +26,9 @@ class RichEditorController {
 
   EditorNode get lastNode => _nodes.last;
 
-  SelectingNodesCursor get selectAllCursor =>
-      SelectingNodesCursor(
-          IndexWithPosition(0, firstNode.beginPosition),
-          IndexWithPosition(nodeLength - 1, lastNode.endPosition));
+  SelectingNodesCursor get selectAllCursor => SelectingNodesCursor(
+      IndexWithPosition(0, firstNode.beginPosition),
+      IndexWithPosition(nodeLength - 1, lastNode.endPosition));
 
   UpdateControllerOperation? update(Update data, {bool record = true}) {
     final operation = data.update(this);
@@ -117,7 +116,7 @@ class Replace extends UpdateControllerOperation {
     final nodes = controller._nodes;
     final oldNodes = nodes.sublist(begin, end);
     final operation =
-    Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
+        Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
     nodes.replaceRange(begin, end, List.of(newNodes));
     controller.updateCursor(cursor, notify: false);
     controller.notifyNodes();

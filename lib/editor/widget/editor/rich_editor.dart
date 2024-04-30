@@ -5,9 +5,9 @@ import '../../core/editor_controller.dart';
 import '../../core/entry_manager.dart';
 import '../../core/input_manager.dart';
 import '../../core/logger.dart';
-import '../../node/basic_node.dart';
+import '../../node/basic.dart';
 import '../../core/shortcuts.dart';
-import '../../exception/command_exception.dart';
+import '../../exception/command.dart';
 import 'auto_scroll_editor_list.dart';
 import 'shared_editor_context_widget.dart';
 

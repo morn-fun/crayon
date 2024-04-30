@@ -1,11 +1,11 @@
-import 'package:crayon/editor/cursor/rich_text_cursor.dart';
-import 'package:crayon/editor/exception/editor_node_exception.dart';
-import 'package:crayon/editor/node/basic_node.dart';
-import 'package:crayon/editor/node/position_data.dart';
-import 'package:crayon/editor/node/rich_text_node/ordered_node.dart';
-import 'package:crayon/editor/node/rich_text_node/special_newline_mixin.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
-import 'package:crayon/editor/node/rich_text_node/unordered_node.dart';
+import 'package:crayon/editor/cursor/rich_text.dart';
+import 'package:crayon/editor/exception/editor_node.dart';
+import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/cursor/node_position.dart';
+import 'package:crayon/editor/node/rich_text/ordered_node.dart';
+import 'package:crayon/editor/node/rich_text/special_newline_mixin.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
+import 'package:crayon/editor/node/rich_text/unordered_node.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../config/const_texts.dart';

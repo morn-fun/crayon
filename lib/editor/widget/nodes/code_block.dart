@@ -8,14 +8,14 @@ import 'package:highlight/languages/all.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
 import '../../core/node_controller.dart';
-import '../../cursor/code_block_cursor.dart';
-import '../../exception/editor_node_exception.dart';
-import '../../node/code_block_node/code_block_node.dart';
-import '../../node/position_data.dart';
+import '../../cursor/code_block.dart';
+import '../../exception/editor_node.dart';
+import '../../node/code_block/code_block_node.dart';
+import '../../cursor/node_position.dart';
 
 import '../../shortcuts/arrows/arrows.dart';
 import '../editor/shared_editor_context_widget.dart';
-import '../menu/code_select_menu.dart';
+import '../menu/code_selector.dart';
 import 'code_block_line.dart';
 
 class CodeBlock extends StatefulWidget {

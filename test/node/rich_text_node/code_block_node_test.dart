@@ -1,5 +1,5 @@
-import 'package:crayon/editor/cursor/code_block_cursor.dart';
-import 'package:crayon/editor/node/code_block_node/code_block_node.dart';
+import 'package:crayon/editor/cursor/code_block.dart';
+import 'package:crayon/editor/node/code_block/code_block_node.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../config/const_texts.dart';
@@ -18,8 +18,7 @@ void main() {
     assert(node.endPosition.inEdge == true);
   });
 
-
-  test('getFromPosition', (){
+  test('getFromPosition', () {
     var node = basicNode();
     var n1 = node.frontPartNode(CodeBlockPosition(5, 0));
     assert(n1 is CodeBlockNode);
@@ -27,5 +26,4 @@ void main() {
     final text = n1.text.replaceAll('\n', '');
     assert(text == sublist);
   });
-
 }

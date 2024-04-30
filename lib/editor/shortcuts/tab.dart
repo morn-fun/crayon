@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../editor/command/replace.dart';
-import '../../editor/exception/editor_node_exception.dart';
-import '../../editor/extension/int_extension.dart';
+import '../../editor/exception/editor_node.dart';
+import '../../editor/extension/int.dart';
 
-import '../command/selecting_nodes/depth.dart';
+import '../command/selecting/depth.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
-import '../cursor/basic_cursor.dart';
-import '../node/basic_node.dart';
-import '../node/position_data.dart';
+import '../cursor/basic.dart';
+import '../node/basic.dart';
+import '../cursor/node_position.dart';
 
 class TabIntent extends Intent {
   const TabIntent();

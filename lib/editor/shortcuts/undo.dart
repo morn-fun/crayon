@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/context.dart';
 import '../core/logger.dart';
-import '../exception/command_exception.dart';
+import '../exception/command.dart';
 
 class UndoIntent extends Intent {
   const UndoIntent();

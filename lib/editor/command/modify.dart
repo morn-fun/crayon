@@ -1,8 +1,8 @@
 import '../core/command_invoker.dart';
 import '../core/editor_controller.dart';
-import '../cursor/basic_cursor.dart';
-import '../node/basic_node.dart';
-import 'basic_command.dart';
+import '../cursor/basic.dart';
+import '../node/basic.dart';
+import 'basic.dart';
 
 class ModifyNode implements BasicCommand {
   final SingleNodeCursor cursor;
@@ -36,5 +36,4 @@ class ModifyNodeWithoutChangeCursor implements BasicCommand {
   String toString() {
     return 'ModifyNodeWithoutChangeCursor{index: $index, node: $node}';
   }
-
 }

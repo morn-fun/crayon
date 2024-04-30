@@ -1,10 +1,10 @@
 import 'package:crayon/editor/core/node_controller.dart';
-import 'package:crayon/editor/cursor/rich_text_cursor.dart';
-import 'package:crayon/editor/exception/editor_node_exception.dart';
-import 'package:crayon/editor/node/basic_node.dart';
-import 'package:crayon/editor/node/position_data.dart';
-import 'package:crayon/editor/node/rich_text_node/head_node.dart';
-import 'package:crayon/editor/node/rich_text_node/rich_text_span.dart';
+import 'package:crayon/editor/cursor/rich_text.dart';
+import 'package:crayon/editor/exception/editor_node.dart';
+import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/cursor/node_position.dart';
+import 'package:crayon/editor/node/rich_text/head_node.dart';
+import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -52,8 +52,8 @@ void main() {
     H1Node node =
         H1Node.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
-        () => node
-            .onEdit(EditingData(RichTextNodePosition.zero(), EventType.newline)),
+        () => node.onEdit(
+            EditingData(RichTextNodePosition.zero(), EventType.newline)),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onEdit(

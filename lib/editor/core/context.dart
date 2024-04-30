@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../editor/node/position_data.dart';
+import '../cursor/node_position.dart';
 
-import '../command/basic_command.dart';
+import '../command/basic.dart';
 import '../command/modify.dart';
-import '../cursor/basic_cursor.dart';
-import '../exception/command_exception.dart';
-import '../node/basic_node.dart';
+import '../cursor/basic.dart';
+import '../exception/command.dart';
+import '../node/basic.dart';
 import 'command_invoker.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';

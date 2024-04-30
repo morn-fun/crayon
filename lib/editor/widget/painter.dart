@@ -8,7 +8,7 @@ class RichTextPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Rect background = Rect.fromLTWH(0, 0, size.width, size.height);
-    if(size == Size.zero){
+    if (size == Size.zero) {
       background = Rect.fromLTWH(0, 0, _painter.width, _painter.height);
     }
     Paint backgroundPaint = Paint()..color = Colors.transparent;

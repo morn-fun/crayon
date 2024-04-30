@@ -1,6 +1,6 @@
 import '../core/editor_controller.dart';
-import '../node/rich_text_node/rich_text_node.dart';
-import 'basic_cursor.dart';
+import '../node/rich_text/rich_text_node.dart';
+import 'basic.dart';
 
 BasicCursor? generateSelectingCursor(
     NodePosition endPosition, int index, RichEditorController controller) {
