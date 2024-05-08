@@ -20,7 +20,7 @@ import '../../node/table/table.dart';
 
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
-  final Offset offset;
+  final EditingOffset offset;
   final NodeContext nodeContext;
   final ListenerCollection listeners;
 
@@ -36,7 +36,7 @@ class OptionalMenu extends StatefulWidget {
 }
 
 class _OptionalMenuState extends State<OptionalMenu> {
-  Offset get offset => widget.offset;
+  EditingOffset get offset => widget.offset;
 
   NodeContext get nodeContext => widget.nodeContext;
 
@@ -147,7 +147,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final info = _correctCoordinate(Size(size.width - 10, size.height - 10),
-        widget.offset.translate(0, 18));
+        widget.offset.offset.translate(0, offset.height));
     final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => hideMenu(),
@@ -237,7 +237,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     const widgetSize = Size(220, 600);
     const minHeight = 300;
     const minWidth = 200;
-    const distanceY = 18;
+    double distanceY = this.offset.height;
     final resetDistanceToBottom = screenSize.height - offset.dy;
     final resetDistanceToRight = screenSize.width - offset.dx;
     final showInTop = resetDistanceToBottom < minHeight;

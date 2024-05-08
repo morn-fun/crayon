@@ -75,8 +75,6 @@ class EditorContext implements NodeContext {
   @override
   ListenerCollection get listeners => controller.listeners;
 
-  EntryStatus get entryStatus => entryManager.status;
-
   void requestFocus() {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
@@ -86,10 +84,7 @@ class EditorContext implements NodeContext {
 
   void updateStatus(ControllerStatus status) => controller.updateStatus(status);
 
-  void updateEntryStatus(EntryStatus status) =>
-      entryManager.updateStatus(status);
-
-  void showOptionalMenu(Offset offset, OverlayState state) =>
+  void showOptionalMenu(EditingOffset offset, OverlayState state) =>
       entryManager.showOptionalMenu(offset, state, this);
 
   void showTextMenu(OverlayState state, MenuInfo info, LayerLink link) =>
@@ -102,7 +97,7 @@ class EditorContext implements NodeContext {
 
   @override
   void hideMenu() {
-    entryManager.hideMenu();
+    entryManager.removeEntry();
     inputManager.requestFocus();
   }
 

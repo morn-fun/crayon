@@ -6,7 +6,6 @@ import '../node/basic.dart';
 import '../shortcuts/arrows/arrows.dart';
 import '../widget/menu/optional.dart';
 import 'editor_controller.dart';
-import 'entry_manager.dart';
 import 'logger.dart';
 
 class ListenerCollection {
@@ -16,11 +15,9 @@ class ListenerCollection {
   final Set<VoidCallback> _nodesListeners = {};
   final Set<ValueChanged<GestureState>> _gestureListeners = {};
   final Set<ValueChanged<ControllerStatus>> _statusListeners = {};
-  final Set<ValueChanged<EntryStatus>> _entryStatusListeners = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
-  final Set<ValueChanged<CursorOffset>> _editingCursorOffsetListeners = {};
 
   void dispose() {
     logger.i('$tag, dispose');
@@ -28,11 +25,9 @@ class ListenerCollection {
     _nodesListeners.clear();
     _gestureListeners.clear();
     _statusListeners.clear();
-    _entryStatusListeners.clear();
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _optionalMenuListeners.clear();
-    _editingCursorOffsetListeners.clear();
   }
 
   void addCursorChangedListener(ValueChanged<BasicCursor> listener) =>
@@ -59,24 +54,12 @@ class ListenerCollection {
   void removeStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
       _statusListeners.remove(listener);
 
-  void addEntryStatusChangedListener(ValueChanged<EntryStatus> listener) =>
-      _entryStatusListeners.add(listener);
-
-  void removeEntryStatusChangedListener(ValueChanged<EntryStatus> listener) =>
-      _entryStatusListeners.remove(listener);
-
   void addOptionalMenuListener(ValueChanged<OptionalSelectedType> listener) =>
       _optionalMenuListeners.add(listener);
 
   void removeOptionalMenuListener(
           ValueChanged<OptionalSelectedType> listener) =>
       _optionalMenuListeners.remove(listener);
-
-  void addEditingCursorOffsetListener(ValueChanged<CursorOffset> listener) =>
-      _editingCursorOffsetListeners.add(listener);
-
-  void removeEditingCursorOffsetListener(ValueChanged<CursorOffset> listener) =>
-      _editingCursorOffsetListeners.remove(listener);
 
   void addNodeChangedListener(String id, ValueChanged<EditorNode> listener) {
     // logger.i(
@@ -163,21 +146,9 @@ class ListenerCollection {
     }
   }
 
-  void notifyEntryStatus(EntryStatus status) {
-    for (var c in Set.of(_entryStatusListeners)) {
-      c.call(status);
-    }
-  }
-
   void notifyOptionalMenu(OptionalSelectedType type) {
     for (var c in Set.of(_optionalMenuListeners)) {
       c.call(type);
-    }
-  }
-
-  void notifyEditingCursorOffset(CursorOffset indexY) {
-    for (var c in Set.of(_editingCursorOffsetListeners)) {
-      c.call(indexY);
     }
   }
 }
@@ -198,13 +169,19 @@ enum GestureType { tap, panUpdate, hover }
 
 class CursorOffset {
   final int index;
-  final double globalY;
+  final EditingOffset offset;
 
-  CursorOffset(this.index, this.globalY);
+  CursorOffset(this.index, this.offset);
+
+  CursorOffset.zero()
+      : index = 0,
+        offset = EditingOffset.zero();
+
+  double get y => offset.y;
 
   @override
   String toString() {
-    return 'CursorOffset{index: $index, globalY: $globalY}';
+    return 'CursorOffset{index: $index, offset: $offset}';
   }
 
   @override
@@ -213,8 +190,8 @@ class CursorOffset {
       other is CursorOffset &&
           runtimeType == other.runtimeType &&
           index == other.index &&
-          globalY == other.globalY;
+          offset == other.offset;
 
   @override
-  int get hashCode => index.hashCode ^ globalY.hashCode;
+  int get hashCode => index.hashCode ^ offset.hashCode;
 }

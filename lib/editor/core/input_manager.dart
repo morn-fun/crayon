@@ -9,7 +9,6 @@ import '../exception/editor_node.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
 import 'editor_controller.dart';
-import 'entry_manager.dart';
 import 'logger.dart';
 
 class InputManager with TextInputClient, DeltaTextInputClient {
@@ -21,7 +20,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   final RichEditorController controller;
 
   final ValueChanged<BasicCommand> onCommand;
-  final ValueChanged<EntryStatus> onEntryStatus;
+  final ValueChanged<NodeWithPosition> onOptionalMenu;
   final VoidCallback focusCall;
 
   BasicCursor get cursor => controller.cursor;
@@ -29,7 +28,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   InputManager(
       {required this.controller,
       required this.onCommand,
-      required this.onEntryStatus,
+      required this.onOptionalMenu,
       required this.focusCall});
 
   @override
@@ -107,7 +106,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onEntryStatus.call(EntryStatus.readyToShowingOptionalMenu);
+        onOptionalMenu.call(e.nodeWithPosition);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }
@@ -125,7 +124,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onEntryStatus.call(EntryStatus.readyToShowingOptionalMenu);
+        onOptionalMenu.call(e.nodeWithPosition);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }

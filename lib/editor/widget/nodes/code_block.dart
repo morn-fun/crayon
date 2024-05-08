@@ -198,8 +198,8 @@ class _CodeBlockState extends State<CodeBlock> {
                             style: theme.textTheme.bodyMedium,
                             controller: CodeNodeController(
                               onEditingOffsetChanged: (o) {
-                                lastEditOffset = o;
-                                controller.notifyEditingOffset(o.dy);
+                                lastEditOffset = o.offset;
+                                controller.notifyEditingOffset(o);
                               },
                               onInputConnectionAttribute:
                                   controller.onInputConnectionAttribute,

@@ -37,7 +37,13 @@ class _RichEditorPageState extends State<RichEditor> {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
     final listeners = controller.listeners;
-    entryManager = EntryManager((s) => listeners.notifyEntryStatus(s));
+    entryManager = EntryManager(onMenuShowing: (t) {
+      if (t == MenuType.optional) {
+        shortcutManager.shortcuts = selectingMenuShortcuts;
+      }
+    }, onMenuHide: (t) {
+      shortcutManager.shortcuts = editorShortcuts;
+    });
     shortcutManager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
     inputManager = InputManager(
         controller: controller,
@@ -49,7 +55,11 @@ class _RichEditorPageState extends State<RichEditor> {
           }
         },
         focusCall: () => focusNode.requestFocus(),
-        onEntryStatus: (s) => entryManager.updateStatus(s));
+        onOptionalMenu: (s) {
+          final cursorOffset = controller.lastCursorOffset;
+          entryManager.showOptionalMenu(
+              cursorOffset.offset, Overlay.of(context), editorContext);
+        });
     inputManager.startInput();
     editorContext = EditorContext(
         controller, inputManager, focusNode, invoker, entryManager);
@@ -57,7 +67,7 @@ class _RichEditorPageState extends State<RichEditor> {
     focusNode.addListener(_onFocusChanged);
     listeners.addNodesChangedListener(refresh);
     listeners.addStatusChangedListener((value) {
-      entryManager.hideOptionalMenu();
+      entryManager.removeEntry();
       switch (value) {
         case ControllerStatus.typing:
           shortcutManager.shortcuts = {};
@@ -65,13 +75,6 @@ class _RichEditorPageState extends State<RichEditor> {
         case ControllerStatus.idle:
           shortcutManager.shortcuts = editorShortcuts;
           break;
-      }
-    });
-    listeners.addEntryStatusChangedListener((value) {
-      if (value == EntryStatus.showingOptionalMenu) {
-        shortcutManager.shortcuts = selectingMenuShortcuts;
-      } else {
-        shortcutManager.shortcuts = editorShortcuts;
       }
     });
   }

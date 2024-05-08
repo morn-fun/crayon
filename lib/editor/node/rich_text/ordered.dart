@@ -26,7 +26,7 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
             style: TextStyle(
                 fontSize: size, color: theme.textTheme.displayMedium?.color),
           ),
-          Expanded(child: RichText(controller, this, position)),
+          Expanded(child: RichTextWidget(controller, this, position)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );

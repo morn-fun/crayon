@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:crayon/editor/core/editor_controller.dart';
 import 'package:flutter/material.dart';
 import '../../../../editor/extension/render_box.dart';
 import '../../core/entry_manager.dart';
@@ -19,8 +20,8 @@ import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';
 
-class RichText extends StatefulWidget {
-  const RichText(
+class RichTextWidget extends StatefulWidget {
+  const RichTextWidget(
     this.controller,
     this.richTextNode,
     this.position, {
@@ -34,10 +35,10 @@ class RichText extends StatefulWidget {
   final double fontSize;
 
   @override
-  State<RichText> createState() => _RichTextState();
+  State<RichTextWidget> createState() => _RichTextWidgetState();
 }
 
-class _RichTextState extends State<RichText> {
+class _RichTextWidgetState extends State<RichTextWidget> {
   final tag = 'RichText';
 
   final key = GlobalKey();
@@ -83,7 +84,6 @@ class _RichTextState extends State<RichText> {
       notifyEditingOffset(editorPosition(nodePosition));
     });
     listeners.addGestureListener(onGesture);
-    listeners.addEntryStatusChangedListener(onEntryStatus);
     listeners.addArrowDelegate(node.id, onArrowAccept);
   }
 
@@ -91,22 +91,11 @@ class _RichTextState extends State<RichText> {
   void dispose() {
     super.dispose();
     listeners.removeGestureListener(onGesture);
-    listeners.removeEntryStatusChangedListener(onEntryStatus);
     listeners.removeArrowDelegate(node.id, onArrowAccept);
     editingCursorNotifier.dispose();
     selectingCursorNotifier.dispose();
     nodeChangedNotifier.dispose();
     painter.dispose();
-  }
-
-  void onEntryStatus(EntryStatus s) {
-    if (s != EntryStatus.readyToShowingOptionalMenu) return;
-    final box = renderBox;
-    if (box == null) return;
-    final v = editingCursorNotifier.value;
-    if (v == null) return;
-    controller
-        .showOverlayEntry(OptionalEntryShower(box.localToGlobal(Offset.zero)));
   }
 
   void onArrowAccept(AcceptArrowData data) {
@@ -215,13 +204,11 @@ class _RichTextState extends State<RichText> {
   void confirmToShowTextMenu(Offset offset) {
     final v = selectingCursorNotifier.value;
     if (v == null) return;
-    if (controller.entryStatus != EntryStatus.idle) return;
     if (!containsOffset(offset)) return;
     final left = v.left, right = v.right;
     if (left is! RichTextNodePosition || right is! RichTextNodePosition) return;
     bool isTextEmpty = node.getFromPosition(left, right).isEmpty;
     if (isTextEmpty) return;
-    controller.updateEntryStatus(EntryStatus.readyToShowingTextMenu);
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
@@ -231,8 +218,6 @@ class _RichTextState extends State<RichText> {
 
   void confirmToShowLinkMenu(
       Offset offset, String url, SelectingPosition position) {
-    if (controller.entryStatus != EntryStatus.idle) return;
-    controller.updateEntryStatus(EntryStatus.readyToShowingLinkMenu);
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
@@ -267,7 +252,7 @@ class _RichTextState extends State<RichText> {
   }
 
   @override
-  void didUpdateWidget(covariant RichText oldWidget) {
+  void didUpdateWidget(covariant RichTextWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (node != oldWidget.richTextNode) {
       nodeChangedNotifier.value = node;
@@ -284,9 +269,18 @@ class _RichTextState extends State<RichText> {
 
   void notifyEditingOffset(RichTextNodePosition? position) {
     if (position != null && y != null) {
-      final cursorY = painter.getOffsetFromTextOffset(position.offset).dy;
-      controller.notifyEditingOffset(cursorY + y!);
+      final offset = painter.getOffsetFromTextOffset(position.offset);
+      controller.notifyEditingOffset(EditingOffset(
+          Offset(offset.dx, offset.dy + y!), getCurrentCursorHeight(position)));
     }
+  }
+
+  double getCurrentCursorHeight(RichTextNodePosition offset) {
+    final rect = Rect.fromPoints(
+        Offset.zero, renderBox?.globalToLocal(Offset.zero) ?? Offset.zero);
+    return painter.getFullHeightForCaret(
+            TextPosition(offset: node.getOffset(offset)), rect) ??
+        widget.fontSize;
   }
 
   @override
@@ -360,16 +354,9 @@ class _RichTextState extends State<RichText> {
                             children: painter.buildLinkGestures(v,
                                 onEnter: (o, s, p) {
                           final url = s.attributes['url'] ?? '';
-                          controller.updateEntryStatus(EntryStatus.idle);
                           confirmToShowLinkMenu(o, url, p);
                         }, onExit: (e) {
-                          Future.delayed(Duration(milliseconds: 200), () {
-                            if (controller.entryStatus ==
-                                    EntryStatus.showingLinkMenu &&
-                                mounted) {
-                              controller.entryManager.hideMenu();
-                            }
-                          });
+                          controller.entryManager.removeEntry();
                         }, onTap: (s) {
                           logger.i('$tag,  tapped:${s.text}');
                         }));
@@ -406,7 +393,8 @@ class _RichTextState extends State<RichText> {
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     controller.notifyEditingPosition(richPosition);
-    controller.notifyEditingOffset(globalOffset.dy);
+    controller.notifyEditingOffset(
+        EditingOffset(globalOffset, getCurrentCursorHeight(richPosition)));
     updateInputAttribute(richPosition);
   }
 

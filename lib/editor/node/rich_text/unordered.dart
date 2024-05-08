@@ -23,7 +23,7 @@ class UnorderedNode extends RichTextNode with SpecialNewlineMixin {
         children: [
           buildMarker(26, theme),
           Expanded(
-              child: RichText(
+              child: RichTextWidget(
             controller,
             this,
             position,

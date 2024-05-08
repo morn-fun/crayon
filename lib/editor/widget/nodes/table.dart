@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart' hide TableCell;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../editor/cursor/basic.dart';
 import '../../../editor/extension/cursor.dart';
@@ -12,9 +13,12 @@ import '../../core/logger.dart';
 import '../../core/node_controller.dart';
 import '../../cursor/node_position.dart';
 import '../../cursor/table_cell.dart';
+import '../../node/rich_text/rich_text.dart';
 import '../../node/table/table.dart';
-import '../../node/table/table_cell.dart';
+import '../../node/table/table_cell.dart' as tc;
+import '../../node/table/table_cell_list.dart';
 import '../../shortcuts/arrows/arrows.dart';
+import 'table_operator.dart';
 
 class RichTable extends StatefulWidget {
   final NodeController controller;
@@ -38,12 +42,13 @@ class _RichTableState extends State<RichTable> {
   ListenerCollection get listeners => controller.listeners;
 
   final ValueNotifier<double?> heightNotifier = ValueNotifier(null);
+  final ValueNotifier<List<double>> heightsNotifier = ValueNotifier([]);
   final ValueNotifier<_MouseState?> mouseNotifier = ValueNotifier(null);
   final key = GlobalKey();
 
   @override
   void initState() {
-    updateHeight();
+    updateSize();
     listeners.addArrowDelegate(node.id, onArrowAccept);
     super.initState();
   }
@@ -89,14 +94,29 @@ class _RichTableState extends State<RichTable> {
     return map;
   }
 
-  void updateHeight() {
+  void updateSize() {
     if (!mounted) return;
-    final h = renderBox?.size.height;
-    if (heightNotifier.value != h) {
-      heightNotifier.value = h;
-      logger.i('updateHeight: $h');
+    final box = renderBox;
+    if (box is RenderTable) {
+      final h = box.size.height;
+      bool needUpdateHeights = false;
+      if (heightNotifier.value != h) {
+        heightNotifier.value = h;
+        needUpdateHeights = true;
+        logger.i('updateHeight: $h');
+      }
+      if (needUpdateHeights) {
+        List<double> heights = List.generate(box.rows, (index) => 0);
+        for (var i = 0; i < box.rows; ++i) {
+          final rows = box.row(i);
+          double maxHeight = rows.map((e) => e.size.height).reduce(max);
+          heights[i] = maxHeight;
+        }
+        heightsNotifier.value = heights;
+        logger.i('updateHeights: $heights');
+      }
     }
-    WidgetsBinding.instance.addPostFrameCallback((t) => updateHeight());
+    WidgetsBinding.instance.addPostFrameCallback((t) => updateSize());
   }
 
   void onArrowAccept(AcceptArrowData data) {}
@@ -111,20 +131,22 @@ class _RichTableState extends State<RichTable> {
     final widths = node.widths;
     final Map<int, FixedColumnWidth> widthsMap = buildWidthsMap(node);
     final table = node.table;
-    final wholeContain = _wholeContain(position, node);
+    final wholeContain = node.wholeContain(position);
     final tableBorderWidth = 1.0;
+    final operatorSize = 10.0;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Stack(
         children: [
           Container(
-            key: key,
             alignment: Alignment.topLeft,
+            padding: EdgeInsets.only(left: operatorSize, top: operatorSize),
             child: Container(
               foregroundDecoration: wholeContain
                   ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
                   : null,
               child: Table(
+                key: key,
                 columnWidths: widthsMap,
                 border: TableBorder.all(width: tableBorderWidth),
                 children: List.generate(table.length, (r) {
@@ -132,71 +154,76 @@ class _RichTableState extends State<RichTable> {
                   return TableRow(
                       children: List.generate(cellList.length, (c) {
                     final cell = cellList.getCell(c);
-                    _ContainStatus status = _ContainStatus.outer;
+                    tc.CellCursorStatus status = tc.CellCursorStatus.outer;
                     if (!wholeContain) {
-                      status = _containCell(position, r, c, cell);
+                      status = cell.getCursorStatus(position, r, c);
                     }
-                    return Container(
-                      foregroundDecoration: status == _ContainStatus.current
-                          ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
-                          : null,
-                      padding: EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: List.generate(cell.length, (i) {
-                          final innerNode = cell.getNode(i);
-                          SingleNodePosition? innerPosition;
-                          if (status == _ContainStatus.inner) {
-                            final cursor = _fromPosition(position!);
-                            innerPosition =
-                                cursor.getSingleNodePosition(i, innerNode);
-                          }
-                          return Container(
-                            padding: EdgeInsets.only(
-                                left: innerNode.depth * 12, right: 4),
-                            child: innerNode.build(
-                                controller.copy(
-                                  onEditingPosition: (p) {
-                                    final realPosition = TablePosition(
-                                        r, c, TableCellPosition(i, p));
-                                    controller.onEditingPosition
-                                        .call(realPosition);
-                                  },
-                                  onPanUpdatePosition: (p) {
-                                    final realPosition = TablePosition(
-                                        r, c, TableCellPosition(i, p));
-                                    controller.onPanUpdatePosition
-                                        .call(realPosition);
-                                  },
-                                  cursorGenerator: (p) {
-                                    late SingleNodePosition position;
-                                    if (p is EditingPosition) {
-                                      position = EditingPosition(TablePosition(
-                                          r,
-                                          c,
-                                          TableCellPosition(i, p.position)));
-                                    } else if (p is SelectingPosition) {
-                                      position = SelectingPosition(
-                                          TablePosition(r, c,
-                                              TableCellPosition(i, p.begin)),
-                                          TablePosition(r, c,
-                                              TableCellPosition(i, p.end)));
-                                    }
-                                    return controller.cursorGenerator
-                                        .call(position);
-                                  },
-                                  nodeGetter: (i) => cell.getNode(i),
-                                  onNodeChanged: (n) {
-                                    final newNode = node.updateCell(
-                                        r, c, to(cell.update(i, to(n))));
-                                    controller.onNodeChanged.call(newNode);
-                                  },
-                                ),
-                                innerPosition,
-                                i),
-                          );
-                        }),
+                    return TableCell(
+                      child: Container(
+                        foregroundDecoration: status ==
+                                tc.CellCursorStatus.current
+                            ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
+                            : null,
+                        padding: EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: List.generate(cell.length, (i) {
+                            final innerNode = cell.getNode(i);
+                            SingleNodePosition? innerPosition;
+                            if (status == tc.CellCursorStatus.inner) {
+                              final cursor = _fromPosition(position!);
+                              innerPosition =
+                                  cursor.getSingleNodePosition(i, innerNode);
+                            }
+                            return Container(
+                              padding: EdgeInsets.only(
+                                  left: innerNode.depth * 12, right: 4),
+                              child: innerNode.build(
+                                  controller.copy(
+                                    onEditingPosition: (p) {
+                                      final realPosition = TablePosition(
+                                          r, c, TableCellPosition(i, p));
+                                      controller.onEditingPosition
+                                          .call(realPosition);
+                                    },
+                                    onPanUpdatePosition: (p) {
+                                      final realPosition = TablePosition(
+                                          r, c, TableCellPosition(i, p));
+                                      controller.onPanUpdatePosition
+                                          .call(realPosition);
+                                    },
+                                    cursorGenerator: (p) {
+                                      late SingleNodePosition position;
+                                      if (p is EditingPosition) {
+                                        position = EditingPosition(
+                                            TablePosition(
+                                                r,
+                                                c,
+                                                TableCellPosition(
+                                                    i, p.position)));
+                                      } else if (p is SelectingPosition) {
+                                        position = SelectingPosition(
+                                            TablePosition(r, c,
+                                                TableCellPosition(i, p.begin)),
+                                            TablePosition(r, c,
+                                                TableCellPosition(i, p.end)));
+                                      }
+                                      return controller.cursorGenerator
+                                          .call(position);
+                                    },
+                                    nodeGetter: (i) => cell.getNode(i),
+                                    onNodeChanged: (n) {
+                                      final newNode = node.updateCell(
+                                          r, c, to(cell.update(i, to(n))));
+                                      controller.onNodeChanged.call(newNode);
+                                    },
+                                  ),
+                                  innerPosition,
+                                  i),
+                            );
+                          }),
+                        ),
                       ),
                     );
                   }));
@@ -208,81 +235,109 @@ class _RichTableState extends State<RichTable> {
               valueListenable: heightNotifier,
               builder: (ctx, height, c) {
                 if (height == null) return Container();
-                return Row(
-                    children: List.generate(widths.length, (index) {
-                  var left = widths[index];
-                  final w = 5.0;
-                  final transparentArea = 8.0;
-                  if(index == 0){
-                    left = max(w, left - transparentArea / 2);
-                  } else {
-                    left = max(w, left - transparentArea);
-                  }
-                  return Padding(
-                    padding: EdgeInsets.only(left: left),
-                    child: GestureDetector(
-                      onHorizontalDragStart: (e) {
-                        mouseNotifier.value =
-                            _MouseState(index, _MouseStatus.dragging);
-                      },
-                      onHorizontalDragEnd: (e) {
-                        mouseNotifier.value = null;
-                      },
-                      onHorizontalDragCancel: () {
-                        mouseNotifier.value = null;
-                      },
-                      onHorizontalDragUpdate: (e) {
-                        final delta = e.delta;
-                        logger.i('onHorizontalDragUpdate:$delta');
-                        final left = widths[index];
-                        final width = delta.dx + left;
-                        if (width >= 100 && width <= 800) {
-                          final newWidths = widths.update(index, to(width));
-                          controller
-                              .updateNode(node.from(node.table, newWidths));
-                        }
-                        mouseNotifier.value =
-                            _MouseState(index, _MouseStatus.dragging);
-                      },
-                      child: ValueListenableBuilder(
-                          valueListenable: mouseNotifier,
-                          builder: (context, v, c) {
-                            _MouseStatus status = _MouseStatus.idle;
-                            if (v != null && v.index == index) {
-                              status = v.status;
-                            }
-                            bool dragging = status == _MouseStatus.dragging;
-                            bool idle = status == _MouseStatus.idle;
-                            final borderColor =
-                                idle ? Colors.transparent : Colors.blue;
-                            return MouseRegion(
-                              cursor: dragging
-                                  ? SystemMouseCursors.grabbing
-                                  : SystemMouseCursors.grab,
-                              onHover: (e) {
-                                if (dragging) return;
-                                mouseNotifier.value =
-                                    _MouseState(index, _MouseStatus.hovering);
-                              },
-                              onExit: (e) {
-                                if (dragging) return;
-                                mouseNotifier.value = null;
-                              },
-                              child: SizedBox(
-                                width: transparentArea,
-                                child: Center(
-                                  child: Container(
-                                    width: w,
-                                    height: height,
-                                    color: borderColor,
+                return Padding(
+                  padding:
+                      EdgeInsets.only(left: operatorSize, top: operatorSize),
+                  child: Row(
+                      children: List.generate(widths.length, (index) {
+                    var left = widths[index];
+                    final w = 5.0;
+                    final transparentArea = 8.0;
+                    if (index == 0) {
+                      left = max(w, left - transparentArea / 2);
+                    } else {
+                      left = max(w, left - transparentArea);
+                    }
+                    return Padding(
+                      padding: EdgeInsets.only(left: left),
+                      child: GestureDetector(
+                        onHorizontalDragStart: (e) {
+                          mouseNotifier.value =
+                              _MouseState(index, _MouseStatus.dragging);
+                        },
+                        onHorizontalDragEnd: (e) {
+                          mouseNotifier.value = null;
+                        },
+                        onHorizontalDragCancel: () {
+                          mouseNotifier.value = null;
+                        },
+                        onHorizontalDragUpdate: (e) {
+                          final delta = e.delta;
+                          logger.i('onHorizontalDragUpdate:$delta');
+                          final left = widths[index];
+                          final width = delta.dx + left;
+                          if (width >= 100 && width <= 800) {
+                            final newWidths = widths.update(index, to(width));
+                            controller
+                                .updateNode(node.from(node.table, newWidths));
+                          }
+                          mouseNotifier.value =
+                              _MouseState(index, _MouseStatus.dragging);
+                        },
+                        child: ValueListenableBuilder(
+                            valueListenable: mouseNotifier,
+                            builder: (context, v, c) {
+                              _MouseStatus status = _MouseStatus.idle;
+                              if (v != null && v.index == index) {
+                                status = v.status;
+                              }
+                              bool dragging = status == _MouseStatus.dragging;
+                              bool idle = status == _MouseStatus.idle;
+                              final borderColor =
+                                  idle ? Colors.transparent : Colors.blue;
+                              return MouseRegion(
+                                cursor: dragging
+                                    ? SystemMouseCursors.grabbing
+                                    : SystemMouseCursors.grab,
+                                onHover: (e) {
+                                  if (dragging) return;
+                                  mouseNotifier.value =
+                                      _MouseState(index, _MouseStatus.hovering);
+                                },
+                                onExit: (e) {
+                                  if (dragging) return;
+                                  mouseNotifier.value = null;
+                                },
+                                child: SizedBox(
+                                  width: transparentArea,
+                                  child: Center(
+                                    child: Container(
+                                      width: w,
+                                      height: height,
+                                      color: borderColor,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          }),
-                    ),
-                  );
-                }));
+                              );
+                            }),
+                      ),
+                    );
+                  })),
+                );
+              }),
+          ValueListenableBuilder(
+              valueListenable: heightsNotifier,
+              builder: (ctx, heights, c) {
+                return Padding(
+                  padding: EdgeInsets.only(top: operatorSize),
+                  child: TableRowOperator(
+                    heights: heights,
+                    onSelect: (i) {
+                      final cellList = node.table[i];
+                      controller.notifySelectingPosition(SelectingPosition(
+                          TablePosition(i, 0, cellList.first.beginPosition),
+                          TablePosition(i, cellList.length - 1,
+                              cellList.last.endPosition)));
+                    },
+                    onAdd: (i) {
+                      final newNode = node.insertRows(i, [
+                        TableCellList(List.generate(node.columnCount,
+                            (index) => tc.TableCell([RichTextNode.from([])])))
+                      ]);
+                      controller.updateNode(newNode);
+                    },
+                  ),
+                );
               })
         ],
       ),
@@ -299,49 +354,6 @@ class _MouseState {
   _MouseState(this.index, this.status);
 }
 
-bool _wholeContain(SingleNodePosition? position, TableNode node) {
-  if (position is! SelectingPosition) return false;
-  var left = position.left;
-  var right = position.right;
-  if (left is! TablePosition && right is! TablePosition) {
-    return false;
-  }
-  left = left as TablePosition;
-  right = right as TablePosition;
-  return left == node.beginPosition && right == node.endPosition;
-}
-
-_ContainStatus _containCell(
-    SingleNodePosition? position, int row, int column, TableCell cell) {
-  final p = position;
-  if (p == null) return _ContainStatus.outer;
-  if (p is EditingPosition) {
-    var pTable = p.position;
-    if (pTable is! TablePosition) return _ContainStatus.outer;
-    if (pTable.column == column && pTable.row == row) {
-      return _ContainStatus.inner;
-    }
-    return _ContainStatus.outer;
-  }
-  if (p is SelectingPosition) {
-    var left = p.left;
-    var right = p.right;
-    if (left is! TablePosition && right is! TablePosition) {
-      return _ContainStatus.outer;
-    }
-    left = left as TablePosition;
-    right = right as TablePosition;
-    if (left.inSameCell(right) && left.column == column && left.row == row) {
-      bool wholeSelected =
-          cell.wholeSelected(left.cellPosition, right.cellPosition);
-      return wholeSelected ? _ContainStatus.current : _ContainStatus.inner;
-    }
-    bool containsSelf = cell.containSelf(left, right, row, column);
-    return containsSelf ? _ContainStatus.current : _ContainStatus.outer;
-  }
-  return _ContainStatus.outer;
-}
-
 BasicCursor _fromPosition(SingleNodePosition position) {
   if (position is EditingPosition) {
     final p = position.position as TablePosition;
@@ -356,5 +368,3 @@ BasicCursor _fromPosition(SingleNodePosition position) {
   return SelectingNodesCursor(IndexWithPosition(left.index, left.position),
       IndexWithPosition(right.index, right.position));
 }
-
-enum _ContainStatus { inner, current, outer }

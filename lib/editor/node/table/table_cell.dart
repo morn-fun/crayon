@@ -8,7 +8,6 @@ import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../../../editor/command/basic.dart';
 import '../../../../editor/core/command_invoker.dart';
 import '../../../../editor/core/editor_controller.dart';
-import '../../../../editor/shortcuts/arrows/arrows.dart';
 import '../../command/modification.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
@@ -75,6 +74,36 @@ class TableCell {
     final maxColumn = max(begin.column, end.column);
     return (minRow <= row && maxRow >= row) &&
         (minColumn <= column && maxColumn >= column);
+  }
+
+  CellCursorStatus getCursorStatus(
+      SingleNodePosition? position, int row, int column) {
+    final p = position;
+    if (p == null) return CellCursorStatus.outer;
+    if (p is EditingPosition) {
+      var pTable = p.position;
+      if (pTable is! TablePosition) return CellCursorStatus.outer;
+      if (pTable.column == column && pTable.row == row) {
+        return CellCursorStatus.inner;
+      }
+      return CellCursorStatus.outer;
+    }
+    if (p is SelectingPosition) {
+      var left = p.left;
+      var right = p.right;
+      if (left is! TablePosition && right is! TablePosition) {
+        return CellCursorStatus.outer;
+      }
+      left = left as TablePosition;
+      right = right as TablePosition;
+      if (left.inSameCell(right) && left.column == column && left.row == row) {
+        bool selected = wholeSelected(left.cellPosition, right.cellPosition);
+        return selected ? CellCursorStatus.current : CellCursorStatus.inner;
+      }
+      bool containsSelf = containSelf(left, right, row, column);
+      return containsSelf ? CellCursorStatus.current : CellCursorStatus.outer;
+    }
+    return CellCursorStatus.outer;
   }
 
   TableCell update(int index, ValueCopier<EditorNode> copier) =>
@@ -207,3 +236,5 @@ class TableCellNodeContext extends NodeContext {
   void updateCursor(BasicCursor cursor, {bool notify = true}) =>
       onCursor.call(cursor);
 }
+
+enum CellCursorStatus { inner, current, outer }

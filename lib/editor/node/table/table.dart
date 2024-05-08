@@ -159,6 +159,18 @@ class TableNode extends EditorNode {
     return from(newTable, widths);
   }
 
+  bool wholeContain(SingleNodePosition? position) {
+    if (position is! SelectingPosition) return false;
+    var left = position.left;
+    var right = position.right;
+    if (left is! TablePosition && right is! TablePosition) {
+      return false;
+    }
+    left = left as TablePosition;
+    right = right as TablePosition;
+    return left == beginPosition && right == endPosition;
+  }
+
   @override
   Widget build(NodeController controller,
           SingleNodePosition<NodePosition>? position, extras) =>

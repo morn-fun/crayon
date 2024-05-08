@@ -5,102 +5,80 @@ import '../widget/menu/link.dart';
 import '../widget/menu/optional.dart';
 import '../widget/menu/rich_text.dart';
 import 'context.dart';
+import 'editor_controller.dart';
 
 class EntryManager {
-  OverlayEntry? showingEntry;
-  EntryStatus _status = EntryStatus.idle;
+  OverlayEntry? _showingEntry;
+  MenuType? _lastShowingType;
 
-  final Function(EntryStatus status) onStatusChanged;
+  final ValueChanged<MenuType>? onMenuShowing;
+  final ValueChanged<MenuType>? onMenuHide;
 
-  EntryManager(this.onStatusChanged);
+  EntryManager({this.onMenuShowing, this.onMenuHide});
 
   void removeEntry() {
-    showingEntry?.remove();
-    showingEntry = null;
+    if (_showingEntry != null) {
+      _showingEntry?.remove();
+    }
+    if (_lastShowingType != null) {
+      onMenuHide?.call(_lastShowingType!);
+    }
+    _showingEntry = null;
+    _lastShowingType = null;
   }
 
-  void hideMenu() {
-    removeEntry();
-    updateStatus(EntryStatus.idle);
+  void _notifyMenuShowing() {
+    if (_lastShowingType != null && onMenuShowing != null) {
+      onMenuShowing?.call(_lastShowingType!);
+    }
   }
 
   void showOptionalMenu(
-      Offset offset, OverlayState state, EditorContext context) async {
-    if (_status != EntryStatus.readyToShowingOptionalMenu) return;
+      EditingOffset offset, OverlayState state, EditorContext context) async {
     removeEntry();
-    showingEntry = OverlayEntry(
+    _lastShowingType = MenuType.optional;
+    _showingEntry = OverlayEntry(
         builder: (_) => OptionalMenu(
               offset: offset,
               nodeContext: context,
               listeners: context.listeners,
             ));
-    state.insert(showingEntry!);
-    updateStatus(EntryStatus.showingOptionalMenu);
-  }
-
-  void hideOptionalMenu() {
-    if (!isOptionalMenuShowing) return;
-    hideMenu();
+    state.insert(_showingEntry!);
+    _notifyMenuShowing();
   }
 
   void showTextMenu(OverlayState state, MenuInfo info, LayerLink link,
       EditorContext context) {
-    if (_status != EntryStatus.readyToShowingTextMenu) return;
     removeEntry();
-    showingEntry = OverlayEntry(
+    _lastShowingType = MenuType.text;
+    _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
               child: TextMenu(context, info, link, context.listeners),
               showWhenUnlinked: false,
               link: link,
             ));
-    state.insert(showingEntry!);
-    updateStatus(EntryStatus.showingTextMenu);
-  }
-
-  void hideTextMenu() {
-    if (!isTextMenuShowing) return;
-    hideMenu();
+    state.insert(_showingEntry!);
+    _notifyMenuShowing();
   }
 
   void showLinkMenu(
       OverlayState state, MenuInfo info, LayerLink link, EditorContext context,
       {UrlWithPosition? urlWithPosition}) {
-    if (_status != EntryStatus.readyToShowingLinkMenu) return;
     removeEntry();
-    updateStatus(EntryStatus.showingLinkMenu);
-    showingEntry = OverlayEntry(
+    _lastShowingType = MenuType.text;
+    _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
               child: LinkMenu(context, info, urlWithPosition: urlWithPosition),
               showWhenUnlinked: false,
               link: link,
             ));
-    state.insert(showingEntry!);
-  }
-
-  void hideLinkMenu() {
-    if (!isLinkMenuShowing) return;
-    hideMenu();
+    state.insert(_showingEntry!);
+    _notifyMenuShowing();
   }
 
   void dispose() {
     removeEntry();
   }
-
-  void updateStatus(EntryStatus status) {
-    if (_status == status) return;
-    _status = status;
-    onStatusChanged.call(status);
-  }
-
-  bool get isOptionalMenuShowing => _status == EntryStatus.showingOptionalMenu;
-
-  bool get isTextMenuShowing => _status == EntryStatus.showingTextMenu;
-
-  bool get isLinkMenuShowing => _status == EntryStatus.showingLinkMenu;
-
-  bool get isShowing => _status != EntryStatus.idle;
-
-  EntryStatus get status => _status;
 }
 
 class MenuInfo {
@@ -116,6 +94,8 @@ class MenuInfo {
         nodeId = '';
 }
 
+enum MenuType { optional, link, text }
+
 enum EntryStatus {
   idle,
   readyToShowingOptionalMenu,
@@ -129,16 +109,6 @@ enum EntryStatus {
 
 abstract class EntryShower {
   void show(OverlayState state, EditorContext context);
-}
-
-class OptionalEntryShower implements EntryShower {
-  final Offset offset;
-
-  OptionalEntryShower(this.offset);
-
-  @override
-  void show(OverlayState state, EditorContext context) =>
-      context.showOptionalMenu(offset, state);
 }
 
 class TextMenuEntryShower implements EntryShower {

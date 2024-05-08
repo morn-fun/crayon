@@ -7,6 +7,7 @@ import 'package:highlight/highlight.dart' show Node, highlight;
 
 import '../../../../editor/extension/render_box.dart';
 import '../../../../editor/extension/painter.dart';
+import '../../core/editor_controller.dart';
 import '../../core/input_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
@@ -212,7 +213,8 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     if (!containsY(globalOffset)) return;
     final off = buildTextPosition(globalOffset).offset;
     controller.onEditingPosition.call(off);
-    controller.onEditingOffsetChanged.call(globalOffset);
+    controller.onEditingOffsetChanged
+        .call(EditingOffset(globalOffset, painter.height));
     updateInputAttribute(off);
   }
 
@@ -255,7 +257,8 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     if (o != null && y != null) {
       final cursorY = painter.height;
       final offset = painter.getOffsetFromTextOffset(o);
-      controller.onEditingOffsetChanged.call(Offset(offset.dx, cursorY + y!));
+      controller.onEditingOffsetChanged
+          .call(EditingOffset(Offset(offset.dx, cursorY + y!), painter.height));
     }
   }
 }
@@ -264,7 +267,7 @@ class CodeNodeController {
   final ValueChanged<int> onEditingPosition;
   final ValueChanged<InputConnectionAttribute> onInputConnectionAttribute;
   final ValueChanged<int> onPanUpdatePosition;
-  final ValueChanged<Offset> onEditingOffsetChanged;
+  final ValueChanged<EditingOffset> onEditingOffsetChanged;
   final ListenerCollection listeners;
 
   CodeNodeController({

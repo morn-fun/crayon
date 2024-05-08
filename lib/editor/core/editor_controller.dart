@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 
 import '../cursor/basic.dart';
 import '../node/basic.dart';
@@ -14,6 +15,7 @@ class RichEditorController {
   final List<EditorNode> _nodes = [];
   ControllerStatus _status = ControllerStatus.idle;
   BasicCursor _cursor = NoneCursor();
+  CursorOffset _lastCursorOffset = CursorOffset.zero();
 
   final ListenerCollection listeners = ListenerCollection();
 
@@ -66,8 +68,9 @@ class RichEditorController {
 
   void notifyNodes() => listeners.notifyNodes();
 
-  void notifyEditingCursorOffset(CursorOffset indexY) =>
-      listeners.notifyEditingCursorOffset(indexY);
+  void setCursorOffset(CursorOffset o) {
+    _lastCursorOffset = o;
+  }
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
@@ -83,6 +86,8 @@ class RichEditorController {
   int get nodeLength => _nodes.length;
 
   ControllerStatus get status => _status;
+
+  CursorOffset get lastCursorOffset => _lastCursorOffset;
 }
 
 class Update extends UpdateControllerOperation {
@@ -133,4 +138,33 @@ class Replace extends UpdateControllerOperation {
 enum ControllerStatus {
   typing,
   idle,
+}
+
+class EditingOffset {
+  final Offset offset;
+  final double height;
+
+  EditingOffset(this.offset, this.height);
+
+  EditingOffset.zero()
+      : offset = Offset.zero,
+        height = 0.0;
+
+  double get y => offset.dy;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EditingOffset &&
+          runtimeType == other.runtimeType &&
+          offset == other.offset &&
+          height == other.height;
+
+  @override
+  int get hashCode => offset.hashCode ^ height.hashCode;
+
+  @override
+  String toString() {
+    return 'EditingOffset{offset: $offset, height: $height}';
+  }
 }

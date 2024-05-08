@@ -359,7 +359,7 @@ void main() {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
     final widget = newNode.build(NodeController.empty,
         EditingPosition(RichTextNodePosition(0, 0)), null);
-    assert(widget is RichText);
+    assert(widget is RichTextWidget);
   });
 
   test('insertByPosition', () {

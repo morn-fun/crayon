@@ -56,7 +56,7 @@ abstract class HeadNode extends RichTextNode {
   @override
   Widget build(
       NodeController controller, SingleNodePosition? position, dynamic extras) {
-    return RichText(
+    return RichTextWidget(
       controller,
       this,
       position,

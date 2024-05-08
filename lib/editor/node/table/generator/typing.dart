@@ -23,8 +23,10 @@ NodeWithPosition typingWhileEditing(
     nodeWithPosition = e.current;
   } on TypingRequiredOptionalMenuException catch (e) {
     nodeWithPosition = e.nodeWithPosition;
-
-    ///TODO:show option menu here!
+    throw TypingRequiredOptionalMenuException(NodeWithPosition(
+        node.updateCell(
+            p.row, p.column, to(cell.update(index, to(nodeWithPosition.node)))),
+        p.fromCursor(nodeWithPosition.position.toCursor(index))));
   }
   return NodeWithPosition(
       node.updateCell(
@@ -54,8 +56,10 @@ NodeWithPosition typingWhileSelecting(
           nodeWithPosition = e.current;
         } on TypingRequiredOptionalMenuException catch (e) {
           nodeWithPosition = e.nodeWithPosition;
-
-          ///TODO:show option menu here!
+          throw TypingRequiredOptionalMenuException(NodeWithPosition(
+              node.updateCell(left.row, left.column,
+                  to(cell.update(index, to(nodeWithPosition.node)))),
+              left.fromCursor(nodeWithPosition.position.toCursor(index))));
         }
         return NodeWithPosition(
             node.updateCell(left.row, left.column,

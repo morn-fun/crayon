@@ -41,7 +41,7 @@ class TodoNode extends RichTextNode with SpecialNewlineMixin {
                 }),
           ),
           Expanded(
-              child: RichText(
+              child: RichTextWidget(
             controller,
             this,
             position,

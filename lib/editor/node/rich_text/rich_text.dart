@@ -78,7 +78,7 @@ class RichTextNode extends EditorNode {
   @override
   Widget build(NodeController controller, SingleNodePosition? position,
           dynamic extras) =>
-      RichText(controller, this, position);
+      RichTextWidget(controller, this, position);
 
   RichTextNode insert(int index, RichTextSpan span) {
     final copySpans = List.of(spans);

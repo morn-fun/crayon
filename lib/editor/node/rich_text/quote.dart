@@ -24,7 +24,7 @@ class QuoteNode extends RichTextNode with SpecialNewlineMixin {
             border:
                 Border(left: BorderSide(color: theme.hoverColor, width: 4))),
         padding: EdgeInsets.only(left: 4),
-        child: RichText(controller, this, position),
+        child: RichTextWidget(controller, this, position),
       );
     });
   }

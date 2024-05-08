@@ -38,7 +38,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   final key = GlobalKey();
   final aliveIndexMap = <int, Set<String>>{};
 
-  CursorOffset lastEditingCursorOffset = CursorOffset(0, 0);
+  CursorOffset lastEditingCursorOffset = CursorOffset.zero();
   double listOffsetY = 0;
   double maxExtent = 0;
   double minExtent = 0;
@@ -56,13 +56,11 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       listOffsetY += event;
       // logger.i('y:$listOffsetY, max:$maxExtent, min:$minExtent, event:$event');
     });
-    listeners.addEditingCursorOffsetListener(onCursorOffsetChanged);
     listeners.addCursorChangedListener(onCursorChanged);
   }
 
   @override
   void dispose() {
-    listeners.removeEditingCursorOffsetListener(onCursorOffsetChanged);
     listeners.removeCursorChangedListener(onCursorChanged);
     scrollOffsetSubscription.cancel();
     super.dispose();
@@ -82,7 +80,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     final offset = box.localToGlobal(Offset.zero);
     final top = offset.dy;
     final bottom = size.height + top;
-    final globalY = v.globalY;
+    final globalY = v.y;
     if (globalY + 18 > bottom) {
       logger.i(
           'onCursorOffsetChanged down, v:$v, globalY:$globalY, top:$top, bottom:$bottom');
@@ -225,8 +223,13 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                             nodeGetter: (i) => controller.getNode(i),
                             onEditingPosition: (v) => controller
                                 .updateCursor(EditingCursor(index, v)),
-                            onEditingOffsetChanged: (y) =>
-                                onCursorOffsetChanged(CursorOffset(index, y)),
+                            onSelectingPosition: (v) =>
+                                controller.updateCursor(v.toCursor(index)),
+                            onEditingOffsetChanged: (o){
+                              final cursorOffset = CursorOffset(index, o);
+                              controller.setCursorOffset(cursorOffset);
+                              onCursorOffsetChanged(cursorOffset);
+                            },
                             cursorGenerator: (p) => p.toCursor(index),
                             onInputConnectionAttribute: (v) =>
                                 editorContext.updateInputConnectionAttribute(v),
