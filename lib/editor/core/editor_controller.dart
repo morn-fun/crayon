@@ -26,9 +26,11 @@ class RichEditorController {
 
   EditorNode get lastNode => _nodes.last;
 
-  SelectingNodesCursor get selectAllCursor => SelectingNodesCursor(
-      IndexWithPosition(0, firstNode.beginPosition),
-      IndexWithPosition(nodeLength - 1, lastNode.endPosition));
+  BasicCursor get selectAllCursor => nodeLength == 1
+      ? SelectingNodeCursor(
+          0, nodes.first.beginPosition, nodes.last.endPosition)
+      : SelectingNodesCursor(IndexWithPosition(0, firstNode.beginPosition),
+          IndexWithPosition(nodeLength - 1, lastNode.endPosition));
 
   UpdateControllerOperation? update(Update data, {bool record = true}) {
     final operation = data.update(this);

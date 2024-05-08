@@ -72,6 +72,7 @@ class EditorContext implements NodeContext {
   @override
   BasicCursor get cursor => controller.cursor;
 
+  @override
   ListenerCollection get listeners => controller.listeners;
 
   EntryStatus get entryStatus => entryManager.status;
@@ -123,8 +124,7 @@ class EditorContext implements NodeContext {
       controller.updateCursor(cursor, notify: notify);
 
   @override
-  SelectingNodesCursor<NodePosition> get selectAllCursor =>
-      controller.selectAllCursor;
+  BasicCursor<NodePosition> get selectAllCursor => controller.selectAllCursor;
 
   @override
   void onArrowAccept(AcceptArrowData data) => controller.onArrowAccept(data);
@@ -155,7 +155,7 @@ abstract class NodeContext {
 
   void updateCursor(BasicCursor cursor, {bool notify = true});
 
-  SelectingNodesCursor get selectAllCursor;
+  BasicCursor get selectAllCursor;
 
   void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
 

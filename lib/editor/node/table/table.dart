@@ -202,6 +202,7 @@ class TableNode extends EditorNode {
           TableCellList([cell])
         ], newWidths, id: newId);
       } else {
+        ///TODO:deal with this exception
         throw GetFromPositionButAcquireMoreNodes(runtimeType,
             cell.getNodes(left.cellPosition, right.cellPosition), left, right);
       }

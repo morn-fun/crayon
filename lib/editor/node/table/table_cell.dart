@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -14,6 +15,7 @@ import '../../core/copier.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/node_position.dart';
+import '../../cursor/table.dart';
 import '../../cursor/table_cell.dart';
 import '../basic.dart';
 
@@ -59,10 +61,20 @@ class TableCell {
     return true;
   }
 
-  bool wholeSelected(TableCellPosition begin, TableCellPosition end){
+  bool wholeSelected(TableCellPosition begin, TableCellPosition end) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
     return isBegin(left) && isEnd(right);
+  }
+
+  bool containSelf(
+      TablePosition begin, TablePosition end, int row, int column) {
+    final minRow = min(begin.row, end.row);
+    final maxRow = min(begin.row, end.row);
+    final minColumn = min(begin.column, end.column);
+    final maxColumn = max(begin.column, end.column);
+    return (minRow <= row && maxRow >= row) &&
+        (minColumn <= column && maxColumn >= column);
   }
 
   TableCell update(int index, ValueCopier<EditorNode> copier) =>
@@ -89,7 +101,8 @@ class TableCell {
           rightNode.frontPartNode(right.position, newId: randomNodeId);
       return [
         newLeftNode,
-        ...nodes.getRange(left.index + 1, right.index),
+        if (left.index < right.index)
+          ...nodes.getRange(left.index + 1, right.index),
         newRightNode
       ];
     }
@@ -137,7 +150,7 @@ class TableCellNodeContext extends NodeContext {
       logger.i('$tag, execute 【$command】');
       command.run(this);
     } catch (e) {
-      logger.e('execute 【$command】error:${e}');
+      logger.e('execute 【$command】error:$e');
     }
   }
 

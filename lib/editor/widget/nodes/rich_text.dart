@@ -305,7 +305,7 @@ class _RichTextState extends State<RichText> {
             child: SizedBox(
               key: key,
               height: max(painter.height, widget.fontSize),
-              width: painter.width,
+              width: recordWidth,
               child: Stack(
                 children: [
                   ValueListenableBuilder(
