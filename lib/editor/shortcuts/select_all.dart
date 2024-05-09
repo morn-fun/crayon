@@ -12,21 +12,27 @@ class SelectAllIntent extends Intent {
 }
 
 class SelectAllAction extends ContextAction<SelectAllIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  SelectAllAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  SelectAllAction(this.ac);
 
   @override
   void invoke(SelectAllIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     if (cursor is EditingCursor) {
       try {
-        final r = nodeContext.getNode(cursor.index).onEdit(EditingData(
-            cursor.position, EventType.selectAll, nodeContext.listeners));
+        final r = nodeContext.getNode(cursor.index).onEdit(
+            EditingData(cursor.position, EventType.selectAll, nodeContext));
         nodeContext.updateCursor(r.toCursor(cursor.index));
       } on EmptyNodeToSelectAllException {
         nodeContext.updateCursor(nodeContext.selectAllCursor);
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
       final node = nodeContext.getNode(cursor.index);
@@ -34,11 +40,15 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
           node.endPosition == cursor.end) {
         nodeContext.updateCursor(nodeContext.selectAllCursor);
       } else {
-        final r = node.onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end),
-            EventType.selectAll,
-            nodeContext.listeners));
-        nodeContext.updateCursor(r.toCursor(cursor.index));
+        try {
+          final r = node.onSelect(SelectingData(
+              SelectingPosition(cursor.begin, cursor.end),
+              EventType.selectAll,
+              nodeContext));
+          nodeContext.updateCursor(r.toCursor(cursor.index));
+        } on NodeUnsupportedException catch (e) {
+          logger.e('$runtimeType, ${e.message}');
+        }
       }
     } else if (cursor is SelectingNodesCursor) {
       final allNodesCursor = nodeContext.selectAllCursor;

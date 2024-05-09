@@ -24,7 +24,7 @@ NodeWithPosition newlineWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final newNode = node.replace(p.left, p.right, []);
-  return newlineWhileEditing(EditingData(p.left, EventType.newline, data.listeners), newNode);
+  return newlineWhileEditing(EditingData(p.left, EventType.newline, data.context), newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

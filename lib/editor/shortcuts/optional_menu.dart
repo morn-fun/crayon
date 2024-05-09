@@ -17,38 +17,44 @@ class OptionalMenuEnterIntent extends Intent {
 
 class OptionalMenuUpArrowAction
     extends ContextAction<OptionalMenuUpArrowIntent> {
-  final EditorContext editorContext;
+  final ActionContext ac;
 
-  OptionalMenuUpArrowAction(this.editorContext);
+  NodeContext get nodeContext => ac.context;
+
+  OptionalMenuUpArrowAction(this.ac);
 
   @override
   void invoke(OptionalMenuUpArrowIntent intent, [BuildContext? context]) {
-    final listeners = editorContext.listeners;
+    final listeners = nodeContext.listeners;
     listeners.notifyOptionalMenu(OptionalSelectedType.last);
   }
 }
 
 class OptionalMenuDownArrowAction
     extends ContextAction<OptionalMenuDownArrowIntent> {
-  final EditorContext editorContext;
+  final ActionContext ac;
 
-  OptionalMenuDownArrowAction(this.editorContext);
+  NodeContext get nodeContext => ac.context;
+
+  OptionalMenuDownArrowAction(this.ac);
 
   @override
   void invoke(OptionalMenuDownArrowIntent intent, [BuildContext? context]) {
-    final listeners = editorContext.listeners;
+    final listeners = nodeContext.listeners;
     listeners.notifyOptionalMenu(OptionalSelectedType.next);
   }
 }
 
 class OptionalMenuEnterAction extends ContextAction<OptionalMenuEnterIntent> {
-  final EditorContext editorContext;
+  final ActionContext ac;
 
-  OptionalMenuEnterAction(this.editorContext);
+  NodeContext get nodeContext => ac.context;
+
+  OptionalMenuEnterAction(this.ac);
 
   @override
   void invoke(OptionalMenuEnterIntent intent, [BuildContext? context]) {
-    final listeners = editorContext.listeners;
+    final listeners = nodeContext.listeners;
     listeners.notifyOptionalMenu(OptionalSelectedType.current);
   }
 }

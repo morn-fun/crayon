@@ -29,21 +29,21 @@ class UpdateSelectingNodes implements BasicCommand {
         np = node.onSelect(SelectingData(
             SelectingPosition(left.position, node.endPosition),
             type,
-            nodeContext.listeners,
+            nodeContext,
             extras: extra));
         leftPosition = np.position;
       } else if (i == right.index) {
         np = node.onSelect(SelectingData(
             SelectingPosition(node.beginPosition, right.position),
             type,
-            nodeContext.listeners,
+            nodeContext,
             extras: extra));
         rightPosition = np.position;
       } else {
         np = node.onSelect(SelectingData(
             SelectingPosition(node.beginPosition, node.endPosition),
             type,
-            nodeContext.listeners,
+            nodeContext,
             extras: extra));
       }
       nodes.add(np.node);

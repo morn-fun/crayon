@@ -18,6 +18,7 @@ class ListenerCollection {
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
+  final Set<ListenerCollection> _childListeners = {};
 
   void dispose() {
     logger.i('$tag, dispose');
@@ -28,6 +29,7 @@ class ListenerCollection {
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _optionalMenuListeners.clear();
+    _childListeners.clear();
   }
 
   void addCursorChangedListener(ValueChanged<BasicCursor> listener) =>
@@ -108,12 +110,14 @@ class ListenerCollection {
     for (var c in Set.of(set)) {
       c.call(data);
     }
+    _notifyChildrenListener((v) => v.onArrowAccept(data));
   }
 
   void notifyCursor(BasicCursor cursor) {
     for (var c in Set.of(_cursorListeners)) {
       c.call(cursor);
     }
+    _notifyChildrenListener((v) => v.notifyCursor(cursor));
     // logger.i('$tag, notifyCursor length:${_cursorChangedCallbacks.length}');
   }
 
@@ -121,6 +125,7 @@ class ListenerCollection {
     for (var c in Set.of(_gestureListeners)) {
       c.call(state);
     }
+    _notifyChildrenListener((v) => v.notifyGesture(state));
     // logger.i(
     //     '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
@@ -129,6 +134,7 @@ class ListenerCollection {
     for (var c in Set.of(_nodeListeners[node.id] ?? {})) {
       c.call(node);
     }
+    _notifyChildrenListener((v) => v.notifyNode(node));
     // logger
     //     .i('$tag, notifyNode length:${_nodeChangedCallbacks[node.id]?.length}');
   }
@@ -137,6 +143,7 @@ class ListenerCollection {
     for (var c in Set.of(_nodesListeners)) {
       c.call();
     }
+    _notifyChildrenListener((v) => v.notifyNodes());
     // logger.i('$tag, notifyNodes length:${_nodesChangedCallbacks.length}');
   }
 
@@ -144,11 +151,23 @@ class ListenerCollection {
     for (var c in Set.of(_statusListeners)) {
       c.call(status);
     }
+    _notifyChildrenListener((v) => v.notifyStatus(status));
   }
 
   void notifyOptionalMenu(OptionalSelectedType type) {
     for (var c in Set.of(_optionalMenuListeners)) {
       c.call(type);
+    }
+    _notifyChildrenListener((v) => v.notifyOptionalMenu(type));
+  }
+
+  void addChildListener(ListenerCollection l) => _childListeners.add(l);
+
+  void removeChildListener(ListenerCollection l) => _childListeners.remove(l);
+
+  void _notifyChildrenListener(ValueChanged<ListenerCollection> l) {
+    for (var o in _childListeners) {
+      l.call(o);
     }
   }
 }

@@ -5,6 +5,7 @@ import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../cursor/rich_text.dart';
+import '../exception/editor_node.dart';
 import '../node/basic.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
@@ -26,56 +27,71 @@ class LineThroughIntent extends Intent {
 }
 
 class UnderlineAction extends ContextAction<UnderlineIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  UnderlineAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  UnderlineAction(this.ac);
 
   @override
   void invoke(UnderlineIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.underline);
+    onStyleEvent(nodeContext, RichTextTag.underline, cursor);
   }
 }
 
 class BoldAction extends ContextAction<BoldIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  BoldAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  BoldAction(this.ac);
 
   @override
   void invoke(BoldIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.bold);
+    onStyleEvent(nodeContext, RichTextTag.bold, cursor);
   }
 }
 
 class ItalicAction extends ContextAction<ItalicIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  ItalicAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  ItalicAction(this.ac);
 
   @override
   void invoke(ItalicIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.italic);
+    onStyleEvent(nodeContext, RichTextTag.italic, cursor);
   }
 }
 
 class LineThroughAction extends ContextAction<LineThroughIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  LineThroughAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  LineThroughAction(this.ac);
 
   @override
   void invoke(LineThroughIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.lineThrough);
+    onStyleEvent(nodeContext, RichTextTag.lineThrough, cursor);
   }
 }
 
-void onStyleEvent(NodeContext context, RichTextTag tag,
+void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
     {Map<String, String>? attributes}) {
-  final cursor = context.cursor;
   try {
     final type = EventType.values.byName(tag.name);
     if (cursor is SingleNodeCursor) {
@@ -112,6 +128,8 @@ void onStyleEvent(NodeContext context, RichTextTag tag,
     }
   } on ArgumentError catch (e) {
     logger.e('onStyleEvent error: $e');
+  } on NodeUnsupportedException catch (e) {
+    logger.e('$tag, ${e.message}');
   }
 }
 

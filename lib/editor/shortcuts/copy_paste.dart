@@ -26,14 +26,18 @@ class PasteIntent extends Intent {
 }
 
 class CopyAction extends ContextAction<CopyIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  CopyAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  CopyAction(this.ac);
 
   @override
   void invoke(CopyIntent intent, [BuildContext? context]) async {
     logger.i('$runtimeType is invoking!');
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     if (cursor is EditingCursor) return;
     if (cursor is SelectingNodeCursor) {
       final node = nodeContext.getNode(cursor.index);
@@ -64,9 +68,13 @@ final List<EditorNode> _copiedNodes = [];
 const _specialEdge = '\u{200C}';
 
 class PasteAction extends ContextAction<PasteIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  PasteAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  PasteAction(this.ac);
 
   @override
   void invoke(PasteIntent intent, [BuildContext? context]) async {
@@ -107,18 +115,20 @@ class PasteAction extends ContextAction<PasteIntent> {
         }
       }
     }
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     if (cursor is EditingCursor) {
       final index = cursor.index;
       final node = nodeContext.getNode(index);
       try {
         final r = node.onEdit(EditingData(
-            cursor.position, EventType.paste, nodeContext.listeners,
+            cursor.position, EventType.paste, nodeContext,
             extras: nodes));
         nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
       } on UnablePasteException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
       final index = cursor.index;
@@ -127,12 +137,14 @@ class PasteAction extends ContextAction<PasteIntent> {
         final r = node.onSelect(SelectingData(
             SelectingPosition(cursor.left, cursor.right),
             EventType.paste,
-            nodeContext.listeners,
+            nodeContext,
             extras: nodes));
         nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
       } on UnablePasteException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodesCursor) {
       nodeContext.execute(PasteWhileSelectingNodes(cursor, nodes));

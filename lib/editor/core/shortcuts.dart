@@ -110,7 +110,8 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
 };
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>
-    shortcutActions.map((key, value) => MapEntry(key, value.call(context)));
+    shortcutActions.map((key, value) => MapEntry(
+        key, value.call(ActionContext(context, () => context.cursor))));
 
 typedef RichEditorControllerAction = Action<Intent> Function(
-    EditorContext context);
+    ActionContext context);

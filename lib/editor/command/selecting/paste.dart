@@ -25,8 +25,9 @@ class PasteWhileSelectingNodes implements BasicCommand {
     try {
       final newNode = left.merge(right);
       try {
-        final r = newNode.onEdit(
-            EditingData(left.endPosition, EventType.paste, nodeContext.listeners, extras: nodes));
+        final r = newNode.onEdit(EditingData(
+            left.endPosition, EventType.paste, nodeContext,
+            extras: nodes));
         return nodeContext.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,

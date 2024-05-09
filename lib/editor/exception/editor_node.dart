@@ -177,15 +177,6 @@ class TypingToChangeNodeException implements EditorNodeException {
       'old node ${old.runtimeType} is going to be changed as ${current.node.runtimeType}';
 }
 
-class TypingRequiredOptionalMenuException implements EditorNodeException {
-  final NodeWithPosition nodeWithPosition;
-
-  TypingRequiredOptionalMenuException(this.nodeWithPosition);
-
-  String get message =>
-      '${nodeWithPosition.node.runtimeType} required optional menu';
-}
-
 class DepthNotAbleToIncreaseException implements EditorNodeException {
   final Type type;
   final int depth;

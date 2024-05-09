@@ -20,21 +20,26 @@ class ShiftTabIntent extends Intent {
 }
 
 class TabAction extends ContextAction<TabIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  TabAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  TabAction(this.ac);
+
 
   @override
   void invoke(TabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
         final node = nodeContext.getNode(index);
         int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
         final r = node.onEdit(EditingData(
-            cursor.position, EventType.increaseDepth, nodeContext.listeners,
+            cursor.position, EventType.increaseDepth, nodeContext,
             extras: lastDepth));
         nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
@@ -44,7 +49,7 @@ class TabAction extends ContextAction<TabIntent> {
         final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
             SelectingPosition(cursor.begin, cursor.end),
             EventType.increaseDepth,
-            nodeContext.listeners,
+            nodeContext,
             extras: lastDepth));
         nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
@@ -53,25 +58,32 @@ class TabAction extends ContextAction<TabIntent> {
       }
     } on DepthNotAbleToIncreaseException catch (e) {
       logger.e('$runtimeType, ${e.message}');
+    } on NodeUnsupportedException catch (e) {
+      logger.e('$runtimeType, ${e.message}');
     }
   }
 }
 
 class ShiftTabAction extends ContextAction<ShiftTabIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  ShiftTabAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  ShiftTabAction(this.ac);
+
 
   @override
   void invoke(ShiftTabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
         final node = nodeContext.getNode(index);
-        final r = node.onEdit(EditingData(
-            cursor.position, EventType.decreaseDepth, nodeContext.listeners));
+        final r = node.onEdit(
+            EditingData(cursor.position, EventType.decreaseDepth, nodeContext));
         nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodeCursor) {
@@ -79,7 +91,7 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
         final r = nodeContext.getNode(index).onSelect(SelectingData(
             SelectingPosition(cursor.begin, cursor.end),
             EventType.decreaseDepth,
-            nodeContext.listeners));
+            nodeContext));
         nodeContext.execute(ReplaceNode(
             Replace(index, index + 1, [r.node], r.position.toCursor(index))));
       } else if (cursor is SelectingNodesCursor) {
@@ -95,6 +107,8 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
           index + 1, e.depth, nodes);
       nodeContext.execute(ReplaceNode(
           Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
+    } on NodeUnsupportedException catch (e) {
+      logger.e('$runtimeType, ${e.message}');
     }
   }
 }

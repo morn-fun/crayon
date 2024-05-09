@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
+import '../core/context.dart';
 import '../core/listener_collection.dart';
 import '../core/node_controller.dart';
 import '../cursor/basic.dart';
@@ -65,13 +66,16 @@ class NodeWithPosition<T extends NodePosition> {
 class EditingData<T extends NodePosition> {
   final T position;
   final EventType type;
-  final ListenerCollection listeners;
+  final NodeContext context;
   final dynamic extras;
 
-  EditingData(this.position, this.type, this.listeners, {this.extras});
+  EditingData(this.position, this.type, this.context, {this.extras});
 
-  EditingData<E> as<E extends NodePosition>() =>
-      EditingData<E>(position as E, type, listeners, extras: extras);
+  EditingData<E> as<E extends NodePosition>({NodeContext? context}) =>
+      EditingData<E>(position as E, type, context ?? this.context,
+          extras: extras);
+
+  ListenerCollection get listeners => context.listeners;
 
   @override
   String toString() {
@@ -82,17 +86,21 @@ class EditingData<T extends NodePosition> {
 class SelectingData<T extends NodePosition> {
   final SelectingPosition<T> position;
   final EventType type;
-  final ListenerCollection listeners;
+  final NodeContext context;
+
   final dynamic extras;
 
-  SelectingData(this.position, this.type, this.listeners, {this.extras});
+  SelectingData(this.position, this.type, this.context, {this.extras});
 
   T get left => position.left;
 
   T get right => position.right;
 
-  SelectingData<E> as<E extends NodePosition>() =>
-      SelectingData<E>(position.as<E>(), type, listeners, extras: extras);
+  ListenerCollection get listeners => context.listeners;
+
+  SelectingData<E> as<E extends NodePosition>({NodeContext? context}) =>
+      SelectingData<E>(position.as<E>(), type, context ?? this.context,
+          extras: extras);
 
   @override
   String toString() {

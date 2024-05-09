@@ -1,4 +1,3 @@
-import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
@@ -10,6 +9,7 @@ import 'package:crayon/editor/node/rich_text/unordered.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../config/const_texts.dart';
+import '../config/test_node_context.dart';
 
 void main() {
   test('onEdit', () {
@@ -17,21 +17,21 @@ void main() {
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
         () => node.onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.delete, ListenerCollection())),
+            EventType.delete, TestNodeContext())),
         throwsA(const TypeMatcher<DeleteToChangeNodeException>()));
 
     expect(
         () => node.onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.newline, ListenerCollection())),
+            EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     expect(
         () => node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.newline, ListenerCollection())),
+            EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
-        EventType.increaseDepth, ListenerCollection()));
+        EventType.increaseDepth, TestNodeContext()));
     assert(np.node.depth - node.depth == 1);
 
     node = UnorderedNode.from(
@@ -39,21 +39,21 @@ void main() {
 
     expect(
         () => node.onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.delete, ListenerCollection())),
+            EventType.delete, TestNodeContext())),
         throwsA(const TypeMatcher<DeleteToChangeNodeException>()));
 
     expect(
         () => node.onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.newline, ListenerCollection())),
+            EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     expect(
         () => node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.newline, ListenerCollection())),
+            EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     np = node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
-        EventType.increaseDepth, ListenerCollection()));
+        EventType.increaseDepth, TestNodeContext()));
     assert(np.node.depth - node.depth == 1);
   });
 
@@ -66,14 +66,14 @@ void main() {
             SelectingPosition(
                 RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
             EventType.newline,
-            ListenerCollection())),
+            TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onSelect(SelectingData(
         SelectingPosition(
             RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
         EventType.increaseDepth,
-        ListenerCollection()));
+        TestNodeContext()));
     assert(np.node.depth > node.depth);
 
     node = UnorderedNode.from(
@@ -84,14 +84,14 @@ void main() {
             SelectingPosition(
                 RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
             EventType.newline,
-            ListenerCollection())),
+            TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     np = node.from([]).onSelect(SelectingData(
         SelectingPosition(
             RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
         EventType.increaseDepth,
-        ListenerCollection()));
+        TestNodeContext()));
     assert(np.node.depth > node.depth);
   });
 }

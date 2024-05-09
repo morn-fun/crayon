@@ -24,7 +24,7 @@ class ReplaceSelectingNodes implements BasicCommand {
     final newLeftNP = leftNode.onSelect(SelectingData(
         SelectingPosition(left.position, leftNode.endPosition),
         type,
-        nodeContext.listeners,
+        nodeContext,
         extras: extra));
     final newRight =
         rightNode.rearPartNode(right.position, newId: randomNodeId);

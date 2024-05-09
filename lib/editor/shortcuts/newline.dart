@@ -14,14 +14,19 @@ class NewlineIntent extends Intent {
 }
 
 class NewlineAction extends ContextAction<NewlineIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  NewlineAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  NewlineAction(this.ac);
+
 
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final c = nodeContext.cursor;
+    final c = cursor;
     if (c is EditingCursor) {
       try {
         nodeContext.onNodeEditing(c, EventType.newline);
@@ -31,12 +36,14 @@ class NewlineAction extends ContextAction<NewlineIntent> {
         final current = nodeContext.getNode(index);
         final left = current.frontPartNode(c.position);
         final right = current.rearPartNode(c.position, newId: randomNodeId);
-        nodeContext.execute(ReplaceNode(Replace(index, index + 1,
-            [left, right], EditingCursor(index + 1, right.beginPosition))));
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, [left, right],
+            EditingCursor(index + 1, right.beginPosition))));
       } on NewlineRequiresNewSpecialNode catch (e) {
         int index = c.index;
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
             EditingCursor(index + e.newNodes.length - 1, e.position))));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (c is SelectingNodeCursor) {
       try {
@@ -47,12 +54,14 @@ class NewlineAction extends ContextAction<NewlineIntent> {
         final current = nodeContext.getNode(index);
         final left = current.frontPartNode(c.left);
         final right = current.rearPartNode(c.right, newId: randomNodeId);
-        nodeContext.execute(ReplaceNode(Replace(index, index + 1,
-            [left, right], EditingCursor(index + 1, right.beginPosition))));
+        nodeContext.execute(ReplaceNode(Replace(index, index + 1, [left, right],
+            EditingCursor(index + 1, right.beginPosition))));
       } on NewlineRequiresNewSpecialNode catch (e) {
         int index = c.index;
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.newNodes,
             EditingCursor(index + e.newNodes.length - 1, e.position))));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (c is SelectingNodesCursor) {
       nodeContext.execute(InsertNewLineWhileSelectingNodes(c));

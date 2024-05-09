@@ -9,9 +9,11 @@ class UndoIntent extends Intent {
 }
 
 class UndoAction extends ContextAction<UndoIntent> {
-  final EditorContext editorContext;
+  final ActionContext ac;
 
-  UndoAction(this.editorContext);
+  EditorContext get editorContext => ac.context as EditorContext;
+
+  UndoAction(this.ac);
 
   @override
   void invoke(Intent intent, [BuildContext? context]) {

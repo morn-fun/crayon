@@ -1,3 +1,5 @@
+import 'package:crayon/editor/core/context.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../command/basic.dart';
@@ -6,6 +8,7 @@ import '../command/replace.dart';
 import '../command/selecting/replacement.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
+import '../exception/menu.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
 import 'editor_controller.dart';
@@ -17,16 +20,20 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   TextInputConnection? _inputConnection;
   InputConnectionAttribute _attribute = InputConnectionAttribute.empty();
 
-  final RichEditorController controller;
+  final ValueGetter<EditorContext> contextGetter;
 
   final ValueChanged<BasicCommand> onCommand;
   final ValueChanged<NodeWithPosition> onOptionalMenu;
   final VoidCallback focusCall;
 
+  EditorContext get editorContext => contextGetter.call();
+
+  RichEditorController get controller => editorContext.controller;
+
   BasicCursor get cursor => controller.cursor;
 
   InputManager(
-      {required this.controller,
+      {required this.contextGetter,
       required this.onCommand,
       required this.onOptionalMenu,
       required this.focusCall});
@@ -98,7 +105,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       final node = controller.getNode(c.index);
       try {
         final newOne = node.onEdit(EditingData(
-            c.position, EventType.typing, controller.listeners,
+            c.position, EventType.typing, editorContext,
             extras: delta));
         return ModifyNode(newOne.toCursor(c.index), newOne.node);
       } on TypingToChangeNodeException catch (e) {
@@ -114,9 +121,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
       final node = controller.getNode(c.index);
       try {
         final newOne = node.onSelect(SelectingData(
-            SelectingPosition(c.begin, c.end),
-            EventType.typing,
-            controller.listeners,
+            SelectingPosition(c.begin, c.end), EventType.typing, editorContext,
             extras: delta));
         return ModifyNode(newOne.toCursor(c.index), newOne.node);
       } on TypingToChangeNodeException catch (e) {

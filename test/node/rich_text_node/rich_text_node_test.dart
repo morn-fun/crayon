@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/core/node_controller.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
@@ -14,6 +13,7 @@ import 'package:crayon/editor/cursor/node_position.dart';
 
 import '../config/const_texts.dart';
 import '../config/test_editor_node.dart';
+import '../config/test_node_context.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 
@@ -549,7 +549,7 @@ void main() {
     for (var t in EventType.values) {
       try {
         newNode.onEdit(
-            EditingData(RichTextNodePosition.zero(), t, ListenerCollection()));
+            EditingData(RichTextNodePosition.zero(), t, TestNodeContext()));
       } catch (e) {
         print('e:$e');
       }
@@ -565,7 +565,7 @@ void main() {
             SelectingPosition(
                 RichTextNodePosition.zero(), RichTextNodePosition(1, 1)),
             t,
-            ListenerCollection()));
+            TestNodeContext()));
       } catch (e) {
         print('e:$e');
       }

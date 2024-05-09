@@ -1,3 +1,4 @@
+import '../../../core/context.dart';
 import '../../../cursor/basic.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
@@ -19,30 +20,16 @@ NodeWithPosition newlineWhileSelecting(
   if (left.inSameCell(right)) {
     final cell = node.getCellByPosition(left);
     if (!cell.wholeSelected(left.cellPosition, right.cellPosition)) {
+      final context = data.context
+          .getChildContext(cell.getId(node.id, left.row, left.column))!;
       final sameIndex = left.index == right.index;
       BasicCursor cursor = sameIndex
           ? SelectingNodeCursor(left.index, left.position, right.position)
           : SelectingNodesCursor(IndexWithPosition(left.index, left.position),
-          IndexWithPosition(right.index, right.position));
-      var newCell = cell;
-      final context = cell.buildContext(
-          cursor: cursor,
-          listeners: data.listeners,
-          onReplace: (v) {
-            newCell = cell.replaceMore(v.begin, v.end, v.newNodes);
-            cursor = v.cursor;
-          },
-          onUpdate: (v) {
-            newCell = cell.update(v.index, (n) => v.node);
-            cursor = v.cursor;
-          },
-          onCursor: (c) {
-            cursor = c;
-          });
-      NewlineAction(context).invoke(NewlineIntent());
-      return NodeWithPosition(
-          node.updateCell(left.row, left.column, (t) => newCell),
-          left.fromCursor(cursor));
+              IndexWithPosition(right.index, right.position));
+      NewlineAction(ActionContext(context,() =>  cursor)).invoke(NewlineIntent());
+      throw NodeUnsupportedException(
+          node.runtimeType, 'operateWhileEditing', null);
     }
   }
   throw NodeUnsupportedException(

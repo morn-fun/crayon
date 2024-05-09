@@ -48,7 +48,7 @@ NodeWithPosition typingWhileSelecting(
   final p = data.position;
   final newNode = node.replace(p.left, p.right, []);
   return typingWhileEditing(
-      EditingData(p.left, EventType.typing, data.listeners,
+      EditingData(p.left, EventType.typing, data.context,
           extras: data.extras),
       newNode);
 }

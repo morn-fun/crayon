@@ -22,6 +22,7 @@ class CodeBlockLine extends StatefulWidget {
   final TextRange? selectingOffset;
   final TextStyle? style;
   final bool dark;
+  final String nodeId;
 
   const CodeBlockLine(
       {super.key,
@@ -31,6 +32,7 @@ class CodeBlockLine extends StatefulWidget {
       this.editingOffset,
       this.style,
       required this.dark,
+      required this.nodeId,
       this.selectingOffset});
 
   @override
@@ -214,7 +216,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     final off = buildTextPosition(globalOffset).offset;
     controller.onEditingPosition.call(off);
     controller.onEditingOffsetChanged
-        .call(EditingOffset(globalOffset, painter.height));
+        .call(EditingOffset(globalOffset, painter.height, widget.nodeId));
     updateInputAttribute(off);
   }
 
@@ -257,8 +259,8 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     if (o != null && y != null) {
       final cursorY = painter.height;
       final offset = painter.getOffsetFromTextOffset(o);
-      controller.onEditingOffsetChanged
-          .call(EditingOffset(Offset(offset.dx, cursorY + y!), painter.height));
+      controller.onEditingOffsetChanged.call(EditingOffset(
+          Offset(offset.dx, cursorY + y!), painter.height, widget.nodeId));
     }
   }
 }

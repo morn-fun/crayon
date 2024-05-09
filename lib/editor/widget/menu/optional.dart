@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../command/replace.dart';
 import '../../core/context.dart';
 import '../../core/editor_controller.dart';
+import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/rich_text.dart';
@@ -21,14 +21,14 @@ import '../../node/table/table.dart';
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final EditingOffset offset;
-  final NodeContext nodeContext;
-  final ListenerCollection listeners;
+  final ValueGetter<NodeContext> contextGetter;
+  final EntryManager manager;
 
-  const OptionalMenu({
+  const OptionalMenu(
+    this.offset,
+    this.contextGetter,
+    this.manager, {
     super.key,
-    required this.offset,
-    required this.nodeContext,
-    required this.listeners,
   });
 
   @override
@@ -38,11 +38,14 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   EditingOffset get offset => widget.offset;
 
-  NodeContext get nodeContext => widget.nodeContext;
+  NodeContext get nodeContext => widget.contextGetter.call();
 
-  ListenerCollection get listeners => widget.listeners;
+  ListenerCollection get listeners => nodeContext.listeners;
+
+  EntryManager get manager => widget.manager;
 
   final ValueNotifier<int> currentIndex = ValueNotifier(1);
+
   bool isCheckingText = false;
 
   final list = List.of(defaultMenus);
@@ -78,12 +81,12 @@ class _OptionalMenuState extends State<OptionalMenu> {
     checkText(node, cursor);
   }
 
-  void hideMenu() => nodeContext.hideMenu();
+  void hideMenu() => manager.removeEntry();
 
   void _onNodeChanged(EditorNode node) {
-    final cursor = nodeContext.cursor;
-    if (cursor is! EditingCursor) return;
-    checkText(node, cursor);
+    final c = nodeContext.cursor;
+    if (c is! EditingCursor) return;
+    checkText(node, c);
   }
 
   void checkText(EditorNode node, EditingCursor<NodePosition> cursor) {
@@ -125,22 +128,16 @@ class _OptionalMenuState extends State<OptionalMenu> {
 
   void _onItemSelected(MenuItemInfo current) {
     hideMenu();
-    final cursor = nodeContext.cursor;
-    if (cursor is! EditingCursor) return;
-    final node = nodeContext.getNode(cursor.index);
+    final c = nodeContext.cursor;
+    if (c is! EditingCursor) return;
+    final node = nodeContext.getNode(c.index);
     if (node.id != nodeId) return;
     if (node is! RichTextNode) return;
     if (current.generator == null) return;
-
-    ///TODO:avoid hardcode here
-    final nodes = current.generator!
-        .call(node.rearPartNode(cursor.position as RichTextNodePosition));
-    nodeContext.execute(ReplaceNode(Replace(
-      cursor.index,
-      cursor.index + 1,
-      nodes,
-      EditingCursor(cursor.index, nodes.last.beginPosition),
-    )));
+    final newNode = current.generator!
+        .call(node.rearPartNode(c.position as RichTextNodePosition));
+    nodeContext.update(Update(
+        c.index, newNode, EditingCursor(c.index, newNode.beginPosition)));
   }
 
   @override
@@ -274,28 +271,28 @@ enum OptionalSelectedType { last, next, current }
 
 final defaultMenus = [
   MenuItemInfo.readable('基础'),
-  MenuItemInfo.normal('文本', Icons.text_fields_rounded, _textColor, (n) => [n]),
+  MenuItemInfo.normal('文本', Icons.text_fields_rounded, _textColor, (n) => n),
   MenuItemInfo.normal('一级标题', Icons.title_rounded, _textColor,
-      (n) => [H1Node.from(n.spans, id: n.id, depth: n.depth)]),
+      (n) => H1Node.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('二级标题', Icons.title_rounded, _textColor,
-      (n) => [H2Node.from(n.spans, id: n.id, depth: n.depth)]),
+      (n) => H2Node.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('三级标题', Icons.title_rounded, _textColor,
-      (n) => [H3Node.from(n.spans, id: n.id, depth: n.depth)]),
+      (n) => H3Node.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('有序列表', Icons.format_list_numbered_rounded, _textColor,
-      (n) => [OrderedNode.from(n.spans, id: n.id, depth: n.depth)]),
+      (n) => OrderedNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('无序列表', Icons.list_rounded, _textColor,
-      (n) => [UnorderedNode.from(n.spans, id: n.id, depth: n.depth)]),
+      (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('代码块', Icons.code, _codeColor,
-      (n) => [CodeBlockNode.from([], id: n.id, depth: n.depth)]),
+      (n) => CodeBlockNode.from([], id: n.id, depth: n.depth)),
   MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
-      (n) => [QuoteNode.from([], id: n.id, depth: n.depth)]),
+      (n) => QuoteNode.from([], id: n.id, depth: n.depth)),
   MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
   MenuItemInfo.normal('链接', Icons.question_mark_rounded, _linkColor, null),
   MenuItemInfo.readable('常用'),
   MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
-      (n) => [TodoNode.from([], id: n.id, depth: n.depth)]),
+      (n) => TodoNode.from([], id: n.id, depth: n.depth)),
   MenuItemInfo.normal('表格', Icons.table_chart_rounded, _textColor,
-      (n) => [TableNode.from([], [], id: n.id, depth: n.depth)]),
+      (n) => TableNode.from([], [], id: n.id, depth: n.depth)),
 ];
 
 const _textColor = Colors.brown;
@@ -320,4 +317,4 @@ class MenuItemInfo {
       : interactive = true;
 }
 
-typedef NodeGenerator = List<EditorNode> Function(RichTextNode node);
+typedef NodeGenerator = EditorNode Function(RichTextNode node);

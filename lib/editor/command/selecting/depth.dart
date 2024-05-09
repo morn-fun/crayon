@@ -66,7 +66,7 @@ class DecreaseNodesDepth implements BasicCommand {
       final nodePosition = lastNode.onSelect(SelectingData(
           SelectingPosition(lastNode.beginPosition, rightCursor.position),
           EventType.decreaseDepth,
-          nodeContext.listeners));
+          nodeContext));
       newNodes.add(nodePosition.node);
     } on DepthNeedDecreaseMoreException catch (e) {
       newNodes.add(lastNode.newNode(depth: lastNode.depth.decrease()));

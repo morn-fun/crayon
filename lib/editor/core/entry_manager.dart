@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../cursor/basic.dart';
 import '../widget/menu/link.dart';
 import '../widget/menu/optional.dart';
-import '../widget/menu/rich_text.dart';
+import '../widget/menu/text.dart';
 import 'context.dart';
 import 'editor_controller.dart';
 
@@ -11,66 +11,62 @@ class EntryManager {
   OverlayEntry? _showingEntry;
   MenuType? _lastShowingType;
 
-  final ValueChanged<MenuType>? onMenuShowing;
-  final ValueChanged<MenuType>? onMenuHide;
+  final ValueChanged<MenuType>? _onMenuShowing;
+  final ValueChanged<MenuType>? _onMenuHide;
 
-  EntryManager({this.onMenuShowing, this.onMenuHide});
+  EntryManager(this._onMenuShowing, this._onMenuHide);
 
   void removeEntry() {
     if (_showingEntry != null) {
       _showingEntry?.remove();
     }
     if (_lastShowingType != null) {
-      onMenuHide?.call(_lastShowingType!);
+      _onMenuHide?.call(_lastShowingType!);
     }
     _showingEntry = null;
     _lastShowingType = null;
   }
 
   void _notifyMenuShowing() {
-    if (_lastShowingType != null && onMenuShowing != null) {
-      onMenuShowing?.call(_lastShowingType!);
+    if (_lastShowingType != null && _onMenuShowing != null) {
+      _onMenuShowing?.call(_lastShowingType!);
     }
   }
 
   void showOptionalMenu(
-      EditingOffset offset, OverlayState state, EditorContext context) async {
+      EditingOffset offset, OverlayState state, ValueGetter<NodeContext> contextGetter) async {
     removeEntry();
     _lastShowingType = MenuType.optional;
-    _showingEntry = OverlayEntry(
-        builder: (_) => OptionalMenu(
-              offset: offset,
-              nodeContext: context,
-              listeners: context.listeners,
-            ));
+    _showingEntry =
+        OverlayEntry(builder: (_) => OptionalMenu(offset, contextGetter, this));
     state.insert(_showingEntry!);
     _notifyMenuShowing();
   }
 
-  void showTextMenu(OverlayState state, MenuInfo info, LayerLink link,
-      EditorContext context) {
+  void showTextMenu(OverlayState state, MenuInfo info,
+      ValueGetter<NodeContext> contextGetter) {
     removeEntry();
     _lastShowingType = MenuType.text;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: TextMenu(context, info, link, context.listeners),
+              child: TextMenu(contextGetter, info, this),
               showWhenUnlinked: false,
-              link: link,
+              link: info.layerLink,
             ));
     state.insert(_showingEntry!);
     _notifyMenuShowing();
   }
 
   void showLinkMenu(
-      OverlayState state, MenuInfo info, LayerLink link, EditorContext context,
-      {UrlWithPosition? urlWithPosition}) {
+      OverlayState state, LinkMenuInfo linkMenuInfo, ValueGetter<NodeContext> contextGetter) {
     removeEntry();
     _lastShowingType = MenuType.text;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: LinkMenu(context, info, urlWithPosition: urlWithPosition),
+              child: LinkMenu(contextGetter, linkMenuInfo.menuInfo, this,
+                  urlWithPosition: linkMenuInfo.urlWithPosition),
               showWhenUnlinked: false,
-              link: link,
+              link: linkMenuInfo.link,
             ));
     state.insert(_showingEntry!);
     _notifyMenuShowing();
@@ -79,60 +75,44 @@ class EntryManager {
   void dispose() {
     removeEntry();
   }
+
+  MenuType? get showingType => _lastShowingType;
 }
 
 class MenuInfo {
   final Offset offset;
   final String nodeId;
   final double lineHeight;
+  final LayerLink layerLink;
 
-  MenuInfo(this.offset, this.nodeId, this.lineHeight);
+  MenuInfo(this.offset, this.nodeId, this.lineHeight, this.layerLink);
 
   MenuInfo.zero()
       : offset = Offset.zero,
         lineHeight = 0,
-        nodeId = '';
+        nodeId = '',
+        layerLink = LayerLink();
+
+  @override
+  String toString() {
+    return 'MenuInfo{offset: $offset, nodeId: $nodeId, lineHeight: $lineHeight}';
+  }
 }
 
 enum MenuType { optional, link, text }
 
-enum EntryStatus {
-  idle,
-  readyToShowingOptionalMenu,
-  showingOptionalMenu,
-  readyToShowingTextMenu,
-  showingTextMenu,
-  readyToShowingLinkMenu,
-  showingLinkMenu,
-  onMenuHovering,
-}
-
-abstract class EntryShower {
-  void show(OverlayState state, EditorContext context);
-}
-
-class TextMenuEntryShower implements EntryShower {
+class LinkMenuInfo {
   final MenuInfo menuInfo;
-  final LayerLink layerLink;
-
-  TextMenuEntryShower(this.menuInfo, this.layerLink);
-
-  @override
-  void show(OverlayState state, EditorContext context) =>
-      context.showTextMenu(state, menuInfo, layerLink);
-}
-
-class LinkEntryShower implements EntryShower {
-  final MenuInfo menuInfo;
-  final LayerLink layerLink;
   final UrlWithPosition? urlWithPosition;
 
-  LinkEntryShower(this.menuInfo, this.layerLink, {this.urlWithPosition});
+  LayerLink get link => menuInfo.layerLink;
+
+  LinkMenuInfo(this.menuInfo, this.urlWithPosition);
 
   @override
-  void show(OverlayState state, EditorContext context) =>
-      context.showLinkMenu(state, menuInfo, layerLink,
-          urlWithPosition: urlWithPosition);
+  String toString() {
+    return 'LinkMenuInfo{menuInfo: $menuInfo, urlWithPosition: $urlWithPosition}';
+  }
 }
 
 class UrlWithPosition {
@@ -140,4 +120,9 @@ class UrlWithPosition {
   final SelectingNodeCursor cursor;
 
   UrlWithPosition(this.url, this.cursor);
+
+  @override
+  String toString() {
+    return 'UrlWithPosition{url: $url, cursor: $cursor}';
+  }
 }

@@ -12,11 +12,12 @@ import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class LinkMenu extends StatefulWidget {
-  final NodeContext nodeContext;
+  final ValueGetter<NodeContext> contextGetter;
   final MenuInfo info;
+  final EntryManager manager;
   final UrlWithPosition? urlWithPosition;
 
-  const LinkMenu(this.nodeContext, this.info,
+  const LinkMenu(this.contextGetter, this.info, this.manager,
       {super.key, this.urlWithPosition});
 
   @override
@@ -24,11 +25,13 @@ class LinkMenu extends StatefulWidget {
 }
 
 class _LinkMenuState extends State<LinkMenu> {
-  NodeContext get nodeContext => widget.nodeContext;
+  NodeContext get nodeContext => widget.contextGetter.call();
 
   ListenerCollection get listeners => nodeContext.listeners;
 
   MenuInfo get info => widget.info;
+
+  EntryManager get manager => widget.manager;
 
   bool enableCancel = false;
 
@@ -71,7 +74,7 @@ class _LinkMenuState extends State<LinkMenu> {
     if (mounted) setState(() {});
   }
 
-  void hideMenu() => nodeContext.hideMenu();
+  void hideMenu() => manager.removeEntry();
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +127,7 @@ class _LinkMenuState extends State<LinkMenu> {
                                     SelectingPosition(
                                         linkCursor.begin, linkCursor.end),
                                     EventType.link,
-                                    listeners,
+                                    nodeContext,
                                     extras: StyleExtra(false, {})));
                             nodeContext.execute(ModifyNodeWithoutChangeCursor(
                                 linkCursor.index, r.node));
@@ -148,7 +151,7 @@ class _LinkMenuState extends State<LinkMenu> {
                                           SelectingPosition(
                                               linkCursor.begin, linkCursor.end),
                                           EventType.link,
-                                          listeners,
+                                          nodeContext,
                                           extras:
                                               StyleExtra(true, {'url': text})));
                                   nodeContext.execute(
@@ -156,6 +159,7 @@ class _LinkMenuState extends State<LinkMenu> {
                                           linkCursor.index, r.node));
                                 } else {
                                   onStyleEvent(nodeContext, RichTextTag.link,
+                                      nodeContext.cursor,
                                       attributes: {'url': text});
                                 }
                                 hideMenu();

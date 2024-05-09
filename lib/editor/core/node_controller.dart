@@ -9,23 +9,22 @@ import 'input_manager.dart';
 import 'listener_collection.dart';
 
 class NodeController {
-  final ValueChanged<NodePosition> onEditingPosition;
   final ValueChanged<SelectingPosition> onSelectingPosition;
   final ValueChanged<InputConnectionAttribute> onInputConnectionAttribute;
+  final ValueChanged<NodePosition> onEditingPosition;
   final ValueChanged<NodePosition> onPanUpdatePosition;
   final ValueChanged<EditingOffset> onEditingOffsetChanged;
-  final ValueChanged<EntryShower> onOverlayEntryShow;
   final ValueGetter<EntryManager> entryManagerGetter;
   final CursorGenerator cursorGenerator;
   final ListenerCollection listeners;
   final NodeGetter nodeGetter;
   final ValueChanged<EditorNode> onNodeChanged;
+  final ValueChanged<NodeWithPosition> onNodeWithPositionChanged;
 
   NodeController({
     required this.onEditingPosition,
     required this.onSelectingPosition,
     required this.onInputConnectionAttribute,
-    required this.onOverlayEntryShow,
     required this.onPanUpdatePosition,
     required this.entryManagerGetter,
     required this.listeners,
@@ -33,6 +32,7 @@ class NodeController {
     required this.onEditingOffsetChanged,
     required this.nodeGetter,
     required this.onNodeChanged,
+    required this.onNodeWithPositionChanged,
   });
 
   static NodeController empty = NodeController(
@@ -40,13 +40,13 @@ class NodeController {
     onSelectingPosition: (v) {},
     onEditingOffsetChanged: (v) {},
     onInputConnectionAttribute: (v) {},
-    onOverlayEntryShow: (s) {},
     nodeGetter: (i) => throw Exception(),
-    entryManagerGetter: () => EntryManager(),
+    entryManagerGetter: () => EntryManager(null, null),
     onPanUpdatePosition: (v) {},
     cursorGenerator: (p) => p.toCursor(0),
     listeners: ListenerCollection(),
     onNodeChanged: (n) {},
+    onNodeWithPositionChanged: (n) {},
   );
 
   void notifyEditingPosition(NodePosition p) => onEditingPosition.call(p);
@@ -62,11 +62,14 @@ class NodeController {
   void updateInputConnectionAttribute(InputConnectionAttribute v) =>
       onInputConnectionAttribute.call(v);
 
-  void showOverlayEntry(EntryShower shower) => onOverlayEntryShow.call(shower);
-
   void updateNode(EditorNode node) => onNodeChanged.call(node);
 
+  void notifyNodeWithPosition(NodeWithPosition p) =>
+      onNodeWithPositionChanged.call(p);
+
   EntryManager get entryManager => entryManagerGetter.call();
+
+  void removeEntry() => entryManager.removeEntry();
 
   EditorNode getNode(int index) => nodeGetter.call(index);
 
@@ -78,12 +81,12 @@ class NodeController {
     ValueChanged<InputConnectionAttribute>? onInputConnectionAttribute,
     ValueChanged<NodePosition>? onPanUpdatePosition,
     ValueChanged<EditingOffset>? onEditingOffsetChanged,
-    ValueChanged<EntryShower>? onOverlayEntryShow,
     ValueGetter<EntryManager>? entryManagerGetter,
     CursorGenerator? cursorGenerator,
     ListenerCollection? listeners,
     NodeGetter? nodeGetter,
     ValueChanged<EditorNode>? onNodeChanged,
+    ValueChanged<NodeWithPosition>? onNodeWithPositionChanged,
     VoidCallback? focusCallback,
   }) =>
       NodeController(
@@ -91,7 +94,6 @@ class NodeController {
         onSelectingPosition: onSelectingPosition ?? this.onSelectingPosition,
         onInputConnectionAttribute:
             onInputConnectionAttribute ?? this.onInputConnectionAttribute,
-        onOverlayEntryShow: onOverlayEntryShow ?? this.onOverlayEntryShow,
         onPanUpdatePosition: onPanUpdatePosition ?? this.onPanUpdatePosition,
         entryManagerGetter: entryManagerGetter ?? this.entryManagerGetter,
         listeners: listeners ?? this.listeners,
@@ -100,6 +102,8 @@ class NodeController {
             onEditingOffsetChanged ?? this.onEditingOffsetChanged,
         nodeGetter: nodeGetter ?? this.nodeGetter,
         onNodeChanged: onNodeChanged ?? this.onNodeChanged,
+        onNodeWithPositionChanged:
+            onNodeWithPositionChanged ?? this.onNodeWithPositionChanged,
       );
 }
 

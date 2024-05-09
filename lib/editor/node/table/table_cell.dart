@@ -46,6 +46,8 @@ class TableCell {
 
   TableCell clear() => TableCell([RichTextNode.from([])]);
 
+  String getId(String id, int row, int column) => '$id-$row-$column';
+
   bool isBegin(TableCellPosition p) {
     if (!p.atEdge) return false;
     if (p.index != 0) return false;
@@ -140,22 +142,11 @@ class TableCell {
   List<Map<String, dynamic>> toJson() => nodes.map((e) => e.toJson()).toList();
 
   String get text => nodes.map((e) => e.text).join('\n');
-
-  TableCellNodeContext buildContext({
-    required BasicCursor cursor,
-    required ListenerCollection listeners,
-    required ValueChanged<Replace> onReplace,
-    required ValueChanged<Update> onUpdate,
-    required ValueChanged<BasicCursor> onCursor,
-  }) =>
-      TableCellNodeContext(
-          cursor, this, listeners, onReplace, onUpdate, onCursor);
 }
 
 class TableCellNodeContext extends NodeContext {
-  @override
-  final BasicCursor cursor;
-  final TableCell cell;
+  final ValueGetter<BasicCursor> cursorGetter;
+  final ValueGetter<TableCell> cellGetter;
   @override
   final ListenerCollection listeners;
   final ValueChanged<Replace> onReplace;
@@ -163,8 +154,8 @@ class TableCellNodeContext extends NodeContext {
   final ValueChanged<BasicCursor> onCursor;
 
   TableCellNodeContext(
-    this.cursor,
-    this.cell,
+    this.cursorGetter,
+    this.cellGetter,
     this.listeners,
     this.onReplace,
     this.onUpdate,
@@ -172,6 +163,8 @@ class TableCellNodeContext extends NodeContext {
   );
 
   final tag = 'TableCellNodeContext';
+
+  TableCell get cell => cellGetter.call();
 
   @override
   void execute(BasicCommand command) {
@@ -191,9 +184,6 @@ class TableCellNodeContext extends NodeContext {
       cell.nodes.getRange(begin, end);
 
   @override
-  void hideMenu() {}
-
-  @override
   int get nodeLength => cell.length;
 
   @override
@@ -205,11 +195,11 @@ class TableCellNodeContext extends NodeContext {
       {dynamic extra}) {
     if (cursor is EditingCursor) {
       final r = getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type, listeners, extras: extra));
+          .onEdit(EditingData(cursor.position, type, this, extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     } else if (cursor is SelectingNodeCursor) {
       final r = getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end), type, listeners,
+          SelectingPosition(cursor.begin, cursor.end), type, this,
           extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     }
@@ -235,6 +225,10 @@ class TableCellNodeContext extends NodeContext {
   @override
   void updateCursor(BasicCursor cursor, {bool notify = true}) =>
       onCursor.call(cursor);
+
+  @override
+  // TODO: implement cursor
+  BasicCursor<NodePosition> get cursor => cursorGetter.call();
 }
 
 enum CellCursorStatus { inner, current, outer }

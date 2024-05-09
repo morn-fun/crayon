@@ -17,20 +17,24 @@ class DeleteIntent extends Intent {
 }
 
 class DeleteAction extends ContextAction<DeleteIntent> {
-  final NodeContext nodeContext;
+  final ActionContext ac;
 
-  DeleteAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  DeleteAction(this.ac);
 
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    final cursor = nodeContext.cursor;
+    final cursor = this.cursor;
     if (cursor is EditingCursor) {
       final index = cursor.index;
       final node = nodeContext.getNode(index);
       try {
-        final r = node.onEdit(EditingData(
-            cursor.position, EventType.delete, nodeContext.listeners));
+        final r = node.onEdit(
+            EditingData(cursor.position, EventType.delete, nodeContext));
         nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
       } on DeleteRequiresNewLineException catch (e) {
         logger.e('$runtimeType, ${e.message}');
@@ -58,14 +62,20 @@ class DeleteAction extends ContextAction<DeleteIntent> {
         logger.e('$runtimeType, ${e.message}');
         nodeContext.execute(ReplaceNode(Replace(
             index, index + 1, [e.node], EditingCursor(index, e.position))));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
-      final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end),
-          EventType.delete,
-          nodeContext.listeners));
-      nodeContext
-          .execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+      try {
+        final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
+            SelectingPosition(cursor.begin, cursor.end),
+            EventType.delete,
+            nodeContext));
+        nodeContext
+            .execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
+      }
     } else if (cursor is SelectingNodesCursor) {
       nodeContext.execute(DeletionWhileSelectingNodes(cursor));
     }

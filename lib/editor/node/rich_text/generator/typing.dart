@@ -3,6 +3,7 @@ import '../../../../editor/extension/string.dart';
 
 import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
+import '../../../exception/menu.dart';
 import '../../basic.dart';
 import '../../../cursor/node_position.dart';
 import '../head.dart';
@@ -63,7 +64,7 @@ NodeWithPosition typingRichTextNodeWhileSelecting(
   final nodeAfterMerge = newLeft.merge(newRight);
   try {
     return typingRichTextNodeWhileEditing(
-        EditingData(newLeft.endPosition, EventType.typing, data.listeners,
+        EditingData(newLeft.endPosition, EventType.typing, data.context,
             extras: data.extras),
         nodeAfterMerge);
   } on TypingRequiredOptionalMenuException catch (e) {

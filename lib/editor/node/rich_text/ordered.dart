@@ -21,10 +21,13 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
       final theme = Theme.of(c);
       return Row(
         children: [
-          Text(
-            '${generateOrderedNumber(getIndex(extras as int, controller) + 1, depth)}. ',
-            style: TextStyle(
-                fontSize: size, color: theme.textTheme.displayMedium?.color),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              '${generateOrderedNumber(getIndex(extras as int, controller) + 1, depth)}. ',
+              style: TextStyle(
+                  fontSize: size, color: theme.textTheme.displayMedium?.color),
+            ),
           ),
           Expanded(child: RichTextWidget(controller, this, position)),
         ],

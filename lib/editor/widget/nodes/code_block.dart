@@ -14,7 +14,6 @@ import '../../node/code_block/code_block.dart';
 import '../../cursor/node_position.dart';
 
 import '../../shortcuts/arrows/arrows.dart';
-import '../editor/shared_editor_context_widget.dart';
 import '../menu/code_selector.dart';
 import 'code_block_line.dart';
 
@@ -143,7 +142,6 @@ class _CodeBlockState extends State<CodeBlock> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     bool allSelected = isAllSelected();
-    final editorContext = ShareEditorContextWidget.of(context)?.context;
     return Stack(
       key: key,
       children: [
@@ -211,6 +209,7 @@ class _CodeBlockState extends State<CodeBlock> {
                                   controller.notifyEditingPosition(
                                       CodeBlockPosition(index, o)),
                             ),
+                            nodeId: node.id,
                           ),
                         );
                       }),
@@ -237,14 +236,13 @@ class _CodeBlockState extends State<CodeBlock> {
                       },
                       onHide: () {
                         languageController.hide();
-                        editorContext?.updateStatus(ControllerStatus.idle);
-                        editorContext?.requestFocus();
+                        listeners.notifyStatus(ControllerStatus.idle);
                       },
                     );
                   },
                   child: InkWell(
                     onTap: () {
-                      editorContext?.updateStatus(ControllerStatus.typing);
+                      listeners.notifyStatus(ControllerStatus.typing);
                       languageController.show();
                     },
                     onHover: (e) => toHover(),

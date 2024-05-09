@@ -9,9 +9,11 @@ class RedoIntent extends Intent {
 }
 
 class RedoAction extends ContextAction<RedoIntent> {
-  final EditorContext editorContext;
+  final ActionContext ac;
 
-  RedoAction(this.editorContext);
+  EditorContext get editorContext => ac.context as EditorContext;
+
+  RedoAction(this.ac);
 
   @override
   void invoke(Intent intent, [BuildContext? context]) {

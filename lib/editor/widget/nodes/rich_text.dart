@@ -18,6 +18,7 @@ import '../../cursor/node_position.dart';
 import '../../node/rich_text/rich_text.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
+import '../editor/shared_node_context_widget.dart';
 import '../painter.dart';
 
 class RichTextWidget extends StatefulWidget {
@@ -212,19 +213,22 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
-    controller.showOverlayEntry(
-        TextMenuEntryShower(MenuInfo(offset, node.id, h), layerLink));
-  }
-
-  void confirmToShowLinkMenu(
-      Offset offset, String url, SelectingPosition position) {
-    final h =
-        painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
-            widget.fontSize;
-    controller.showOverlayEntry(LinkEntryShower(
-        MenuInfo(offset, node.id, h), layerLink,
-        urlWithPosition: UrlWithPosition(
-            url, controller.toCursor(position) as SelectingNodeCursor)));
+    final nodeContext = ShareNodeContextWidget.of(context)?.context;
+    final entryManager = controller.entryManager;
+    if (nodeContext != null && entryManager.showingType != MenuType.text) {
+      entryManager.showTextMenu(
+          Overlay.of(context), MenuInfo(offset, node.id, h, layerLink), () {
+        if (context.mounted) {
+          final c = ShareNodeContextWidget.of(context)?.context;
+          if (c == null) {
+            entryManager.removeEntry();
+            return nodeContext;
+          }
+        }
+        entryManager.removeEntry();
+        return nodeContext;
+      });
+    }
   }
 
   bool containsOffset(Offset global) =>
@@ -271,7 +275,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (position != null && y != null) {
       final offset = painter.getOffsetFromTextOffset(position.offset);
       controller.notifyEditingOffset(EditingOffset(
-          Offset(offset.dx, offset.dy + y!), getCurrentCursorHeight(position)));
+          Offset(offset.dx, offset.dy + y!),
+          getCurrentCursorHeight(position),
+          node.id));
     }
   }
 
@@ -285,6 +291,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final nodeContext = ShareNodeContextWidget.of(context)?.context;
     return MouseRegion(
       cursor: SystemMouseCursors.text,
       child: LayoutBuilder(builder: (context, constrains) {
@@ -354,7 +361,27 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                             children: painter.buildLinkGestures(v,
                                 onEnter: (o, s, p) {
                           final url = s.attributes['url'] ?? '';
-                          confirmToShowLinkMenu(o, url, p);
+                          final h = painter.getFullHeightForCaret(
+                                  buildTextPosition(o), Rect.zero) ??
+                              widget.fontSize;
+                          if (nodeContext != null) {
+                            controller.entryManager.showLinkMenu(
+                                Overlay.of(context),
+                                LinkMenuInfo(
+                                    MenuInfo(o, node.id, h, layerLink),
+                                    UrlWithPosition(
+                                        url,
+                                        controller.toCursor(p)
+                                            as SelectingNodeCursor)), () {
+                              final c =
+                                  ShareNodeContextWidget.of(context)?.context;
+                              if (c != null) {
+                                controller.entryManager.removeEntry();
+                                return c;
+                              }
+                              return nodeContext;
+                            });
+                          }
                         }, onExit: (e) {
                           controller.entryManager.removeEntry();
                         }, onTap: (s) {
@@ -393,8 +420,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     controller.notifyEditingPosition(richPosition);
-    controller.notifyEditingOffset(
-        EditingOffset(globalOffset, getCurrentCursorHeight(richPosition)));
+    controller.notifyEditingOffset(EditingOffset(
+        globalOffset, getCurrentCursorHeight(richPosition), node.id));
     updateInputAttribute(richPosition);
   }
 

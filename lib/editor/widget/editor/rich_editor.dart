@@ -9,7 +9,7 @@ import '../../node/basic.dart';
 import '../../core/shortcuts.dart';
 import '../../exception/command.dart';
 import 'auto_scroll_editor_list.dart';
-import 'shared_editor_context_widget.dart';
+import 'shared_node_context_widget.dart';
 
 class RichEditor extends StatefulWidget {
   final List<EditorNode> nodes;
@@ -37,16 +37,16 @@ class _RichEditorPageState extends State<RichEditor> {
     super.initState();
     controller = RichEditorController.fromNodes(widget.nodes);
     final listeners = controller.listeners;
-    entryManager = EntryManager(onMenuShowing: (t) {
+    entryManager = EntryManager((t) {
       if (t == MenuType.optional) {
         shortcutManager.shortcuts = selectingMenuShortcuts;
       }
-    }, onMenuHide: (t) {
+    }, (t) {
       shortcutManager.shortcuts = editorShortcuts;
     });
     shortcutManager = ShortcutManager(shortcuts: editorShortcuts, modal: true);
     inputManager = InputManager(
-        controller: controller,
+        contextGetter: () => editorContext,
         onCommand: (c) {
           try {
             invoker.execute(c, editorContext);
@@ -58,7 +58,7 @@ class _RichEditorPageState extends State<RichEditor> {
         onOptionalMenu: (s) {
           final cursorOffset = controller.lastCursorOffset;
           entryManager.showOptionalMenu(
-              cursorOffset.offset, Overlay.of(context), editorContext);
+              cursorOffset.offset, Overlay.of(context), () => editorContext);
         });
     inputManager.startInput();
     editorContext = EditorContext(
@@ -68,12 +68,15 @@ class _RichEditorPageState extends State<RichEditor> {
     listeners.addNodesChangedListener(refresh);
     listeners.addStatusChangedListener((value) {
       entryManager.removeEntry();
+      if (value == controller.status) return;
+      controller.updateStatus(value);
       switch (value) {
         case ControllerStatus.typing:
           shortcutManager.shortcuts = {};
           break;
         case ControllerStatus.idle:
           shortcutManager.shortcuts = editorShortcuts;
+          inputManager.requestFocus();
           break;
       }
     });
@@ -112,7 +115,7 @@ class _RichEditorPageState extends State<RichEditor> {
         actions: getActions(editorContext),
         child: Focus(
           focusNode: focusNode,
-          child: ShareEditorContextWidget(
+          child: ShareNodeContextWidget(
             child: AutoScrollEditorList(editorContext: editorContext),
             context: editorContext,
           ),

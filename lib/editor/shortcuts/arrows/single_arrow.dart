@@ -7,55 +7,71 @@ import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
 class LeftArrowAction extends ContextAction<LeftArrowIntent> {
-    final NodeContext nodeContext;
+  final ActionContext ac;
 
-  LeftArrowAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  LeftArrowAction(this.ac);
 
   @override
   void invoke(LeftArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onLeftOrUp(ArrowType.left, nodeContext, runtimeType);
+    _onLeftOrUp(ArrowType.left, nodeContext, runtimeType, cursor);
   }
 }
 
 class RightArrowAction extends ContextAction<RightArrowIntent> {
-    final NodeContext nodeContext;
+  final ActionContext ac;
 
-  RightArrowAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  RightArrowAction(this.ac);
 
   @override
   void invoke(RightArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onRightOrDown(ArrowType.right, nodeContext, runtimeType);
+    _onRightOrDown(ArrowType.right, nodeContext, runtimeType, cursor);
   }
 }
 
 class UpArrowAction extends ContextAction<UpArrowIntent> {
-    final NodeContext nodeContext;
+  final ActionContext ac;
 
-  UpArrowAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  UpArrowAction(this.ac);
 
   @override
   void invoke(UpArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onLeftOrUp(ArrowType.up, nodeContext, runtimeType);
+    _onLeftOrUp(ArrowType.up, nodeContext, runtimeType, cursor);
   }
 }
 
 class DownArrowAction extends ContextAction<DownArrowIntent> {
-    final NodeContext nodeContext;
+  final ActionContext ac;
 
-  DownArrowAction(this.nodeContext);
+  NodeContext get nodeContext => ac.context;
+
+  BasicCursor get cursor => ac.cursor;
+
+  DownArrowAction(this.ac);
 
   @override
   void invoke(DownArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onRightOrDown(ArrowType.down, nodeContext, runtimeType);
+    _onRightOrDown(ArrowType.down, nodeContext, runtimeType, cursor);
   }
 }
 
-void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType) {
-  final cursor = nodeContext.cursor;
+void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
+    BasicCursor cursor) {
   int index = -1;
   late NodePosition position;
   ArrowType t = type;
@@ -95,9 +111,8 @@ void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType) {
   }
 }
 
-void _onRightOrDown(
-    ArrowType type, NodeContext nodeContext, Type actionType) {
-  final cursor = nodeContext.cursor;
+void _onRightOrDown(ArrowType type, NodeContext nodeContext, Type actionType,
+    BasicCursor cursor) {
   int index = -1;
   ArrowType t = type;
   late NodePosition position;

@@ -14,20 +14,15 @@ import 'input_manager.dart';
 import 'listener_collection.dart';
 import 'logger.dart';
 
-class EditorContext implements NodeContext {
+class EditorContext extends NodeContext {
   final RichEditorController controller;
   final InputManager inputManager;
   final FocusNode focusNode;
   final CommandInvoker invoker;
   final EntryManager entryManager;
 
-  EditorContext(
-    this.controller,
-    this.inputManager,
-    this.focusNode,
-    this.invoker,
-    this.entryManager,
-  );
+  EditorContext(this.controller, this.inputManager, this.focusNode,
+      this.invoker, this.entryManager);
 
   @override
   void execute(BasicCommand command) {
@@ -43,11 +38,11 @@ class EditorContext implements NodeContext {
     if (cursor is EditingCursor) {
       final r = controller
           .getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type, listeners, extras: extra));
+          .onEdit(EditingData(cursor.position, type, this, extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     } else if (cursor is SelectingNodeCursor) {
       final r = controller.getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end), type, listeners,
+          SelectingPosition(cursor.begin, cursor.end), type, this,
           extras: extra));
       execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     }
@@ -82,25 +77,6 @@ class EditorContext implements NodeContext {
   void updateInputConnectionAttribute(InputConnectionAttribute attribute) =>
       inputManager.updateInputConnectionAttribute(attribute);
 
-  void updateStatus(ControllerStatus status) => controller.updateStatus(status);
-
-  void showOptionalMenu(EditingOffset offset, OverlayState state) =>
-      entryManager.showOptionalMenu(offset, state, this);
-
-  void showTextMenu(OverlayState state, MenuInfo info, LayerLink link) =>
-      entryManager.showTextMenu(state, info, link, this);
-
-  void showLinkMenu(OverlayState state, MenuInfo info, LayerLink link,
-          {UrlWithPosition? urlWithPosition}) =>
-      entryManager.showLinkMenu(state, info, link, this,
-          urlWithPosition: urlWithPosition);
-
-  @override
-  void hideMenu() {
-    entryManager.removeEntry();
-    inputManager.requestFocus();
-  }
-
   @override
   EditorNode getNode(int index) => controller.getNode(index);
 
@@ -122,15 +98,39 @@ class EditorContext implements NodeContext {
   BasicCursor<NodePosition> get selectAllCursor => controller.selectAllCursor;
 
   @override
-  void onArrowAccept(AcceptArrowData data) => controller.onArrowAccept(data);
-
-  @override
   UpdateControllerOperation? update(Update data, {bool record = true}) =>
       controller.update(data, record: record);
 
   @override
   UpdateControllerOperation? replace(Replace data, {bool record = true}) =>
       controller.replace(data, record: record);
+
+  @override
+  NodeContext? getChildContext(String id) {
+    final set = _id2ContextMap[id];
+    if (set == null || set.isEmpty) return null;
+    return set.first;
+  }
+
+  @override
+  void addContext(String id, NodeContext context) {
+    var set = _id2ContextMap[id];
+    set ??= {};
+    set.add(context);
+    _id2ContextMap[id] = set;
+  }
+
+  @override
+  void removeContext(String id, NodeContext context) {
+    var set = _id2ContextMap[id];
+    set ??= {};
+    set.remove(id);
+    if (set.isEmpty) {
+      _id2ContextMap.remove(id);
+    } else {
+      _id2ContextMap[id] = set;
+    }
+  }
 }
 
 abstract class NodeContext {
@@ -160,5 +160,38 @@ abstract class NodeContext {
 
   ListenerCollection get listeners;
 
-  void hideMenu();
+  final Map<String, Set<NodeContext>> _id2ContextMap = {};
+
+  NodeContext? getChildContext(String id) {
+    final set = _id2ContextMap[id];
+    if (set == null || set.isEmpty) return null;
+    return set.first;
+  }
+
+  void addContext(String id, NodeContext context) {
+    var set = _id2ContextMap[id];
+    set ??= {};
+    set.add(context);
+    _id2ContextMap[id] = set;
+  }
+
+  void removeContext(String id, NodeContext context) {
+    var set = _id2ContextMap[id];
+    set ??= {};
+    set.remove(context);
+    if (set.isEmpty) {
+      _id2ContextMap.remove(id);
+    } else {
+      _id2ContextMap[id] = set;
+    }
+  }
+}
+
+class ActionContext {
+  final NodeContext context;
+  final ValueGetter<BasicCursor> cursorGetter;
+
+  BasicCursor get cursor => cursorGetter.call();
+
+  ActionContext(this.context, this.cursorGetter);
 }

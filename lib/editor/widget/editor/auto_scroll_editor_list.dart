@@ -1,10 +1,9 @@
 import 'dart:async';
-
-import 'package:crayon/editor/command/modification.dart';
-import 'package:crayon/editor/extension/cursor.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../../../editor/command/modification.dart';
+import '../../../editor/extension/cursor.dart';
 import '../../core/command_invoker.dart';
 import '../../core/context.dart';
 import '../../core/editor_controller.dart';
@@ -225,7 +224,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                                 .updateCursor(EditingCursor(index, v)),
                             onSelectingPosition: (v) =>
                                 controller.updateCursor(v.toCursor(index)),
-                            onEditingOffsetChanged: (o){
+                            onEditingOffsetChanged: (o) {
                               final cursorOffset = CursorOffset(index, o);
                               controller.setCursorOffset(cursorOffset);
                               onCursorOffsetChanged(cursorOffset);
@@ -233,8 +232,6 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                             cursorGenerator: (p) => p.toCursor(index),
                             onInputConnectionAttribute: (v) =>
                                 editorContext.updateInputConnectionAttribute(v),
-                            onOverlayEntryShow: (s) =>
-                                s.show(Overlay.of(context), editorContext),
                             onPanUpdatePosition: (p) {
                               final cursor =
                                   generateSelectingCursor(p, index, controller);
@@ -245,6 +242,9 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                             entryManagerGetter: () =>
                                 editorContext.entryManager,
                             listeners: listeners,
+                            onNodeWithPositionChanged: (n) =>
+                                editorContext.execute(ModifyNode(
+                                    n.position.toCursor(index), n.node)),
                             onNodeChanged: (n) => editorContext.execute(
                                 ModifyNodeWithoutChangeCursor(index, n))),
                         cursor.getSingleNodePosition(index, current),

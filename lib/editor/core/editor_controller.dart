@@ -53,14 +53,11 @@ class RichEditorController {
   void updateStatus(ControllerStatus status) {
     if (_status == status) return;
     _status = status;
-    _notifyStatus(status);
   }
 
   void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
 
   void notifyCursor(BasicCursor cursor) => listeners.notifyCursor(cursor);
-
-  void _notifyStatus(ControllerStatus status) => listeners.notifyStatus(status);
 
   void notifyGesture(GestureState s) => listeners.notifyGesture(s);
 
@@ -143,14 +140,22 @@ enum ControllerStatus {
 class EditingOffset {
   final Offset offset;
   final double height;
+  final String nodeId;
 
-  EditingOffset(this.offset, this.height);
+  EditingOffset(this.offset, this.height, this.nodeId);
 
   EditingOffset.zero()
       : offset = Offset.zero,
-        height = 0.0;
+        height = 0.0,
+        nodeId = '';
 
   double get y => offset.dy;
+
+
+  @override
+  String toString() {
+    return 'EditingOffset{offset: $offset, height: $height, nodeId: $nodeId}';
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -158,13 +163,9 @@ class EditingOffset {
       other is EditingOffset &&
           runtimeType == other.runtimeType &&
           offset == other.offset &&
-          height == other.height;
+          height == other.height &&
+          nodeId == other.nodeId;
 
   @override
-  int get hashCode => offset.hashCode ^ height.hashCode;
-
-  @override
-  String toString() {
-    return 'EditingOffset{offset: $offset, height: $height}';
-  }
+  int get hashCode => offset.hashCode ^ height.hashCode ^ nodeId.hashCode;
 }

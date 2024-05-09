@@ -5,6 +5,7 @@ import '../../../core/copier.dart';
 import '../../../cursor/node_position.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
+import '../../../exception/menu.dart';
 import '../../basic.dart';
 import '../table.dart';
 
@@ -17,7 +18,7 @@ NodeWithPosition typingWhileEditing(
   late NodeWithPosition nodeWithPosition;
   try {
     nodeWithPosition = innerNode.onEdit(EditingData(
-        p.position, EventType.typing, data.listeners,
+        p.position, EventType.typing, data.context,
         extras: data.extras));
   } on TypingToChangeNodeException catch (e) {
     nodeWithPosition = e.current;
@@ -50,7 +51,7 @@ NodeWithPosition typingWhileSelecting(
           nodeWithPosition = innerNode.onSelect(SelectingData(
               SelectingPosition(left.position, right.position),
               EventType.typing,
-              data.listeners,
+              data.context,
               extras: data.extras));
         } on TypingToChangeNodeException catch (e) {
           nodeWithPosition = e.current;
@@ -66,30 +67,13 @@ NodeWithPosition typingWhileSelecting(
                 to(cell.update(index, to(nodeWithPosition.node)))),
             left.fromCursor(nodeWithPosition.position.toCursor(index)));
       }
-      final listeners = data.listeners;
       BasicCursor cursor = SelectingNodesCursor(
           IndexWithPosition(left.index, left.position),
           IndexWithPosition(right.index, right.position));
-      var newCell = cell;
-      final context = cell.buildContext(
-          cursor: cursor,
-          listeners: listeners,
-          onReplace: (v) {
-            newCell = cell.replaceMore(v.begin, v.end, v.newNodes);
-            cursor = v.cursor;
-          },
-          onUpdate: (v) {
-            newCell = cell.update(v.index, (n) => v.node);
-            cursor = v.cursor;
-          },
-          onCursor: (c) {
-            cursor = c;
-          });
+      final context = data.context.getChildContext(cell.getId(node.id, left.row, left.column))!;
       context.execute(ReplaceSelectingNodes(
           cursor as SelectingNodesCursor, EventType.typing, data.extras));
-      return NodeWithPosition(
-          node.updateCell(left.row, left.column, to(newCell)),
-          left.fromCursor(cursor));
+      throw NodeUnsupportedException(node.runtimeType, 'operateWhileEditing', null);
     }
   }
   throw NodeUnsupportedException(
