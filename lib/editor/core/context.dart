@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import '../cursor/cursor_generator.dart';
 import '../cursor/node_position.dart';
 
 import '../command/basic.dart';
-import '../command/modification.dart';
 import '../cursor/basic.dart';
 import '../exception/command.dart';
 import '../node/basic.dart';
-import '../shortcuts/arrows/arrows.dart';
 import 'command_invoker.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';
@@ -30,21 +29,6 @@ class EditorContext extends NodeContext {
       invoker.execute(command, this);
     } on PerformCommandException catch (e) {
       logger.e('$e');
-    }
-  }
-
-  @override
-  void onNodeEditing(SingleNodeCursor cursor, EventType type, {dynamic extra}) {
-    if (cursor is EditingCursor) {
-      final r = controller
-          .getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type, this, extras: extra));
-      execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
-    } else if (cursor is SelectingNodeCursor) {
-      final r = controller.getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end), type, this,
-          extras: extra));
-      execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
     }
   }
 
@@ -74,13 +58,9 @@ class EditorContext extends NodeContext {
     if (!focusNode.hasFocus) focusNode.requestFocus();
   }
 
-  void updateInputConnectionAttribute(InputConnectionAttribute attribute) =>
-      inputManager.updateInputConnectionAttribute(attribute);
-
   @override
   EditorNode getNode(int index) => controller.getNode(index);
 
-  @override
   int get nodeLength => controller.nodeLength;
 
   @override
@@ -90,7 +70,6 @@ class EditorContext extends NodeContext {
   Iterable<EditorNode> getRange(int begin, int end) =>
       controller.getRange(begin, end);
 
-  @override
   void updateCursor(BasicCursor cursor, {bool notify = true}) =>
       controller.updateCursor(cursor, notify: notify);
 
@@ -131,6 +110,30 @@ class EditorContext extends NodeContext {
       _id2ContextMap[id] = set;
     }
   }
+
+  @override
+  void onCursor(BasicCursor cursor) {
+    controller.updateCursor(cursor);
+  }
+
+  @override
+  void onPanUpdate(EditingCursor cursor) {
+    final c = generateSelectingCursor(cursor, controller);
+    if (c != null) controller.updateCursor(c);
+  }
+
+  @override
+  void onCursorOffset(CursorOffset o) {
+    controller.setCursorOffset(o);
+    final editingOff = o.offset;
+    final offset = editingOff.offset;
+    inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
+        Rect.fromPoints(
+            offset, editingOff.offset.translate(0, editingOff.height)),
+        Matrix4.translationValues(offset.dx, offset.dy, 0.0)
+          ..translate(-offset.dx, -offset.dy),
+        Size(400, editingOff.height)));
+  }
 }
 
 abstract class NodeContext {
@@ -144,19 +147,17 @@ abstract class NodeContext {
 
   void execute(BasicCommand command);
 
-  int get nodeLength => nodes.length;
+  void onCursor(BasicCursor cursor);
 
-  void onNodeEditing(SingleNodeCursor cursor, EventType type, {dynamic extra});
+  void onPanUpdate(EditingCursor cursor);
 
-  void updateCursor(BasicCursor cursor, {bool notify = true});
-
-  BasicCursor get selectAllCursor;
-
-  void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
+  void onCursorOffset(CursorOffset o);
 
   UpdateControllerOperation? update(Update data, {bool record = true});
 
   UpdateControllerOperation? replace(Replace data, {bool record = true});
+
+  BasicCursor get selectAllCursor;
 
   ListenerCollection get listeners;
 
@@ -185,6 +186,19 @@ abstract class NodeContext {
       _id2ContextMap[id] = set;
     }
   }
+}
+
+class NodeBuildParam {
+  final SingleNodePosition? position;
+  final int index;
+  final dynamic extras;
+
+  NodeBuildParam({this.position, required this.index, this.extras});
+
+  NodeBuildParam.empty()
+      : index = 0,
+        position = null,
+        extras = null;
 }
 
 class ActionContext {

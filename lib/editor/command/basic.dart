@@ -3,5 +3,7 @@ import '../core/context.dart';
 
 
 abstract class BasicCommand {
-  UpdateControllerOperation? run(NodeContext nodeContext);
+  UpdateControllerOperation? run(NodeContext context);
 }
+
+typedef OperationInvoker = UpdateControllerOperation? Function(UpdateControllerOperation o);

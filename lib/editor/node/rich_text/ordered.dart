@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' hide RichText;
-import '../../core/node_controller.dart';
+import '../../core/context.dart';
 import '../../widget/nodes/rich_text.dart';
-import '../../cursor/node_position.dart';
 import 'special_newline_mixin.dart';
 import 'rich_text.dart';
 import 'rich_text_span.dart';
@@ -14,8 +13,7 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
       OrderedNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
-  Widget build(
-      NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
     final size = 14.0;
     return Builder(builder: (c) {
       final theme = Theme.of(c);
@@ -24,30 +22,30 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
           Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: Text(
-              '${generateOrderedNumber(getIndex(extras as int, controller) + 1, depth)}. ',
+              '${generateOrderedNumber(getIndex(param.index, context) + 1, depth)}. ',
               style: TextStyle(
                   fontSize: size, color: theme.textTheme.displayMedium?.color),
             ),
           ),
-          Expanded(child: RichTextWidget(controller, this, position)),
+          Expanded(child: RichTextWidget(context, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );
     });
   }
 
-  int getIndex(int i, NodeController controller) {
+  int getIndex(int i, NodeContext context) {
     if (i <= 0) return 0;
     int lastIndex = i - 1;
-    final node = controller.getNode(lastIndex);
+    final node = context.getNode(lastIndex);
     int nodeDepth = node.depth;
     if (nodeDepth > depth) {
-      return getIndex(lastIndex, controller);
+      return getIndex(lastIndex, context);
     } else if (nodeDepth < depth) {
       return 0;
     } else {
       if (node is! OrderedNode) return 0;
-      return getIndex(lastIndex, controller) + 1;
+      return getIndex(lastIndex, context) + 1;
     }
   }
 }

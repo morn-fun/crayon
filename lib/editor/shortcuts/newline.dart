@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../editor/command/replace.dart';
 import '../../editor/exception/editor_node.dart';
 
+import '../command/modification.dart';
 import '../command/selecting/newline.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
+import '../cursor/node_position.dart';
 import '../node/basic.dart';
 
 class NewlineIntent extends Intent {
@@ -29,7 +31,10 @@ class NewlineAction extends ContextAction<NewlineIntent> {
     final c = cursor;
     if (c is EditingCursor) {
       try {
-        nodeContext.onNodeEditing(c, EventType.newline);
+        final r = nodeContext
+            .getNode(c.index)
+            .onEdit(EditingData(c.position, EventType.newline, nodeContext));
+        nodeContext.execute(ModifyNode(r.position.toCursor(c.index), r.node));
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;
@@ -47,7 +52,9 @@ class NewlineAction extends ContextAction<NewlineIntent> {
       }
     } else if (c is SelectingNodeCursor) {
       try {
-        nodeContext.onNodeEditing(c, EventType.newline);
+        final r = nodeContext.getNode(c.index).onSelect(SelectingData(
+            SelectingPosition(c.begin, c.end), EventType.newline, nodeContext));
+        nodeContext.execute(ModifyNode(r.position.toCursor(c.index), r.node));
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;

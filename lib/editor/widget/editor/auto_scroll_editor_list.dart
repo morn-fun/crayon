@@ -2,16 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-import '../../../editor/command/modification.dart';
 import '../../../editor/extension/cursor.dart';
 import '../../core/command_invoker.dart';
 import '../../core/context.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
-import '../../core/node_controller.dart';
 import '../../cursor/basic.dart';
-import '../../cursor/cursor_generator.dart';
 import '../stateful_lifecycle_widget.dart';
 
 class AutoScrollEditorList extends StatefulWidget {
@@ -218,37 +215,13 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                       //     'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
                     },
                     child: current.build(
-                        NodeController(
-                            nodeGetter: (i) => controller.getNode(i),
-                            onEditingPosition: (v) => controller
-                                .updateCursor(EditingCursor(index, v)),
-                            onSelectingPosition: (v) =>
-                                controller.updateCursor(v.toCursor(index)),
-                            onEditingOffsetChanged: (o) {
-                              final cursorOffset = CursorOffset(index, o);
-                              controller.setCursorOffset(cursorOffset);
-                              onCursorOffsetChanged(cursorOffset);
-                            },
-                            cursorGenerator: (p) => p.toCursor(index),
-                            onInputConnectionAttribute: (v) =>
-                                editorContext.updateInputConnectionAttribute(v),
-                            onPanUpdatePosition: (p) {
-                              final cursor =
-                                  generateSelectingCursor(p, index, controller);
-                              if (cursor != null) {
-                                controller.updateCursor(cursor);
-                              }
-                            },
-                            entryManagerGetter: () =>
-                                editorContext.entryManager,
-                            listeners: listeners,
-                            onNodeWithPositionChanged: (n) =>
-                                editorContext.execute(ModifyNode(
-                                    n.position.toCursor(index), n.node)),
-                            onNodeChanged: (n) => editorContext.execute(
-                                ModifyNodeWithoutChangeCursor(index, n))),
-                        cursor.getSingleNodePosition(index, current),
-                        index),
+                        editorContext,
+                        NodeBuildParam(
+                          index: index,
+                          position:
+                              cursor.getSingleNodePosition(index, current),
+                        ),
+                        context),
                   ),
                 );
               },

@@ -2,9 +2,10 @@ import '../core/editor_controller.dart';
 import '../node/rich_text/rich_text.dart';
 import 'basic.dart';
 
-BasicCursor? generateSelectingCursor(
-    NodePosition endPosition, int index, RichEditorController controller) {
+BasicCursor? generateSelectingCursor(EditingCursor editingCursor, RichEditorController controller) {
   final oldCursor = controller.cursor;
+  final index = editingCursor.index;
+  final endPosition = editingCursor.position;
   BasicCursor? newCursor;
   if (oldCursor is EditingCursor) {
     final oldIndex = oldCursor.index;
@@ -46,23 +47,23 @@ BasicCursor<NodePosition>? getSelectingNodesCursor(
 
   BasicCursor newCursor;
   if (oldNode is RichTextNode && node is RichTextNode) {
-    newCursor = SelectingNodesCursor(IndexWithPosition(oldIndex, oldPosition),
-        IndexWithPosition(newIndex, newPosition));
+    newCursor = SelectingNodesCursor(EditingCursor(oldIndex, oldPosition),
+        EditingCursor(newIndex, newPosition));
   } else if (oldNode is RichTextNode && node is! RichTextNode) {
     newCursor = SelectingNodesCursor(
-        IndexWithPosition(oldIndex, oldPosition),
-        IndexWithPosition(newIndex,
+        EditingCursor(oldIndex, oldPosition),
+        EditingCursor(newIndex,
             isOldNodeInLower ? node.endPosition : node.beginPosition));
   } else if (oldNode is! RichTextNode && node is RichTextNode) {
     newCursor = SelectingNodesCursor(
-        IndexWithPosition(oldIndex,
+        EditingCursor(oldIndex,
             isOldNodeInLower ? oldNode.beginPosition : oldNode.endPosition),
-        IndexWithPosition(newIndex, newPosition));
+        EditingCursor(newIndex, newPosition));
   } else {
     newCursor = SelectingNodesCursor(
-        IndexWithPosition(oldIndex,
+        EditingCursor(oldIndex,
             isOldNodeInLower ? oldNode.beginPosition : oldNode.endPosition),
-        IndexWithPosition(newIndex,
+        EditingCursor(newIndex,
             isOldNodeInLower ? node.endPosition : node.beginPosition));
   }
   return newCursor;

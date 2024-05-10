@@ -115,7 +115,7 @@ class _RichEditorPageState extends State<RichEditor> {
         actions: getActions(editorContext),
         child: Focus(
           focusNode: focusNode,
-          child: ShareNodeContextWidget(
+          child: ShareEditorContextWidget(
             child: AutoScrollEditorList(editorContext: editorContext),
             context: editorContext,
           ),

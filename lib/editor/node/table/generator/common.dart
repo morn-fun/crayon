@@ -14,7 +14,7 @@ NodeWithPosition operateWhileEditing<T extends Intent>(
   final p = data.position;
   final cell = node.getCellByPosition(p);
   final context =
-      data.context.getChildContext(cell.getId(node.id, p.row, p.column))!;
+      data.context.getChildContext(cell.id)!;
   onAction
       .call(ActionContext(context, () => EditingCursor(p.index, p.position)));
   throw NodeUnsupportedException(node.runtimeType, 'operateWhileEditing', null);

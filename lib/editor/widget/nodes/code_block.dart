@@ -1,34 +1,35 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:crayon/editor/core/editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:highlight/languages/all.dart';
 
+import '../../core/context.dart';
+import '../../../editor/cursor/basic.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
-import '../../core/node_controller.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
 import '../../node/code_block/code_block.dart';
 import '../../cursor/node_position.dart';
-
 import '../../shortcuts/arrows/arrows.dart';
+import '../../../editor/core/editor_controller.dart';
+import '../../../editor/extension/node_context.dart';
 import '../menu/code_selector.dart';
 import 'code_block_line.dart';
 
 class CodeBlock extends StatefulWidget {
-  const CodeBlock({
+  const CodeBlock(
+    this.context,
+    this.node,
+    this.param, {
     super.key,
-    required this.controller,
-    required this.node,
-    this.position,
     this.maxLineHeight = 20,
   });
 
-  final NodeController controller;
+  final NodeContext context;
   final CodeBlockNode node;
-  final SingleNodePosition? position;
+  final NodeBuildParam param;
   final double maxLineHeight;
 
   @override
@@ -42,15 +43,17 @@ class _CodeBlockState extends State<CodeBlock> {
 
   CodeBlockNode get node => widget.node;
 
-  NodeController get controller => widget.controller;
+  NodeContext get nodeContext => widget.context;
 
-  ListenerCollection get listeners => controller.listeners;
+  ListenerCollection get listeners => nodeContext.listeners;
 
   List<String> get codes => node.codes;
 
   Offset lastEditOffset = Offset.zero;
 
-  SingleNodePosition? get nodePosition => widget.position;
+  SingleNodePosition? get nodePosition => widget.param.position;
+
+  int get widgetIndex => widget.param.index;
 
   final padding = EdgeInsets.all(24);
 
@@ -134,7 +137,7 @@ class _CodeBlockState extends State<CodeBlock> {
         break;
     }
     if (newPosition != null) {
-      controller.notifyEditingPosition(newPosition);
+      nodeContext.onCursor(EditingCursor(widgetIndex, newPosition));
     }
   }
 
@@ -197,17 +200,17 @@ class _CodeBlockState extends State<CodeBlock> {
                             controller: CodeNodeController(
                               onEditingOffsetChanged: (o) {
                                 lastEditOffset = o.offset;
-                                controller.notifyEditingOffset(o);
+                                nodeContext
+                                    .onCursorOffset(CursorOffset(index, o));
                               },
-                              onInputConnectionAttribute:
-                                  controller.onInputConnectionAttribute,
                               onPanUpdatePosition: (o) =>
-                                  controller.notifyPositionWhilePanGesture(
-                                      CodeBlockPosition(index, o)),
-                              listeners: controller.listeners,
-                              onEditingPosition: (o) =>
-                                  controller.notifyEditingPosition(
-                                      CodeBlockPosition(index, o)),
+                                  nodeContext.onPanUpdate(EditingCursor(
+                                      widgetIndex,
+                                      CodeBlockPosition(index, o))),
+                              listeners: nodeContext.listeners,
+                              onEditingPosition: (o) => nodeContext.onCursor(
+                                  EditingCursor(widgetIndex,
+                                      CodeBlockPosition(index, o))),
                             ),
                             nodeId: node.id,
                           ),
@@ -232,7 +235,7 @@ class _CodeBlockState extends State<CodeBlock> {
                       languages: constLanguages,
                       onSelect: (s) {
                         if (s == node.language) return;
-                        controller.updateNode(node.newLanguage(s));
+                        nodeContext.onNode(node.newLanguage(s), widgetIndex);
                       },
                       onHide: () {
                         languageController.hide();

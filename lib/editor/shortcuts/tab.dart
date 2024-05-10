@@ -10,6 +10,7 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
+import '../../../editor/extension/node_context.dart';
 
 class TabIntent extends Intent {
   const TabIntent();

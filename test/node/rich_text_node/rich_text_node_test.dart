@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:crayon/editor/core/node_controller.dart';
+import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
@@ -357,8 +357,13 @@ void main() {
 
   test('build', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
-    final widget = newNode.build(NodeController.empty,
-        EditingPosition(RichTextNodePosition(0, 0)), null);
+    final widget = Builder(
+        builder: (c) => newNode.build(
+            TestNodeContext(),
+            NodeBuildParam(
+                index: 0,
+                position: EditingPosition(RichTextNodePosition(0, 0))),
+            c));
     assert(widget is RichTextWidget);
   });
 

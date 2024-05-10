@@ -25,6 +25,12 @@ class EditingCursor<T extends NodePosition> extends SingleNodeCursor<T> {
   String toString() {
     return 'EditingCursor{index: $index, position: $position}';
   }
+
+  bool isLowerThan(EditingCursor other) {
+    if (index < other.index) return true;
+    if (index > other.index) return false;
+    return position.isLowerThan(other.position);
+  }
 }
 
 class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
@@ -49,8 +55,8 @@ class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
 }
 
 class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {
-  final IndexWithPosition begin;
-  final IndexWithPosition end;
+  final EditingCursor begin;
+  final EditingCursor end;
 
   SelectingNodesCursor(this.begin, this.end);
 
@@ -64,9 +70,9 @@ class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {
 
   bool contains(int index) => left.index <= index && right.index >= index;
 
-  IndexWithPosition get left => begin.index < end.index ? begin : end;
+  EditingCursor get left => begin.index < end.index ? begin : end;
 
-  IndexWithPosition get right => begin.index > end.index ? begin : end;
+  EditingCursor get right => begin.index > end.index ? begin : end;
 
   @override
   String toString() {
@@ -83,16 +89,4 @@ class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {
 
   @override
   int get hashCode => begin.hashCode ^ end.hashCode;
-}
-
-class IndexWithPosition {
-  final int index;
-  final NodePosition position;
-
-  IndexWithPosition(this.index, this.position);
-
-  @override
-  String toString() {
-    return 'IndexWithPosition{index: $index, position: $position}';
-  }
 }

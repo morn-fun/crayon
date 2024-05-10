@@ -28,9 +28,9 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
       try {
         final r = nodeContext.getNode(cursor.index).onEdit(
             EditingData(cursor.position, EventType.selectAll, nodeContext));
-        nodeContext.updateCursor(r.toCursor(cursor.index));
+        nodeContext.onCursor(r.toCursor(cursor.index));
       } on EmptyNodeToSelectAllException {
-        nodeContext.updateCursor(nodeContext.selectAllCursor);
+        nodeContext.onCursor(nodeContext.selectAllCursor);
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
@@ -38,14 +38,14 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
       final node = nodeContext.getNode(cursor.index);
       if (node.beginPosition == cursor.begin &&
           node.endPosition == cursor.end) {
-        nodeContext.updateCursor(nodeContext.selectAllCursor);
+        nodeContext.onCursor(nodeContext.selectAllCursor);
       } else {
         try {
           final r = node.onSelect(SelectingData(
               SelectingPosition(cursor.begin, cursor.end),
               EventType.selectAll,
               nodeContext));
-          nodeContext.updateCursor(r.toCursor(cursor.index));
+          nodeContext.onCursor(r.toCursor(cursor.index));
         } on NodeUnsupportedException catch (e) {
           logger.e('$runtimeType, ${e.message}');
         }
@@ -53,7 +53,7 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
     } else if (cursor is SelectingNodesCursor) {
       final allNodesCursor = nodeContext.selectAllCursor;
       if (cursor == allNodesCursor) return;
-      nodeContext.updateCursor(allNodesCursor);
+      nodeContext.onCursor(allNodesCursor);
     }
   }
 }

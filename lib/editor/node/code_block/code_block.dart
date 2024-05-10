@@ -1,10 +1,9 @@
 import 'dart:collection';
-
-import 'package:crayon/editor/extension/string.dart';
-import 'package:crayon/editor/extension/unmodifiable.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/node_controller.dart';
+import '../../../editor/extension/string.dart';
+import '../../../editor/extension/unmodifiable.dart';
+import '../../core/context.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
 import '../../exception/string.dart';
@@ -47,9 +46,8 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  Widget build(NodeController controller, SingleNodePosition? position,
-          dynamic extras) =>
-      CodeBlock(controller: controller, node: this, position: position);
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
+      CodeBlock(context, this, param);
 
   @override
   EditorNode frontPartNode(covariant CodeBlockPosition end, {String? newId}) =>

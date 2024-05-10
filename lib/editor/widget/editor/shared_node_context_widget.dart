@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
 
-class ShareNodeContextWidget extends InheritedWidget {
-  ShareNodeContextWidget({
+class ShareEditorContextWidget extends InheritedWidget {
+  ShareEditorContextWidget({
     Key? key,
     required this.context,
     required Widget child,
   }) : super(key: key, child: child);
 
-  final NodeContext context;
+  final EditorContext context;
 
-  static ShareNodeContextWidget? of(BuildContext context) {
+  static ShareEditorContextWidget? of(BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<ShareNodeContextWidget>();
+        .dependOnInheritedWidgetOfExactType<ShareEditorContextWidget>();
   }
 
   @override
-  bool updateShouldNotify(ShareNodeContextWidget oldWidget) {
+  bool updateShouldNotify(ShareEditorContextWidget oldWidget) {
     return oldWidget.context != context;
   }
 }

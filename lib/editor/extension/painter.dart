@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:crayon/editor/widget/menu/link.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,6 +7,7 @@ import '../cursor/rich_text.dart';
 import '../cursor/node_position.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
+import '../widget/menu/link.dart';
 
 extension PainterExtension on TextPainter {
   Offset getOffsetFromTextOffset(int offset, {Rect rect = Rect.zero}) {

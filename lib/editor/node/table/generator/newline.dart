@@ -19,15 +19,15 @@ NodeWithPosition newlineWhileSelecting(
   final right = data.right;
   if (left.inSameCell(right)) {
     final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cellPosition, right.cellPosition)) {
-      final context = data.context
-          .getChildContext(cell.getId(node.id, left.row, left.column))!;
+    if (!cell.wholeSelected(left.cursor, right.cursor)) {
+      final context = data.context.getChildContext(cell.id)!;
       final sameIndex = left.index == right.index;
       BasicCursor cursor = sameIndex
           ? SelectingNodeCursor(left.index, left.position, right.position)
-          : SelectingNodesCursor(IndexWithPosition(left.index, left.position),
-              IndexWithPosition(right.index, right.position));
-      NewlineAction(ActionContext(context,() =>  cursor)).invoke(NewlineIntent());
+          : SelectingNodesCursor(EditingCursor(left.index, left.position),
+              EditingCursor(right.index, right.position));
+      NewlineAction(ActionContext(context, () => cursor))
+          .invoke(NewlineIntent());
       throw NodeUnsupportedException(
           node.runtimeType, 'operateWhileEditing', null);
     }

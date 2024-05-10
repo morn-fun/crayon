@@ -37,8 +37,18 @@ class TestNodeContext extends NodeContext{
   List<EditorNode> get nodes => throw UnimplementedError();
 
   @override
-  void onNodeEditing(SingleNodeCursor<NodePosition> cursor, EventType type, {extra}) {
-    // TODO: implement onNodeEditing
+  void onCursorOffset(CursorOffset o) {
+    // TODO: implement onCursorOffset
+  }
+
+  @override
+  void onCursor(BasicCursor<NodePosition> cursor) {
+    // TODO: implement onCursor
+  }
+
+  @override
+  void onPanUpdate(EditingCursor<NodePosition> cursor) {
+    // TODO: implement onPanUpdate
   }
 
   @override
@@ -55,10 +65,5 @@ class TestNodeContext extends NodeContext{
   UpdateControllerOperation? update(Update data, {bool record = true}) {
     // TODO: implement update
     throw UnimplementedError();
-  }
-
-  @override
-  void updateCursor(BasicCursor<NodePosition> cursor, {bool notify = true}) {
-    // TODO: implement updateCursor
   }
 }

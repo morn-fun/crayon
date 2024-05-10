@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart' hide RichText;
 
-import '../../core/node_controller.dart';
+import '../../core/context.dart';
 import '../../widget/nodes/rich_text.dart';
-import '../../cursor/node_position.dart';
 import 'special_newline_mixin.dart';
 import 'rich_text.dart';
 import 'rich_text_span.dart';
@@ -15,19 +14,13 @@ class UnorderedNode extends RichTextNode with SpecialNewlineMixin {
       UnorderedNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
-  Widget build(
-      NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
     return Builder(builder: (c) {
       final theme = Theme.of(c);
       return Row(
         children: [
           buildMarker(26, theme),
-          Expanded(
-              child: RichTextWidget(
-            controller,
-            this,
-            position,
-          )),
+          Expanded(child: RichTextWidget(context, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );

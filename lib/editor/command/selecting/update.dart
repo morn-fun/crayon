@@ -50,9 +50,9 @@ class UpdateSelectingNodes implements BasicCommand {
       i++;
     }
     final newCursor = SelectingNodesCursor(
-        IndexWithPosition(
+        EditingCursor(
             left.index, _getBySingleNodePosition(leftPosition, true)),
-        IndexWithPosition(
+        EditingCursor(
             right.index, _getBySingleNodePosition(rightPosition, false)));
     return nodeContext
         .replace(Replace(left.index, right.index + 1, nodes, newCursor));

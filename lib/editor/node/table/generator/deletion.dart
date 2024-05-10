@@ -2,13 +2,13 @@ import '../../../../editor/cursor/basic.dart';
 import '../../../core/context.dart';
 import '../../../core/copier.dart';
 import '../../../cursor/node_position.dart';
+import '../../../cursor/rich_text.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
 import '../../../shortcuts/delete.dart';
 import '../../basic.dart';
 import '../../rich_text/rich_text.dart';
 import '../table.dart';
-import '../table_cell.dart';
 import 'common.dart';
 
 NodeWithPosition deleteWhileEditing(
@@ -28,13 +28,12 @@ NodeWithPosition deleteWhileSelecting(
   }
   if (left.inSameCell(right)) {
     final cell = node.getCellByPosition(left);
-    final context = data.context
-        .getChildContext(cell.getId(node.id, left.row, left.column))!;
+    final context = data.context.getChildContext(cell.id)!;
     final sameIndex = left.index == right.index;
     BasicCursor cursor = sameIndex
         ? SelectingNodeCursor(left.index, left.position, right.position)
-        : SelectingNodesCursor(IndexWithPosition(left.index, left.position),
-            IndexWithPosition(right.index, right.position));
+        : SelectingNodesCursor(EditingCursor(left.index, left.position),
+            EditingCursor(right.index, right.position));
     DeleteAction(ActionContext(context, () => cursor)).invoke(DeleteIntent());
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);
@@ -42,7 +41,7 @@ NodeWithPosition deleteWhileSelecting(
   final newNode = node.updateMore(left, right, (t) {
     return t
         .map((e) => e.updateMore(0, e.length, (m) {
-              return m.map((n) => TableCell([RichTextNode.from([])])).toList();
+              return m.map((n) => n.copy(nodes: [])).toList();
             }))
         .toList();
   });
@@ -51,6 +50,5 @@ NodeWithPosition deleteWhileSelecting(
       SelectingPosition(
           left,
           right.copy(
-              position: (p) => p.copy(
-                  index: to(0), position: to(emptyTextNode.endPosition)))));
+              cursor: to(EditingCursor(0, RichTextNodePosition.zero())))));
 }

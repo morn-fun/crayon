@@ -1,5 +1,6 @@
 import 'dart:collection';
-import 'dart:ui';
+
+import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';
 import '../node/basic.dart';
@@ -31,8 +32,8 @@ class RichEditorController {
   BasicCursor get selectAllCursor => nodeLength == 1
       ? SelectingNodeCursor(
           0, nodes.first.beginPosition, nodes.last.endPosition)
-      : SelectingNodesCursor(IndexWithPosition(0, firstNode.beginPosition),
-          IndexWithPosition(nodeLength - 1, lastNode.endPosition));
+      : SelectingNodesCursor(EditingCursor(0, firstNode.beginPosition),
+          EditingCursor(nodeLength - 1, lastNode.endPosition));
 
   UpdateControllerOperation? update(Update data, {bool record = true}) {
     final operation = data.update(this);
@@ -150,7 +151,6 @@ class EditingOffset {
         nodeId = '';
 
   double get y => offset.dy;
-
 
   @override
   String toString() {

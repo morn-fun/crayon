@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart' hide RichText;
 
-import '../../core/node_controller.dart';
+import '../../core/context.dart';
+import '../../../editor/extension/node_context.dart';
 import '../../widget/nodes/rich_text.dart';
-import '../../cursor/node_position.dart';
 import 'rich_text.dart';
 import 'rich_text_span.dart';
 import 'special_newline_mixin.dart';
@@ -26,8 +26,7 @@ class TodoNode extends RichTextNode with SpecialNewlineMixin {
           depth: depth ?? this.depth);
 
   @override
-  Widget build(
-      NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
     return Builder(builder: (c) {
       return Row(
         children: [
@@ -37,15 +36,10 @@ class TodoNode extends RichTextNode with SpecialNewlineMixin {
             child: Checkbox(
                 value: done,
                 onChanged: (v) {
-                  controller.updateNode(from(spans, done: !done));
+                  context.onNode(from(spans, done: !done), param.index);
                 }),
           ),
-          Expanded(
-              child: RichTextWidget(
-            controller,
-            this,
-            position,
-          )),
+          Expanded(child: RichTextWidget(context, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );

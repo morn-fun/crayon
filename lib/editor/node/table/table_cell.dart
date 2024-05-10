@@ -1,29 +1,36 @@
 import 'dart:collection';
 import 'dart:math';
-import 'package:crayon/editor/core/listener_collection.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:flutter/material.dart';
 
 import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../../../editor/command/basic.dart';
 import '../../../../editor/core/command_invoker.dart';
 import '../../../../editor/core/editor_controller.dart';
-import '../../command/modification.dart';
+import '../../../../editor/core/listener_collection.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/node_position.dart';
 import '../../cursor/table.dart';
-import '../../cursor/table_cell.dart';
 import '../basic.dart';
 
 class TableCell {
   final UnmodifiableListView<EditorNode> nodes;
+  final String id;
 
-  TableCell(List<EditorNode> nodes) : nodes = _initNodes(nodes);
+  TableCell(List<EditorNode> nodes, {String? id})
+      : nodes = _initNodes(nodes),
+        id = id ?? randomNodeId;
 
-  TableCell.empty() : nodes = _initNodes([]);
+  TableCell.empty({String? id})
+      : nodes = _initNodes([]),
+        id = id ?? randomNodeId;
+
+  TableCell copy({List<EditorNode>? nodes, String? id}) =>
+      TableCell(nodes ?? this.nodes, id: id ?? this.id);
 
   static UnmodifiableListView<EditorNode> _initNodes(List<EditorNode> nodes) {
     if (nodes.isEmpty) return UnmodifiableListView([RichTextNode.from([])]);
@@ -36,33 +43,30 @@ class TableCell {
 
   EditorNode get first => nodes.first;
 
-  TableCellPosition get beginPosition =>
-      TableCellPosition(0, first.beginPosition, atEdge: true);
+  EditingCursor get beginCursor => EditingCursor(0, first.beginPosition);
 
-  TableCellPosition get endPosition =>
-      TableCellPosition(length - 1, last.endPosition, atEdge: true);
+  EditingCursor get endCursor => EditingCursor(length - 1, last.endPosition);
+
+  SelectingNodesCursor get selectAllCursor =>
+      SelectingNodesCursor(beginCursor, endCursor);
 
   EditorNode getNode(int index) => nodes[index];
 
-  TableCell clear() => TableCell([RichTextNode.from([])]);
+  TableCell clear() => copy(nodes: [RichTextNode.from([])]);
 
-  String getId(String id, int row, int column) => '$id-$row-$column';
-
-  bool isBegin(TableCellPosition p) {
-    if (!p.atEdge) return false;
+  bool isBegin(EditingCursor p) {
     if (p.index != 0) return false;
     if (p.position != first.beginPosition) return false;
     return true;
   }
 
-  bool isEnd(TableCellPosition p) {
-    if (!p.atEdge) return false;
+  bool isEnd(EditingCursor p) {
     if (p.index != length - 1) return false;
     if (p.position != last.endPosition) return false;
     return true;
   }
 
-  bool wholeSelected(TableCellPosition begin, TableCellPosition end) {
+  bool wholeSelected(EditingCursor begin, EditingCursor end) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
     return isBegin(left) && isEnd(right);
@@ -78,47 +82,47 @@ class TableCell {
         (minColumn <= column && maxColumn >= column);
   }
 
-  CellCursorStatus getCursorStatus(
-      SingleNodePosition? position, int row, int column) {
+  BasicCursor? getCursor(SingleNodePosition? position, CellIndex cellIndex) {
+    final row = cellIndex.row;
+    final column = cellIndex.column;
     final p = position;
-    if (p == null) return CellCursorStatus.outer;
+    if (p == null) return null;
     if (p is EditingPosition) {
       var pTable = p.position;
-      if (pTable is! TablePosition) return CellCursorStatus.outer;
+      if (pTable is! TablePosition) return null;
       if (pTable.column == column && pTable.row == row) {
-        return CellCursorStatus.inner;
+        return pTable.cursor;
       }
-      return CellCursorStatus.outer;
+      return null;
     }
     if (p is SelectingPosition) {
       var left = p.left;
       var right = p.right;
       if (left is! TablePosition && right is! TablePosition) {
-        return CellCursorStatus.outer;
+        return null;
       }
       left = left as TablePosition;
       right = right as TablePosition;
-      if (left.inSameCell(right) && left.column == column && left.row == row) {
-        bool selected = wholeSelected(left.cellPosition, right.cellPosition);
-        return selected ? CellCursorStatus.current : CellCursorStatus.inner;
+      if (left.inSameCell(right)) {
+        return SelectingNodesCursor(left.cursor, right.cursor);
       }
       bool containsSelf = containSelf(left, right, row, column);
-      return containsSelf ? CellCursorStatus.current : CellCursorStatus.outer;
+      return containsSelf ? selectAllCursor : null;
     }
-    return CellCursorStatus.outer;
+    return null;
   }
 
   TableCell update(int index, ValueCopier<EditorNode> copier) =>
-      TableCell(nodes.update(index, copier));
+      copy(nodes: nodes.update(index, copier));
 
   TableCell updateMore(
           int begin, int end, ValueCopier<List<EditorNode>> copier) =>
-      TableCell(nodes.updateMore(begin, end, copier));
+      copy(nodes: nodes.updateMore(begin, end, copier));
 
   TableCell replaceMore(int begin, int end, Iterable<EditorNode> newNodes) =>
-      TableCell(nodes.replaceMore(begin, end, newNodes));
+      copy(nodes: nodes.replaceMore(begin, end, newNodes));
 
-  List<EditorNode> getNodes(TableCellPosition begin, TableCellPosition end) {
+  List<EditorNode> getNodes(EditingCursor begin, EditingCursor end) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
     final leftNode = getNode(left.index);
@@ -151,7 +155,9 @@ class TableCellNodeContext extends NodeContext {
   final ListenerCollection listeners;
   final ValueChanged<Replace> onReplace;
   final ValueChanged<Update> onUpdate;
-  final ValueChanged<BasicCursor> onCursor;
+  final ValueChanged<BasicCursor> onBasicCursor;
+  final ValueChanged<CursorOffset> cursorOffset;
+  final ValueChanged<EditingCursor> onPan;
 
   TableCellNodeContext(
     this.cursorGetter,
@@ -159,7 +165,9 @@ class TableCellNodeContext extends NodeContext {
     this.listeners,
     this.onReplace,
     this.onUpdate,
-    this.onCursor,
+    this.onBasicCursor,
+    this.cursorOffset,
+    this.onPan,
   );
 
   final tag = 'TableCellNodeContext';
@@ -184,26 +192,7 @@ class TableCellNodeContext extends NodeContext {
       cell.nodes.getRange(begin, end);
 
   @override
-  int get nodeLength => cell.length;
-
-  @override
-  // TODO: implement nodes
   List<EditorNode> get nodes => cell.nodes;
-
-  @override
-  void onNodeEditing(SingleNodeCursor<NodePosition> cursor, EventType type,
-      {dynamic extra}) {
-    if (cursor is EditingCursor) {
-      final r = getNode(cursor.index)
-          .onEdit(EditingData(cursor.position, type, this, extras: extra));
-      execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
-    } else if (cursor is SelectingNodeCursor) {
-      final r = getNode(cursor.index).onSelect(SelectingData(
-          SelectingPosition(cursor.begin, cursor.end), type, this,
-          extras: extra));
-      execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
-    }
-  }
 
   @override
   UpdateControllerOperation? replace(Replace data, {bool record = true}) {
@@ -213,8 +202,8 @@ class TableCellNodeContext extends NodeContext {
 
   @override
   SelectingNodesCursor<NodePosition> get selectAllCursor =>
-      SelectingNodesCursor(IndexWithPosition(0, cell.first.beginPosition),
-          IndexWithPosition(nodeLength - 1, cell.last.endPosition));
+      SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
+          EditingCursor(cell.length - 1, cell.last.endPosition));
 
   @override
   UpdateControllerOperation? update(Update data, {bool record = true}) {
@@ -223,12 +212,14 @@ class TableCellNodeContext extends NodeContext {
   }
 
   @override
-  void updateCursor(BasicCursor cursor, {bool notify = true}) =>
-      onCursor.call(cursor);
+  BasicCursor get cursor => cursorGetter.call();
 
   @override
-  // TODO: implement cursor
-  BasicCursor<NodePosition> get cursor => cursorGetter.call();
-}
+  void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
 
-enum CellCursorStatus { inner, current, outer }
+  @override
+  void onCursorOffset(CursorOffset o) => cursorOffset.call(o);
+
+  @override
+  void onPanUpdate(EditingCursor cursor) => onPanUpdate.call(cursor);
+}

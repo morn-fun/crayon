@@ -1,9 +1,10 @@
-import 'package:crayon/editor/core/context.dart';
-
+import '../command/modification.dart';
+import '../core/context.dart';
 import '../cursor/basic.dart';
 import '../node/basic.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
+import '../shortcuts/arrows/arrows.dart';
 
 extension NodeContextExtension on NodeContext {
   List<EditorNode> listNeedRefreshDepth(int startIndex, int startDepth) {
@@ -101,4 +102,18 @@ extension NodeContextExtension on NodeContext {
     }
     return contains;
   }
+
+  void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
+
+  int get nodeLength => nodes.length;
+
+  void onNodeWithPosition(NodeWithPosition p, int index) {
+    execute(ModifyNode(p.position.toCursor(index), p.node));
+  }
+
+  void onNode(EditorNode node, int index) {
+    execute(ModifyNodeWithoutChangeCursor(index, node));
+  }
 }
+
+typedef NodeGetter = EditorNode Function(int index);

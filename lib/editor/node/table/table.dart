@@ -4,9 +4,8 @@ import 'package:flutter/material.dart' hide RichText, TableCell;
 
 import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
+import '../../core/context.dart';
 import '../../core/copier.dart';
-import '../../core/node_controller.dart';
-import '../../cursor/basic.dart';
 import '../../cursor/node_position.dart';
 import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
@@ -172,17 +171,16 @@ class TableNode extends EditorNode {
   }
 
   @override
-  Widget build(NodeController controller,
-          SingleNodePosition<NodePosition>? position, extras) =>
-      RichTable(controller: controller, node: this, position: position);
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
+      RichTable(context, this, param);
 
   @override
   TablePosition get beginPosition =>
-      TablePosition(0, 0, firstCell.beginPosition);
+      TablePosition(CellIndex.zero(), firstCell.beginCursor);
 
   @override
-  TablePosition get endPosition =>
-      TablePosition(rowCount - 1, columnCount - 1, lastCell.endPosition);
+  TablePosition get endPosition => TablePosition(
+      CellIndex(rowCount - 1, columnCount - 1), lastCell.endCursor);
 
   @override
   EditorNode frontPartNode(covariant TablePosition end, {String? newId}) =>
@@ -209,14 +207,14 @@ class TableNode extends EditorNode {
     if (left.inSameCell(right)) {
       final newWidths = [widths[leftColumn]];
       final cell = getCellByPosition(left);
-      if (cell.isBegin(left.cellPosition) && cell.isEnd(right.cellPosition)) {
+      if (cell.isBegin(left.cursor) && cell.isEnd(right.cursor)) {
         return from([
           TableCellList([cell])
         ], newWidths, id: newId);
       } else {
         ///TODO:deal with this exception
-        throw GetFromPositionButAcquireMoreNodes(runtimeType,
-            cell.getNodes(left.cellPosition, right.cellPosition), left, right);
+        throw GetFromPositionButAcquireMoreNodes(
+            runtimeType, cell.getNodes(left.cursor, right.cursor), left, right);
       }
     } else {
       final newWidths = widths.sublist(leftColumn, rightColumn + 1);
@@ -347,7 +345,6 @@ typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
 
 typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
     SelectingData<TablePosition> data, TableNode node);
-
 
 class TableAndWidths {
   final UnmodifiableListView<TableCellList> table;

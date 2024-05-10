@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/material.dart' hide RichText;
-import '../../core/node_controller.dart';
+import '../../core/context.dart';
 import '../../exception/string.dart';
 import '../../extension/string.dart';
 import '../../extension/collection.dart';
@@ -76,9 +76,8 @@ class RichTextNode extends EditorNode {
       RichTextNodePosition(spans.length - 1, spans.last.textLength);
 
   @override
-  Widget build(NodeController controller, SingleNodePosition? position,
-          dynamic extras) =>
-      RichTextWidget(controller, this, position);
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
+      RichTextWidget(context, this, param);
 
   RichTextNode insert(int index, RichTextSpan span) {
     final copySpans = List.of(spans);

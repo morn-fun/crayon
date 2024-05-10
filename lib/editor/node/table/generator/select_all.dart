@@ -1,4 +1,5 @@
 import '../../../core/copier.dart';
+import '../../../cursor/basic.dart';
 import '../../../cursor/node_position.dart';
 import '../../../cursor/table.dart';
 import '../../../shortcuts/select_all.dart';
@@ -18,7 +19,7 @@ NodeWithPosition selectAllWhileSelecting(
   final right = data.right;
   if (left.inSameCell(right)) {
     final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cellPosition, right.cellPosition)) {
+    if (!cell.wholeSelected(left.cursor, right.cursor)) {
       final sameIndex = left.index == right.index;
       if (sameIndex) {
         final innerNode = cell.getNode(left.index);
@@ -27,19 +28,19 @@ NodeWithPosition selectAllWhileSelecting(
           return NodeWithPosition(
             node,
             SelectingPosition(
-                left.copy(
-                    position: (p) =>
-                        p.copy(position: to(innerNode.beginPosition))),
-                right.copy(
-                    position: (p) =>
-                        p.copy(position: to(innerNode.endPosition)))),
+              left.copy(
+                  cursor: (c) =>
+                      EditingCursor(c.index, innerNode.beginPosition)),
+              right.copy(
+                  cursor: (c) => EditingCursor(c.index, innerNode.endPosition)),
+            ),
           );
         }
       }
       return NodeWithPosition(
         node,
-        SelectingPosition(left.copy(position: to(cell.beginPosition)),
-            right.copy(position: to(cell.endPosition))),
+        SelectingPosition(left.copy(cursor: to(cell.beginCursor)),
+            right.copy(cursor: to(cell.endCursor))),
       );
     }
   }

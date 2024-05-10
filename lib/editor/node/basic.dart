@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 import '../core/context.dart';
 import '../core/listener_collection.dart';
-import '../core/node_controller.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../cursor/node_position.dart';
@@ -17,8 +16,7 @@ abstract class EditorNode {
 
   Map<String, dynamic> toJson();
 
-  Widget build(
-      NodeController controller, SingleNodePosition? position, dynamic extras);
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c);
 
   /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
   EditorNode frontPartNode(NodePosition end, {String? newId});

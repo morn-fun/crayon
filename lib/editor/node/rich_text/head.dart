@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart' hide RichText;
 
-import '../../core/node_controller.dart';
+import '../../core/context.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/rich_text.dart';
 import '../../exception/editor_node.dart';
 import '../../widget/nodes/rich_text.dart';
 import '../basic.dart';
-import '../../cursor/node_position.dart';
 import 'rich_text.dart';
 import 'rich_text_span.dart';
 
@@ -54,12 +53,11 @@ abstract class HeadNode extends RichTextNode {
               style: TextStyle(fontSize: fontSize, color: Colors.black))));
 
   @override
-  Widget build(
-      NodeController controller, SingleNodePosition? position, dynamic extras) {
+  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
     return RichTextWidget(
-      controller,
+      context,
       this,
-      position,
+      param,
       fontSize: fontSize,
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../editor/extension/node_context.dart';
 import '../../core/context.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
@@ -107,7 +108,7 @@ void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
         extras: e.offset));
   } on NodeNotFoundException catch (e) {
     logger.e('$actionType error ${e.message}');
-    nodeContext.updateCursor(EditingCursor(index, position));
+    nodeContext.onCursor(EditingCursor(index, position));
   }
 }
 
@@ -148,6 +149,6 @@ void _onRightOrDown(ArrowType type, NodeContext nodeContext, Type actionType,
         extras: e.offset));
   } on NodeNotFoundException catch (e) {
     logger.e('$actionType error ${e.message}');
-    nodeContext.updateCursor(EditingCursor(index, position));
+    nodeContext.onCursor(EditingCursor(index, position));
   }
 }

@@ -1,17 +1,14 @@
 import 'dart:math';
 
-import 'package:crayon/editor/core/editor_controller.dart';
 import 'package:flutter/material.dart';
 import '../../../../editor/extension/render_box.dart';
+import '../../core/context.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
-import '../../core/node_controller.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
 import '../../extension/offset.dart';
 import '../../extension/painter.dart';
-
-import '../../core/input_manager.dart';
 import '../../core/logger.dart';
 import '../../cursor/rich_text.dart';
 import '../../cursor/node_position.dart';
@@ -20,19 +17,20 @@ import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
 import '../editor/shared_node_context_widget.dart';
 import '../painter.dart';
+import '../../../editor/core/editor_controller.dart';
 
 class RichTextWidget extends StatefulWidget {
   const RichTextWidget(
-    this.controller,
+    this.context,
     this.richTextNode,
-    this.position, {
+    this.param, {
     super.key,
     this.fontSize = 16,
   });
 
-  final NodeController controller;
+  final NodeContext context;
   final RichTextNode richTextNode;
-  final SingleNodePosition? position;
+  final NodeBuildParam param;
   final double fontSize;
 
   @override
@@ -58,11 +56,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   TextSpan get textSpan => node.buildTextSpan();
 
-  NodeController get controller => widget.controller;
+  NodeContext get nodeContext => widget.context;
 
-  SingleNodePosition? get nodePosition => widget.position;
+  SingleNodePosition? get nodePosition => widget.param.position;
 
-  ListenerCollection get listeners => controller.listeners;
+  ListenerCollection get listeners => nodeContext.listeners;
+
+  int get widgetIndex => widget.param.index;
 
   RenderBox? get renderBox {
     if (!mounted) return null;
@@ -81,7 +81,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       textDirection: TextDirection.ltr,
     );
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      tryToUpdateInputAttribute(nodePosition);
       notifyEditingOffset(editorPosition(nodePosition));
     });
     listeners.addGestureListener(onGesture);
@@ -182,9 +181,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
     }
     if (newPosition != null) {
-      controller.notifyEditingPosition(newPosition);
+      nodeContext.onCursor(EditingCursor(widgetIndex, newPosition));
       notifyEditingOffset(newPosition);
-      updateInputAttribute(newPosition);
     }
   }
 
@@ -199,7 +197,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     final textPosition = painter.getPositionForOffset(localPosition);
     final richPosition = node.getPositionByOffset(textPosition.offset);
-    controller.notifyPositionWhilePanGesture(richPosition);
+    nodeContext.onPanUpdate(EditingCursor(widgetIndex, richPosition));
   }
 
   void confirmToShowTextMenu(Offset offset) {
@@ -213,21 +211,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
-    final nodeContext = ShareNodeContextWidget.of(context)?.context;
-    final entryManager = controller.entryManager;
-    if (nodeContext != null && entryManager.showingType != MenuType.text) {
-      entryManager.showTextMenu(
-          Overlay.of(context), MenuInfo(offset, node.id, h, layerLink), () {
-        if (context.mounted) {
-          final c = ShareNodeContextWidget.of(context)?.context;
-          if (c == null) {
-            entryManager.removeEntry();
-            return nodeContext;
-          }
-        }
-        entryManager.removeEntry();
-        return nodeContext;
-      });
+    final entryManager =
+        ShareEditorContextWidget.of(context)?.context.entryManager;
+    if (entryManager == null) return;
+    if (entryManager.showingType != MenuType.text) {
+      entryManager.showTextMenu(Overlay.of(context),
+          MenuInfo(offset, node.id, h, layerLink), () => nodeContext);
     }
   }
 
@@ -262,11 +251,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       nodeChangedNotifier.value = node;
       updatePainter();
     }
-    if (nodePosition != oldWidget.position) {
+    if (nodePosition != oldWidget.param.position) {
       final position = editorPosition(nodePosition);
       editingCursorNotifier.value = position;
       selectingCursorNotifier.value = selectingPosition(nodePosition);
-      tryToUpdateInputAttribute(nodePosition);
       notifyEditingOffset(position);
     }
   }
@@ -274,10 +262,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   void notifyEditingOffset(RichTextNodePosition? position) {
     if (position != null && y != null) {
       final offset = painter.getOffsetFromTextOffset(position.offset);
-      controller.notifyEditingOffset(EditingOffset(
-          Offset(offset.dx, offset.dy + y!),
-          getCurrentCursorHeight(position),
-          node.id));
+      nodeContext.onCursorOffset(CursorOffset(
+          widgetIndex,
+          EditingOffset(Offset(offset.dx, offset.dy + y!),
+              getCurrentCursorHeight(position), node.id)));
     }
   }
 
@@ -291,7 +279,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final nodeContext = ShareNodeContextWidget.of(context)?.context;
+    final editorContext = ShareEditorContextWidget.of(context)?.context;
     return MouseRegion(
       cursor: SystemMouseCursors.text,
       child: LayoutBuilder(builder: (context, constrains) {
@@ -302,9 +290,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         return CompositedTransformTarget(
           link: layerLink,
           child: Padding(
+            key: key,
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: SizedBox(
-              key: key,
               height: max(painter.height, widget.fontSize),
               width: recordWidth,
               child: Stack(
@@ -364,26 +352,25 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                           final h = painter.getFullHeightForCaret(
                                   buildTextPosition(o), Rect.zero) ??
                               widget.fontSize;
-                          if (nodeContext != null) {
-                            controller.entryManager.showLinkMenu(
-                                Overlay.of(context),
-                                LinkMenuInfo(
-                                    MenuInfo(o, node.id, h, layerLink),
-                                    UrlWithPosition(
-                                        url,
-                                        controller.toCursor(p)
-                                            as SelectingNodeCursor)), () {
-                              final c =
-                                  ShareNodeContextWidget.of(context)?.context;
-                              if (c != null) {
-                                controller.entryManager.removeEntry();
-                                return c;
-                              }
-                              return nodeContext;
-                            });
-                          }
+                          final entryManager = editorContext?.entryManager;
+                          if (entryManager == null) return;
+                          entryManager.showLinkMenu(
+                              Overlay.of(context),
+                              LinkMenuInfo(
+                                  MenuInfo(o, node.id, h, layerLink),
+                                  UrlWithPosition(
+                                      url, p.toCursor(widgetIndex))), () {
+                            final c =
+                                ShareEditorContextWidget.of(context)?.context;
+                            if (c != null) {
+                              return c;
+                            }
+                            entryManager.removeEntry();
+                            return nodeContext;
+                          });
                         }, onExit: (e) {
-                          controller.entryManager.removeEntry();
+                          final entryManager = editorContext?.entryManager;
+                          entryManager?.removeEntry();
                         }, onTap: (s) {
                           logger.i('$tag,  tapped:${s.text}');
                         }));
@@ -419,33 +406,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
-    controller.notifyEditingPosition(richPosition);
-    controller.notifyEditingOffset(EditingOffset(
-        globalOffset, getCurrentCursorHeight(richPosition), node.id));
-    updateInputAttribute(richPosition);
-  }
-
-  void tryToUpdateInputAttribute(SingleNodePosition? position) {
-    if (position is EditingPosition) {
-      final p = position.position;
-      if (p is RichTextNodePosition) updateInputAttribute(p);
-    }
-    // else if (position is SelectingPosition) {
-    //   final p = position.left;
-    //   if (p is RichTextNodePosition) updateInputAttribute(p);
-    // }
-  }
-
-  void updateInputAttribute(RichTextNodePosition position) {
-    final box = renderBox;
-    if (box == null) return;
-    final offset = painter.getOffsetFromTextOffset(node.getOffset(position));
-    final height = painter.getFullHeightForCaret(
-            TextPosition(offset: node.getOffset(position)), Rect.zero) ??
-        widget.fontSize;
-    controller.updateInputConnectionAttribute(InputConnectionAttribute(
-        Rect.fromPoints(offset, offset.translate(0, height)),
-        box.getTransformTo(null),
-        box.size));
+    nodeContext.onCursor(EditingCursor(widgetIndex, richPosition));
+    nodeContext.onCursorOffset(CursorOffset(
+        widgetIndex,
+        EditingOffset(
+            globalOffset, getCurrentCursorHeight(richPosition), node.id)));
   }
 }

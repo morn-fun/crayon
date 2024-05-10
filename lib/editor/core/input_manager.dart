@@ -1,4 +1,3 @@
-import 'package:crayon/editor/core/context.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +10,7 @@ import '../exception/editor_node.dart';
 import '../exception/menu.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
+import 'context.dart';
 import 'editor_controller.dart';
 import 'logger.dart';
 

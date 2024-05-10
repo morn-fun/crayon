@@ -2,19 +2,15 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
+import '../../../editor/extension/node_context.dart';
 import '../../../editor/cursor/basic.dart';
-import '../../../editor/extension/cursor.dart';
 import '../../../editor/cursor/table.dart';
 import '../../../editor/extension/unmodifiable.dart';
+import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
-import '../../core/node_controller.dart';
 import '../../cursor/node_position.dart';
-import '../../cursor/table_cell.dart';
-import '../../node/basic.dart';
-import '../../node/rich_text/rich_text.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../node/table/table_cell_list.dart';
@@ -24,12 +20,11 @@ import 'table_cell.dart';
 import 'table_operator.dart';
 
 class RichTable extends StatefulWidget {
-  final NodeController controller;
+  final NodeContext context;
   final TableNode node;
-  final SingleNodePosition? position;
+  final NodeBuildParam param;
 
-  const RichTable(
-      {super.key, required this.controller, required this.node, this.position});
+  const RichTable(this.context, this.node, this.param, {super.key});
 
   @override
   State<RichTable> createState() => _RichTableState();
@@ -38,11 +33,11 @@ class RichTable extends StatefulWidget {
 class _RichTableState extends State<RichTable> {
   TableNode get node => widget.node;
 
-  NodeController get controller => widget.controller;
+  NodeContext get nodeContext => widget.context;
 
-  SingleNodePosition? get position => widget.position;
+  SingleNodePosition? get position => widget.param.position;
 
-  ListenerCollection get listeners => controller.listeners;
+  ListenerCollection get listeners => nodeContext.listeners;
 
   final ValueNotifier<double?> heightNotifier = ValueNotifier(null);
   final ValueNotifier<List<double>> heightsNotifier = ValueNotifier([]);
@@ -51,18 +46,18 @@ class _RichTableState extends State<RichTable> {
 
   final localListeners = ListenerCollection();
 
+  int get index => widget.param.index;
+
   @override
   void initState() {
     updateSize();
-    listeners.addArrowDelegate(node.id, onArrowAccept);
-    listeners.addChildListener(localListeners);
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant RichTable oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (node.hashCode != oldWidget.hashCode) {
+    if (node.table.hashCode != oldWidget.node.table.hashCode) {
       localListeners.notifyNodes();
     }
   }
@@ -75,7 +70,6 @@ class _RichTableState extends State<RichTable> {
   void dispose() {
     super.dispose();
     listeners.removeArrowDelegate(node.id, onArrowAccept);
-    listeners.removeChildListener(localListeners);
     localListeners.dispose();
     heightNotifier.dispose();
     mouseNotifier.dispose();
@@ -142,14 +136,15 @@ class _RichTableState extends State<RichTable> {
     final wholeContain = node.wholeContain(position);
     final tableBorderWidth = 1.0;
     final operatorSize = 10.0;
-    final nodeContext = ShareNodeContextWidget.of(context)!.context;
+    final nodeContext = ShareEditorContextWidget.of(context)!.context;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Stack(
         children: [
           Container(
             alignment: Alignment.topLeft,
-            padding: EdgeInsets.only(left: operatorSize, top: operatorSize, bottom: operatorSize),
+            padding: EdgeInsets.only(
+                left: operatorSize, top: operatorSize, bottom: operatorSize),
             child: Container(
               foregroundDecoration: wholeContain
                   ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
@@ -162,111 +157,23 @@ class _RichTableState extends State<RichTable> {
                   final cellList = table[r];
                   return TableRow(
                       children: List.generate(cellList.length, (c) {
+                    final cellIndex = CellIndex(r, c);
                     final cell = cellList.getCell(c);
-                    tc.CellCursorStatus status = tc.CellCursorStatus.outer;
-                    if (!wholeContain) {
-                      status = cell.getCursorStatus(position, r, c);
-                    }
-                    bool innerCell = status == tc.CellCursorStatus.inner;
                     BasicCursor? cursor;
-                    if (innerCell) {
-                      cursor = _fromPosition(position!);
+                    if (wholeContain) {
+                      cursor = cell.selectAllCursor;
+                    } else {
+                      cursor = cell.getCursor(position, cellIndex);
                     }
-                    final child = Container(
-                      foregroundDecoration: status ==
-                              tc.CellCursorStatus.current
-                          ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
-                          : null,
-                      padding: EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: List.generate(cell.length, (i) {
-                          final innerNode = cell.getNode(i);
-                          SingleNodePosition? innerPosition;
-                          if (cursor != null) {
-                            innerPosition =
-                                cursor.getSingleNodePosition(i, innerNode);
-                          }
-                          return Container(
-                            padding: EdgeInsets.only(
-                                left: innerNode.depth * 12, right: 4),
-                            child: innerNode.build(
-                                controller.copy(
-                                  listeners: localListeners,
-                                  onEditingPosition: (p) {
-                                    final realPosition = TablePosition(
-                                        r, c, TableCellPosition(i, p));
-                                    controller.onEditingPosition
-                                        .call(realPosition);
-                                  },
-                                  onPanUpdatePosition: (p) {
-                                    final realPosition = TablePosition(
-                                        r, c, TableCellPosition(i, p));
-                                    controller.onPanUpdatePosition
-                                        .call(realPosition);
-                                  },
-                                  cursorGenerator: (p) {
-                                    SingleNodePosition<NodePosition> position =
-                                        buildTablePosition(p, r, c, i);
-                                    return controller.cursorGenerator
-                                        .call(position);
-                                  },
-                                  nodeGetter: (i) => cell.getNode(i),
-                                  onNodeChanged: (n) {
-                                    final newNode = node.updateCell(
-                                        r, c, to(cell.update(i, to(n))));
-                                    controller.onNodeChanged.call(newNode);
-                                  },
-                                ),
-                                innerPosition,
-                                i),
-                          );
-                        }),
-                      ),
-                    );
-                    return Container(
-                      child: TableCell(
-                        child: innerCell
-                            ? RichTableCell(
-                                id: node.getCell(r, c).getId(node.id, r, c),
-                                cursorGetter: () => _fromPosition(position!),
-                                listeners: localListeners,
-                                onReplace: (v) {
-                                  final newCell = node.getCell(r, c).replaceMore(
-                                      v.begin, v.end, v.newNodes);
-                                  controller.notifyNodeWithPosition(
-                                      NodeWithPosition(
-                                          node.updateCell(r, c, (t) => newCell),
-                                          TablePosition(
-                                                  r, c, TableCellPosition.empty())
-                                              .fromCursor(v.cursor)));
-                                },
-                                onUpdate: (v) {
-                                  final newCell =
-                                  node.getCell(r, c).update(v.index, (n) => v.node);
-                                  controller.notifyNodeWithPosition(
-                                      NodeWithPosition(
-                                          node.updateCell(r, c, (t) => newCell),
-                                          TablePosition(
-                                                  r, c, TableCellPosition.empty())
-                                              .fromCursor(v.cursor)));
-                                },
-                                onCursor: (newCursor) {
-                                  final np = TablePosition(
-                                          r, c, TableCellPosition.empty())
-                                      .fromCursor(newCursor);
-                                  if (np is EditingPosition) {
-                                    controller.notifyEditingPosition(np.position);
-                                  } else if (np is SelectingPosition) {
-                                    controller.notifySelectingPosition(np);
-                                  }
-                                },
-                                cellGetter: () => node.getCell(r, c),
-                                nodeContext: nodeContext,
-                                child: child)
-                            : child,
-                      ),
+                    return RichTableCell(
+                      key: ValueKey(cell.id),
+                      cursor: cursor,
+                      listeners: localListeners,
+                      cell: cell,
+                      cellIndex: cellIndex,
+                      param: widget.param,
+                      context: nodeContext,
+                      node: node,
                     );
                   }));
                 }),
@@ -310,8 +217,8 @@ class _RichTableState extends State<RichTable> {
                           final width = delta.dx + left;
                           if (width >= 100 && width <= 800) {
                             final newWidths = widths.update(index, to(width));
-                            controller
-                                .updateNode(node.from(node.table, newWidths));
+                            nodeContext.onNode(
+                                node.from(node.table, newWidths), index);
                           }
                           mouseNotifier.value =
                               _MouseState(index, _MouseStatus.dragging);
@@ -366,17 +273,19 @@ class _RichTableState extends State<RichTable> {
                     heights: heights,
                     onSelect: (i) {
                       final cellList = node.table[i];
-                      controller.notifySelectingPosition(SelectingPosition(
-                          TablePosition(i, 0, cellList.first.beginPosition),
-                          TablePosition(i, cellList.length - 1,
-                              cellList.last.endPosition)));
+                      nodeContext.onCursor(SelectingNodeCursor(
+                          index,
+                          TablePosition(
+                              CellIndex(i, 0), cellList.first.beginCursor),
+                          TablePosition(CellIndex(i, cellList.length - 1),
+                              cellList.last.endCursor)));
                     },
                     onAdd: (i) {
                       final newNode = node.insertRows(i, [
-                        TableCellList(List.generate(node.columnCount,
-                            (index) => tc.TableCell([RichTextNode.from([])])))
+                        TableCellList(List.generate(
+                            node.columnCount, (index) => tc.TableCell.empty()))
                       ]);
-                      controller.updateNode(newNode);
+                      nodeContext.onNode(newNode, index);
                     },
                   ),
                 );
@@ -384,20 +293,6 @@ class _RichTableState extends State<RichTable> {
         ],
       ),
     );
-  }
-
-  SingleNodePosition<NodePosition> buildTablePosition(
-      SingleNodePosition<NodePosition> p, int r, int c, int i) {
-    late SingleNodePosition position;
-    if (p is EditingPosition) {
-      position = EditingPosition(
-          TablePosition(r, c, TableCellPosition(i, p.position)));
-    } else if (p is SelectingPosition) {
-      position = SelectingPosition(
-          TablePosition(r, c, TableCellPosition(i, p.begin)),
-          TablePosition(r, c, TableCellPosition(i, p.end)));
-    }
-    return position;
   }
 }
 
@@ -408,19 +303,4 @@ class _MouseState {
   final _MouseStatus status;
 
   _MouseState(this.index, this.status);
-}
-
-BasicCursor _fromPosition(SingleNodePosition position) {
-  if (position is EditingPosition) {
-    final p = position.position as TablePosition;
-    return EditingCursor(p.index, p.position);
-  }
-  position = position as SelectingPosition;
-  final left = position.left as TablePosition;
-  final right = position.right as TablePosition;
-  if (left.index == right.index) {
-    return SelectingNodeCursor(left.index, left.position, right.position);
-  }
-  return SelectingNodesCursor(IndexWithPosition(left.index, left.position),
-      IndexWithPosition(right.index, right.position));
 }

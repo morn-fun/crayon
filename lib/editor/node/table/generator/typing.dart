@@ -1,7 +1,6 @@
-import 'package:crayon/editor/cursor/basic.dart';
-
 import '../../../command/selecting/replacement.dart';
 import '../../../core/copier.dart';
+import '../../../cursor/basic.dart';
 import '../../../cursor/node_position.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
@@ -27,12 +26,12 @@ NodeWithPosition typingWhileEditing(
     throw TypingRequiredOptionalMenuException(NodeWithPosition(
         node.updateCell(
             p.row, p.column, to(cell.update(index, to(nodeWithPosition.node)))),
-        p.fromCursor(nodeWithPosition.position.toCursor(index))));
+        p.cursorToPosition(nodeWithPosition.position.toCursor(index))));
   }
   return NodeWithPosition(
       node.updateCell(
           p.row, p.column, to(cell.update(index, to(nodeWithPosition.node)))),
-      p.fromCursor(nodeWithPosition.position.toCursor(index)));
+      p.cursorToPosition(nodeWithPosition.position.toCursor(index)));
 }
 
 NodeWithPosition typingWhileSelecting(
@@ -41,7 +40,7 @@ NodeWithPosition typingWhileSelecting(
   final right = data.right;
   if (left.inSameCell(right)) {
     final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cellPosition, right.cellPosition)) {
+    if (!cell.wholeSelected(left.cursor, right.cursor)) {
       final sameIndex = left.index == right.index;
       if (sameIndex) {
         final index = left.index;
@@ -60,20 +59,22 @@ NodeWithPosition typingWhileSelecting(
           throw TypingRequiredOptionalMenuException(NodeWithPosition(
               node.updateCell(left.row, left.column,
                   to(cell.update(index, to(nodeWithPosition.node)))),
-              left.fromCursor(nodeWithPosition.position.toCursor(index))));
+              left.cursorToPosition(
+                  nodeWithPosition.position.toCursor(index))));
         }
         return NodeWithPosition(
             node.updateCell(left.row, left.column,
                 to(cell.update(index, to(nodeWithPosition.node)))),
-            left.fromCursor(nodeWithPosition.position.toCursor(index)));
+            left.cursorToPosition(nodeWithPosition.position.toCursor(index)));
       }
       BasicCursor cursor = SelectingNodesCursor(
-          IndexWithPosition(left.index, left.position),
-          IndexWithPosition(right.index, right.position));
-      final context = data.context.getChildContext(cell.getId(node.id, left.row, left.column))!;
+          EditingCursor(left.index, left.position),
+          EditingCursor(right.index, right.position));
+      final context = data.context.getChildContext(cell.id)!;
       context.execute(ReplaceSelectingNodes(
           cursor as SelectingNodesCursor, EventType.typing, data.extras));
-      throw NodeUnsupportedException(node.runtimeType, 'operateWhileEditing', null);
+      throw NodeUnsupportedException(
+          node.runtimeType, 'operateWhileEditing', null);
     }
   }
   throw NodeUnsupportedException(

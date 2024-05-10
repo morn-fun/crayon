@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../command/modification.dart';
 import '../command/selecting/update.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
+import '../cursor/node_position.dart';
 import '../cursor/rich_text.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
@@ -95,7 +97,17 @@ void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
   try {
     final type = EventType.values.byName(tag.name);
     if (cursor is SingleNodeCursor) {
-      context.onNodeEditing(cursor, type, extra: StyleExtra(false, attributes));
+      if (cursor is EditingCursor) {
+        final r = context.getNode(cursor.index).onEdit(EditingData(
+            cursor.position, type, context,
+            extras: StyleExtra(false, attributes)));
+        context.execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+      } else if (cursor is SelectingNodeCursor) {
+        final r = context.getNode(cursor.index).onSelect(SelectingData(
+            SelectingPosition(cursor.begin, cursor.end), type, context,
+            extras: StyleExtra(false, attributes)));
+        context.execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+      }
     } else if (cursor is SelectingNodesCursor) {
       final left = cursor.left;
       final right = cursor.right;

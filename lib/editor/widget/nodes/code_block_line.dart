@@ -8,7 +8,6 @@ import 'package:highlight/highlight.dart' show Node, highlight;
 import '../../../../editor/extension/render_box.dart';
 import '../../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
-import '../../core/input_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
 import '../editing_cursor.dart';
@@ -80,7 +79,6 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     painter.layout();
     listeners.addGestureListener(onGesture);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      tryToUpdateInputAttribute();
       notifyEditingOffset(editingOffset);
     });
   }
@@ -95,11 +93,11 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     }
     if (editingCursorNotifier.value != editingOffset) {
       editingCursorNotifier.value = editingOffset;
-      tryToUpdateInputAttribute();
+      notifyEditingOffset(editingOffset);
     }
     if (selectingCursorNotifier.value != selectingOffset) {
       selectingCursorNotifier.value = selectingOffset;
-      tryToUpdateInputAttribute();
+      notifyEditingOffset(editingOffset);
     }
     if (oldWidget.dark != widget.dark) needRefresh = true;
     if (oldWidget.language != language) needRefresh = true;
@@ -217,7 +215,6 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     controller.onEditingPosition.call(off);
     controller.onEditingOffsetChanged
         .call(EditingOffset(globalOffset, painter.height, widget.nodeId));
-    updateInputAttribute(off);
   }
 
   void onPanUpdate(Offset global) {
@@ -237,23 +234,6 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   TextPosition buildTextPosition(Offset p) =>
       painter.buildTextPosition(p, renderBox);
 
-  void tryToUpdateInputAttribute() {
-    if (editingOffset != null) {
-      updateInputAttribute(editingOffset!);
-    }
-  }
-
-  void updateInputAttribute(int off) {
-    final box = renderBox;
-    if (box == null) return;
-    final offset = painter.getOffsetFromTextOffset(off);
-    final height = painter.height;
-    controller.onInputConnectionAttribute.call(InputConnectionAttribute(
-        Rect.fromPoints(offset, offset.translate(0, height)),
-        box.getTransformTo(null),
-        box.size));
-  }
-
   void notifyEditingOffset(int? offset) {
     final o = offset;
     if (o != null && y != null) {
@@ -267,14 +247,12 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
 
 class CodeNodeController {
   final ValueChanged<int> onEditingPosition;
-  final ValueChanged<InputConnectionAttribute> onInputConnectionAttribute;
   final ValueChanged<int> onPanUpdatePosition;
   final ValueChanged<EditingOffset> onEditingOffsetChanged;
   final ListenerCollection listeners;
 
   CodeNodeController({
     required this.onEditingPosition,
-    required this.onInputConnectionAttribute,
     required this.onPanUpdatePosition,
     required this.listeners,
     required this.onEditingOffsetChanged,

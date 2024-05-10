@@ -11,6 +11,7 @@ import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
 import '../cursor/node_position.dart';
+import '../../../editor/extension/node_context.dart';
 
 class DeleteIntent extends Intent {
   const DeleteIntent();

@@ -1,4 +1,4 @@
-import 'package:crayon/editor/core/node_controller.dart';
+import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
@@ -53,8 +53,8 @@ void main() {
     H1Node node =
         H1Node.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
-        () => node.onEdit(EditingData(RichTextNodePosition.zero(),
-            EventType.newline, TestNodeContext())),
+        () => node.onEdit(EditingData(
+            RichTextNodePosition.zero(), EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
@@ -86,22 +86,26 @@ void main() {
     HeadNode node =
         H1Node.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
 
-    var widget =
-        node.from(node.spans, depth: 1).build(NodeController.empty, null, 0);
+    var widget = Builder(
+        builder: (c) => node
+            .from(node.spans, depth: 1)
+            .build(TestNodeContext(), NodeBuildParam.empty(), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
     ));
 
-    widget = H2Node.from(node.spans, depth: 1)
-        .build(NodeController.empty, null, null);
+    widget = Builder(
+        builder: (c) => H2Node.from(node.spans, depth: 1)
+            .build(TestNodeContext(), NodeBuildParam.empty(), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
     ));
 
-    widget = H3Node.from(node.spans, depth: 1)
-        .build(NodeController.empty, null, null);
+    widget = Builder(
+        builder: (c) => H3Node.from(node.spans, depth: 1)
+            .build(TestNodeContext(), NodeBuildParam.empty(), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,

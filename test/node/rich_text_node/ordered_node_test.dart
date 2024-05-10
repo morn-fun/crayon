@@ -1,10 +1,11 @@
-import 'package:crayon/editor/core/node_controller.dart';
+import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/node/rich_text/ordered.dart';
 
 import '../config/const_texts.dart';
+import '../config/test_node_context.dart';
 
 void main() {
   test('test pre text RegExp', () {
@@ -117,25 +118,26 @@ void main() {
     OrderedNode node =
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
 
-    var widget = node.build(NodeController.empty, null, 0);
+    var widget = Builder(
+        builder: (c) =>
+            node.build(TestNodeContext(), NodeBuildParam.empty(), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
     ));
 
-    widget = node.build(
-        NodeController.empty.copy(nodeGetter: (i) => node.from([], depth: 0)),
-        null,
-        1);
+    widget = Builder(
+        builder: (c) =>
+            node.build(TestNodeContext(), NodeBuildParam(index: 1), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
     ));
 
-    widget = node.build(
-        NodeController.empty.copy(nodeGetter: (i) => node.from([], depth: 2)),
-        null,
-        3);
+    widget = Builder(
+        builder: (c) => node
+            .newNode(depth: 2)
+            .build(TestNodeContext(), NodeBuildParam(index: 3), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
