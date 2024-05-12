@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';
+import '../cursor/rich_text.dart';
 import '../node/basic.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'listener_collection.dart';
@@ -17,6 +18,7 @@ class RichEditorController {
   ControllerStatus _status = ControllerStatus.idle;
   BasicCursor _cursor = NoneCursor();
   CursorOffset _lastCursorOffset = CursorOffset.zero();
+  EditingCursor _panStartCursor = EditingCursor(0, RichTextNodePosition.zero());
 
   final ListenerCollection listeners = ListenerCollection();
 
@@ -48,6 +50,7 @@ class RichEditorController {
   void updateCursor(BasicCursor cursor, {bool notify = true}) {
     if (_cursor == cursor) return;
     _cursor = cursor;
+    if (cursor is EditingCursor) _updatePanStartCursor(cursor);
     if (notify) notifyCursor(cursor);
   }
 
@@ -56,11 +59,13 @@ class RichEditorController {
     _status = status;
   }
 
+  void _updatePanStartCursor(EditingCursor c) => _panStartCursor = c;
+
   void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
 
   void notifyCursor(BasicCursor cursor) => listeners.notifyCursor(cursor);
 
-  void notifyGesture(GestureState s) => listeners.notifyGesture(s);
+  void notifyGesture(GestureState s) => listeners.notifyGestures(s);
 
   void notifyNode(EditorNode node) => listeners.notifyNode(node);
 
@@ -86,6 +91,8 @@ class RichEditorController {
   ControllerStatus get status => _status;
 
   CursorOffset get lastCursorOffset => _lastCursorOffset;
+
+  EditingCursor get panStartCursor => _panStartCursor;
 }
 
 class Update extends UpdateControllerOperation {

@@ -22,18 +22,26 @@ NodeWithPosition deleteWhileSelecting(
   final left = data.left;
   final right = data.right;
   final emptyTextNode = RichTextNode.from([]);
-  if (left == node.beginPosition && right == node.endPosition) {
+  final nodeBegin = node.beginPosition, nodeEnd = node.endPosition;
+  if (left == nodeBegin && right == nodeEnd) {
     return NodeWithPosition(
         emptyTextNode, EditingPosition(emptyTextNode.beginPosition));
   }
-  if (left.inSameCell(right)) {
-    final cell = node.getCellByPosition(left);
+  if (left.sameCell(right)) {
+    final cell = node.getCell(left.cellPosition);
     final context = data.context.getChildContext(cell.id)!;
     final sameIndex = left.index == right.index;
     BasicCursor cursor = sameIndex
         ? SelectingNodeCursor(left.index, left.position, right.position)
         : SelectingNodesCursor(EditingCursor(left.index, left.position),
             EditingCursor(right.index, right.position));
+    if (cell.wholeSelected(cursor)) {
+      final newNode = node.updateCell(left.row, left.column, (t) => t.clear());
+      return NodeWithPosition(
+          newNode,
+          EditingPosition(left.copy(
+              cursor: to(newNode.getCell(left.cellPosition).beginCursor))));
+    }
     DeleteAction(ActionContext(context, () => cursor)).invoke(DeleteIntent());
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);

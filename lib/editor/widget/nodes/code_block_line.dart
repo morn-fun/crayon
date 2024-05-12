@@ -58,6 +58,8 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
 
   ListenerCollection get listeners => controller.listeners;
 
+  String get nodeId => widget.nodeId;
+
   RenderBox? get renderBox {
     if (!mounted) return null;
     return key.currentContext?.findRenderObject() as RenderBox?;
@@ -77,7 +79,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
         maxLines: 1,
         text: span);
     painter.layout();
-    listeners.addGestureListener(onGesture);
+    listeners.addGestureListener(nodeId, onGesture);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       notifyEditingOffset(editingOffset);
     });
@@ -110,7 +112,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   @override
   void dispose() {
     painter.dispose();
-    listeners.removeGestureListener(onGesture);
+    listeners.removeGestureListener(nodeId, onGesture);
     super.dispose();
   }
 
@@ -197,15 +199,10 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   }
 
   void onGesture(GestureState s) {
-    switch (s.type) {
-      case GestureType.tap:
-        onTapped(s.globalOffset);
-        break;
-      case GestureType.panUpdate:
-        onPanUpdate(s.globalOffset);
-        break;
-      case GestureType.hover:
-        break;
+    if (s is TapGestureState) {
+      onTapped(s.globalOffset);
+    } else if (s is PanGestureState) {
+      onPanUpdate(s.globalOffset);
     }
   }
 

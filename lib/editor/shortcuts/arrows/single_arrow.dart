@@ -19,7 +19,7 @@ class LeftArrowAction extends ContextAction<LeftArrowIntent> {
   @override
   void invoke(LeftArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onLeftOrUp(ArrowType.left, nodeContext, runtimeType, cursor);
+    arrowOnLeftOrUp(ArrowType.left, nodeContext, runtimeType, cursor);
   }
 }
 
@@ -35,7 +35,7 @@ class RightArrowAction extends ContextAction<RightArrowIntent> {
   @override
   void invoke(RightArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onRightOrDown(ArrowType.right, nodeContext, runtimeType, cursor);
+    arrowOnRightOrDown(ArrowType.right, nodeContext, runtimeType, cursor);
   }
 }
 
@@ -51,7 +51,7 @@ class UpArrowAction extends ContextAction<UpArrowIntent> {
   @override
   void invoke(UpArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onLeftOrUp(ArrowType.up, nodeContext, runtimeType, cursor);
+    arrowOnLeftOrUp(ArrowType.up, nodeContext, runtimeType, cursor);
   }
 }
 
@@ -67,11 +67,11 @@ class DownArrowAction extends ContextAction<DownArrowIntent> {
   @override
   void invoke(DownArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    _onRightOrDown(ArrowType.down, nodeContext, runtimeType, cursor);
+    arrowOnRightOrDown(ArrowType.down, nodeContext, runtimeType, cursor);
   }
 }
 
-void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
+void arrowOnLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   late NodePosition position;
@@ -112,7 +112,7 @@ void _onLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
   }
 }
 
-void _onRightOrDown(ArrowType type, NodeContext nodeContext, Type actionType,
+void arrowOnRightOrDown(ArrowType type, NodeContext nodeContext, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   ArrowType t = type;

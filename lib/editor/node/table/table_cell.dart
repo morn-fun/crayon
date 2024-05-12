@@ -1,6 +1,4 @@
 import 'dart:collection';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../../../../editor/extension/unmodifiable.dart';
@@ -47,8 +45,9 @@ class TableCell {
 
   EditingCursor get endCursor => EditingCursor(length - 1, last.endPosition);
 
-  SelectingNodesCursor get selectAllCursor =>
-      SelectingNodesCursor(beginCursor, endCursor);
+  BasicCursor get selectAllCursor => length == 1
+      ? SelectingNodeCursor(0, first.beginPosition, last.endPosition)
+      : SelectingNodesCursor(beginCursor, endCursor);
 
   EditorNode getNode(int index) => nodes[index];
 
@@ -66,23 +65,23 @@ class TableCell {
     return true;
   }
 
-  bool wholeSelected(EditingCursor begin, EditingCursor end) {
-    final left = begin.isLowerThan(end) ? begin : end;
-    final right = begin.isLowerThan(end) ? end : begin;
-    return isBegin(left) && isEnd(right);
+  bool wholeSelected(BasicCursor? cursor) {
+    if (cursor is EditingCursor) return false;
+    if (cursor is SelectingNodeCursor) {
+      return isBegin(EditingCursor(cursor.index, cursor.begin)) &&
+          isEnd(EditingCursor(cursor.index, cursor.end));
+    }
+    if (cursor is SelectingNodesCursor) {
+      final begin = cursor.begin;
+      final end = cursor.end;
+      final left = begin.isLowerThan(end) ? begin : end;
+      final right = begin.isLowerThan(end) ? end : begin;
+      return isBegin(left) && isEnd(right);
+    }
+    return false;
   }
 
-  bool containSelf(
-      TablePosition begin, TablePosition end, int row, int column) {
-    final minRow = min(begin.row, end.row);
-    final maxRow = min(begin.row, end.row);
-    final minColumn = min(begin.column, end.column);
-    final maxColumn = max(begin.column, end.column);
-    return (minRow <= row && maxRow >= row) &&
-        (minColumn <= column && maxColumn >= column);
-  }
-
-  BasicCursor? getCursor(SingleNodePosition? position, CellIndex cellIndex) {
+  BasicCursor? getCursor(SingleNodePosition? position, CellPosition cellIndex) {
     final row = cellIndex.row;
     final column = cellIndex.column;
     final p = position;
@@ -103,11 +102,17 @@ class TableCell {
       }
       left = left as TablePosition;
       right = right as TablePosition;
-      if (left.inSameCell(right)) {
+      bool containsSelf =
+          cellIndex.containSelf(left.cellPosition, right.cellPosition);
+      if (!containsSelf) return null;
+      if (left.sameCell(right)) {
+        final sameIndex = left.index == right.index;
+        if (sameIndex) {
+          return SelectingNodeCursor(left.index, left.position, right.position);
+        }
         return SelectingNodesCursor(left.cursor, right.cursor);
       }
-      bool containsSelf = containSelf(left, right, row, column);
-      return containsSelf ? selectAllCursor : null;
+      return selectAllCursor;
     }
     return null;
   }
@@ -159,16 +164,16 @@ class TableCellNodeContext extends NodeContext {
   final ValueChanged<CursorOffset> cursorOffset;
   final ValueChanged<EditingCursor> onPan;
 
-  TableCellNodeContext(
-    this.cursorGetter,
-    this.cellGetter,
-    this.listeners,
-    this.onReplace,
-    this.onUpdate,
-    this.onBasicCursor,
-    this.cursorOffset,
-    this.onPan,
-  );
+  TableCellNodeContext({
+    required this.cursorGetter,
+    required this.cellGetter,
+    required this.listeners,
+    required this.onReplace,
+    required this.onUpdate,
+    required this.onBasicCursor,
+    required this.cursorOffset,
+    required this.onPan,
+  });
 
   final tag = 'TableCellNodeContext';
 
@@ -177,7 +182,6 @@ class TableCellNodeContext extends NodeContext {
   @override
   void execute(BasicCommand command) {
     try {
-      logger.i('$tag, execute 【$command】');
       command.run(this);
     } catch (e) {
       logger.e('execute 【$command】error:$e');
@@ -221,5 +225,5 @@ class TableCellNodeContext extends NodeContext {
   void onCursorOffset(CursorOffset o) => cursorOffset.call(o);
 
   @override
-  void onPanUpdate(EditingCursor cursor) => onPanUpdate.call(cursor);
+  void onPanUpdate(EditingCursor cursor) => onPan.call(cursor);
 }

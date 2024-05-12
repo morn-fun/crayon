@@ -31,6 +31,17 @@ class EditingCursor<T extends NodePosition> extends SingleNodeCursor<T> {
     if (index > other.index) return false;
     return position.isLowerThan(other.position);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EditingCursor &&
+          runtimeType == other.runtimeType &&
+          index == other.index &&
+          position == other.position;
+
+  @override
+  int get hashCode => index.hashCode ^ position.hashCode;
 }
 
 class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
@@ -52,6 +63,18 @@ class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
   String toString() {
     return 'SelectingNodeCursor{index: $index, begin: $begin, end: $end}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SelectingNodeCursor &&
+          runtimeType == other.runtimeType &&
+          index == other.index &&
+          begin == other.begin &&
+          end == other.end;
+
+  @override
+  int get hashCode => index.hashCode ^ begin.hashCode ^ end.hashCode;
 }
 
 class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {

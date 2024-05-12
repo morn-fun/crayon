@@ -83,14 +83,14 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       notifyEditingOffset(editorPosition(nodePosition));
     });
-    listeners.addGestureListener(onGesture);
+    listeners.addGestureListener(node.id, onGesture);
     listeners.addArrowDelegate(node.id, onArrowAccept);
   }
 
   @override
   void dispose() {
     super.dispose();
-    listeners.removeGestureListener(onGesture);
+    listeners.removeGestureListener(node.id, onGesture);
     listeners.removeArrowDelegate(node.id, onArrowAccept);
     editingCursorNotifier.dispose();
     selectingCursorNotifier.dispose();
@@ -125,7 +125,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           if (tapOffset == null) return;
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
-          listeners.notifyGesture(GestureState(GestureType.tap, newTapOffset));
+          listeners.notifyGestures(TapGestureState(newTapOffset));
         } else {
           newPosition = p;
         }
@@ -154,7 +154,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        listeners.notifyGesture(GestureState(GestureType.tap, newTapOffset));
+        listeners.notifyGestures(TapGestureState(newTapOffset));
         break;
       case ArrowType.down:
         final box = renderBox;
@@ -175,7 +175,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        listeners.notifyGesture(GestureState(GestureType.tap, newTapOffset));
+        listeners.notifyGestures(TapGestureState(newTapOffset));
         break;
       default:
         break;
@@ -206,18 +206,17 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (!containsOffset(offset)) return;
     final left = v.left, right = v.right;
     if (left is! RichTextNodePosition || right is! RichTextNodePosition) return;
+    final entryManager =
+        ShareEditorContextWidget.of(context)?.context.entryManager;
+    if (entryManager == null) return;
+    if (entryManager.showingType == MenuType.text) return;
     bool isTextEmpty = node.getFromPosition(left, right).isEmpty;
     if (isTextEmpty) return;
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
-    final entryManager =
-        ShareEditorContextWidget.of(context)?.context.entryManager;
-    if (entryManager == null) return;
-    if (entryManager.showingType != MenuType.text) {
-      entryManager.showTextMenu(Overlay.of(context),
-          MenuInfo(offset, node.id, h, layerLink), () => nodeContext);
-    }
+    entryManager.showTextMenu(Overlay.of(context),
+        MenuInfo(offset, node.id, h, layerLink), () => nodeContext);
   }
 
   bool containsOffset(Offset global) =>
@@ -388,16 +387,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       painter.buildTextPosition(p, renderBox);
 
   void onGesture(GestureState s) {
-    switch (s.type) {
-      case GestureType.tap:
-        onTapped(s.globalOffset);
-        break;
-      case GestureType.panUpdate:
-        onPanUpdate(s.globalOffset);
-        break;
-      case GestureType.hover:
-        confirmToShowTextMenu(s.globalOffset);
-        break;
+    if (s is TapGestureState) {
+      onTapped(s.globalOffset);
+    } else if (s is HoverGestureState) {
+      confirmToShowTextMenu(s.globalOffset);
+    } else if (s is PanGestureState) {
+      onPanUpdate(s.globalOffset);
     }
   }
 

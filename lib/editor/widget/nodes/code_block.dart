@@ -106,7 +106,7 @@ class _CodeBlockState extends State<CodeBlock> {
             tapOffset = Offset(extra.dx, globalY + h + padding.top);
           }
           if (tapOffset == null) return;
-          listeners.notifyGesture(GestureState(GestureType.tap, tapOffset));
+          listeners.notifyGestures(TapGestureState(tapOffset));
         } else {
           newPosition = p;
         }

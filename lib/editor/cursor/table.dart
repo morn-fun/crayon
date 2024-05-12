@@ -1,4 +1,4 @@
-
+import 'dart:math';
 import '../core/copier.dart';
 import '../exception/editor_node.dart';
 import '../../../editor/cursor/rich_text.dart';
@@ -7,31 +7,30 @@ import 'node_position.dart';
 
 class TablePosition implements NodePosition {
   final EditingCursor cursor;
-  final CellIndex cellIndex;
+  final CellPosition cellPosition;
 
-  TablePosition(this.cellIndex, this.cursor);
+  TablePosition(this.cellPosition, this.cursor);
 
   TablePosition.zero()
-      : cellIndex = CellIndex.zero(),
+      : cellPosition = CellPosition.zero(),
         cursor = EditingCursor(0, RichTextNodePosition.zero());
 
-  int get row => cellIndex.row;
+  int get row => cellPosition.row;
 
-  int get column => cellIndex.column;
+  int get column => cellPosition.column;
 
-  bool inSameCell(TablePosition other) =>
-      row == other.row && column == other.column;
+  bool sameCell(TablePosition other) =>
+      cellPosition.sameCell(other.cellPosition);
 
   int get index => cursor.index;
 
   NodePosition get position => cursor.position;
 
   TablePosition copy({
-    ValueCopier<CellIndex>? cellIndex,
+    ValueCopier<CellPosition>? cellIndex,
     ValueCopier<EditingCursor>? cursor,
   }) =>
-      TablePosition(
-          cellIndex?.call(this.cellIndex) ?? this.cellIndex,
+      TablePosition(cellIndex?.call(cellPosition) ?? cellPosition,
           cursor?.call(this.cursor) ?? this.cursor);
 
   @override
@@ -50,14 +49,14 @@ class TablePosition implements NodePosition {
       other is TablePosition &&
           runtimeType == other.runtimeType &&
           cursor == other.cursor &&
-          cellIndex == other.cellIndex;
+          cellPosition == other.cellPosition;
 
   @override
-  int get hashCode => cursor.hashCode ^ cellIndex.hashCode;
+  int get hashCode => cursor.hashCode ^ cellPosition.hashCode;
 
   @override
   String toString() {
-    return 'TablePosition{cursor: $cursor, cellIndex: $cellIndex}';
+    return 'TablePosition{cellIndex: $cellPosition, cursor: $cursor}';
   }
 
   SingleNodePosition cursorToPosition(BasicCursor cursor) {
@@ -79,29 +78,53 @@ class TablePosition implements NodePosition {
   }
 }
 
-class CellIndex {
+class CellPosition {
   final int row;
   final int column;
 
-  CellIndex(this.row, this.column);
+  CellPosition(this.row, this.column);
 
-  CellIndex.zero()
+  CellPosition.zero()
       : row = 0,
         column = 0;
 
   @override
   String toString() {
-    return 'CellIndex{row: $row, column: $column}';
+    return 'CellPosition{row: $row, column: $column}';
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CellIndex &&
+      other is CellPosition &&
           runtimeType == other.runtimeType &&
           row == other.row &&
           column == other.column;
 
   @override
   int get hashCode => row.hashCode ^ column.hashCode;
+
+  CellPosition topLeft(CellPosition end) {
+    int c = min(column, end.column);
+    int r = min(row, end.row);
+    return CellPosition(r, c);
+  }
+
+  CellPosition bottomRight(CellPosition end) {
+    int c = max(column, end.column);
+    int r = max(row, end.row);
+    return CellPosition(r, c);
+  }
+
+  bool containSelf(CellPosition begin, CellPosition end) {
+    final minRow = min(begin.row, end.row);
+    final maxRow = max(begin.row, end.row);
+    final minColumn = min(begin.column, end.column);
+    final maxColumn = max(begin.column, end.column);
+    return (minRow <= row && maxRow >= row) &&
+        (minColumn <= column && maxColumn >= column);
+  }
+
+  bool sameCell(CellPosition other) =>
+      row == other.row && column == other.column;
 }

@@ -143,8 +143,9 @@ class _OptionalMenuState extends State<OptionalMenu> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final off = widget.offset.offset;
     final info = _correctCoordinate(Size(size.width - 10, size.height - 10),
-        widget.offset.offset.translate(0, offset.height));
+        off.translate(0, offset.height));
     final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => hideMenu(),

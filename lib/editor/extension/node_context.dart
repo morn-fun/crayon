@@ -24,7 +24,7 @@ extension NodeContextExtension on NodeContext {
     return newList;
   }
 
-  Set<String> tagIntersection() {
+  Set<String> tagIntersection(BasicCursor? cursor) {
     final c = cursor;
     var basicSets = RichTextTag.values.map((e) => e.name).toSet();
     if (c is EditingCursor) return {};

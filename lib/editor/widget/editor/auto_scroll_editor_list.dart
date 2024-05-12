@@ -42,6 +42,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   bool isInPanGesture = false;
   bool needTapDownWhilePanGesture = false;
   Offset panOffset = Offset.zero;
+  Offset panStartOffset = Offset.zero;
   final tag = 'AutoScrollEditorList';
   late BasicCursor cursor = editorContext.cursor;
 
@@ -102,8 +103,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     refresh();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
-      logger.i(
-          'onCursorChanged alive :${aliveIndexMap.length},  dealing:$isDealingWithOffset,  last:$lastEditingCursorOffset   ,cursor:$cursor');
+      // logger.i(
+      //     'onCursorChanged alive :${aliveIndexMap.length},  dealing:$isDealingWithOffset,  last:$lastEditingCursorOffset   ,cursor:$cursor');
       if (cursor is! EditingCursor) return;
       if (isDealingWithOffset) return;
       final index = cursor.index;
@@ -136,38 +137,36 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
         // logger.i('onTapDown:$d');
-        controller
-            .notifyGesture(GestureState(GestureType.tap, d.globalPosition));
+        controller.notifyGesture(TapGestureState(d.globalPosition));
       },
       onPanStart: (d) {
         isInPanGesture = true;
         // logger.i('onPanStart:$d');
         panOffset = d.globalPosition;
+        panStartOffset = d.globalPosition;
       },
       onPanEnd: (d) {
         isInPanGesture = false;
+        panStartOffset = Offset.zero;
         // logger.i('onPanEnd:$d');
-        if (d.velocity != Velocity.zero) {
-          controller
-              .notifyGesture(GestureState(GestureType.panUpdate, panOffset));
-        }
       },
       onPanDown: (d) {
         // logger.i('onPanDown:$d');
         panOffset = d.globalPosition;
+        panStartOffset = d.globalPosition;
         needTapDownWhilePanGesture = true;
       },
       onPanUpdate: (d) {
         // logger.i('onPanUpdate:$d');
         if (needTapDownWhilePanGesture) {
-          controller.notifyGesture(GestureState(GestureType.tap, panOffset));
+          controller.notifyGesture(TapGestureState(d.globalPosition));
           needTapDownWhilePanGesture = false;
         }
         panOffset = panOffset.translate(d.delta.dx, d.delta.dy);
         Throttle.execute(
           () {
-            controller.notifyGesture(
-                GestureState(GestureType.panUpdate, d.globalPosition));
+            controller
+                .notifyGesture(PanGestureState(panOffset, panStartOffset));
             scrollList(d.globalPosition, d.delta);
           },
           tag: tag,
@@ -177,6 +176,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       onPanCancel: () {
         // logger.i('onPanCancel');
         panOffset = Offset.zero;
+        panStartOffset = Offset.zero;
         needTapDownWhilePanGesture = false;
         isInPanGesture = false;
       },
@@ -184,7 +184,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         onHover: (d) {
           if (isInPanGesture) return;
           if (controller.cursor is EditingCursor) return;
-          controller.notifyGesture(GestureState(GestureType.hover, d.position));
+          controller.notifyGesture(HoverGestureState(d.position));
         },
         child: NotificationListener<ScrollNotification>(
           onNotification: (ScrollNotification notification) {

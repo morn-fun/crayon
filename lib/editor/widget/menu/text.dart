@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../editor/extension/node_context.dart';
 import '../../../editor/extension/collection.dart';
+import '../../../editor/cursor/rich_text.dart';
 
 import '../../core/context.dart';
 import '../../core/entry_manager.dart';
@@ -37,7 +38,7 @@ class _TextMenuState extends State<TextMenu> {
   void initState() {
     listeners.addCursorChangedListener(onCursorChanged);
     listeners.addNodesChangedListener(onNodesChanged);
-    tagSets = nodeContext.tagIntersection();
+    tagSets = nodeContext.tagIntersection(cursor);
     super.initState();
   }
 
@@ -55,7 +56,7 @@ class _TextMenuState extends State<TextMenu> {
         hideMenu();
         return;
       }
-      final newTags = nodeContext.tagIntersection();
+      final newTags = nodeContext.tagIntersection(cursor);
       if (!newTags.equalsTo(tagSets)) refresh();
       tagSets = newTags;
     });
@@ -64,7 +65,7 @@ class _TextMenuState extends State<TextMenu> {
   void onNodesChanged() {
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
-      final newTags = nodeContext.tagIntersection();
+      final newTags = nodeContext.tagIntersection(cursor);
       if (!newTags.equalsTo(tagSets)) refresh();
       tagSets = newTags;
     });
@@ -80,6 +81,7 @@ class _TextMenuState extends State<TextMenu> {
   Widget build(BuildContext context) {
     double dy = info.lineHeight;
     double dx = info.offset.dx / 2;
+    final c = cursor;
     return Stack(
       children: [
         Positioned(
@@ -128,7 +130,9 @@ class _TextMenuState extends State<TextMenu> {
                         nodeContext, RichTextTag.underline, nodeContext.cursor),
                     contains: tagSets.contains(RichTextTag.underline.name),
                   ),
-                  if (cursor is SelectingNodeCursor)
+                  if (c is SelectingNodeCursor &&
+                      c.begin is RichTextNodePosition &&
+                      c.end is RichTextNodePosition)
                     TextMenuItem(
                       iconData: Icons.link_rounded,
                       onTap: () {

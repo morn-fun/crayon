@@ -17,15 +17,14 @@ NodeWithPosition newlineWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
-  if (left.inSameCell(right)) {
-    final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cursor, right.cursor)) {
+  if (left.sameCell(right)) {
+    final cell = node.getCell(left.cellPosition);
+    final sameIndex = left.index == right.index;
+    BasicCursor cursor = sameIndex
+        ? SelectingNodeCursor(left.index, left.position, right.position)
+        : SelectingNodesCursor(left.cursor, right.cursor);
+    if (!cell.wholeSelected(cursor)) {
       final context = data.context.getChildContext(cell.id)!;
-      final sameIndex = left.index == right.index;
-      BasicCursor cursor = sameIndex
-          ? SelectingNodeCursor(left.index, left.position, right.position)
-          : SelectingNodesCursor(EditingCursor(left.index, left.position),
-              EditingCursor(right.index, right.position));
       NewlineAction(ActionContext(context, () => cursor))
           .invoke(NewlineIntent());
       throw NodeUnsupportedException(

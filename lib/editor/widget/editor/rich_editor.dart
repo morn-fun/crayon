@@ -58,7 +58,7 @@ class _RichEditorPageState extends State<RichEditor> {
         onOptionalMenu: (s) {
           final cursorOffset = controller.lastCursorOffset;
           entryManager.showOptionalMenu(
-              cursorOffset.offset, Overlay.of(context), () => editorContext);
+              cursorOffset.offset, Overlay.of(context), () => s);
         });
     inputManager.startInput();
     editorContext = EditorContext(

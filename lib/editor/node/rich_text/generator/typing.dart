@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import '../../../../editor/extension/string.dart';
 
+import '../../../core/context.dart';
 import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../../exception/menu.dart';
@@ -25,7 +26,8 @@ NodeWithPosition typingRichTextNodeWhileEditing(
         span.copy(text: (v) => v.insert(position.offset, text)));
     final newPosition = EditingPosition(
         RichTextNodePosition(position.index, position.offset + text.length));
-    checkNeedShowSelectingMenu(text, newNode, newPosition.position);
+    checkNeedShowSelectingMenu(
+        text, newNode, newPosition.position, data.context);
     return NodeWithPosition(newNode, newPosition);
   } else if (delta is TextEditingDeltaReplacement) {
     final position = data.position;
@@ -93,12 +95,12 @@ void checkNeedChangeNodeTyp(
   }
 }
 
-void checkNeedShowSelectingMenu(
-    String text, RichTextNode node, RichTextNodePosition position) {
+void checkNeedShowSelectingMenu(String text, RichTextNode node,
+    RichTextNodePosition position, NodeContext context) {
   final frontText = node.frontPartNode(position).text;
   if (frontText == '/') {
     throw TypingRequiredOptionalMenuException(
-        NodeWithPosition(node, EditingPosition(position)));
+        NodeWithPosition(node, EditingPosition(position)), context);
   }
 }
 

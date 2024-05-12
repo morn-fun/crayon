@@ -6,15 +6,18 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
+import '../../cursor/basic.dart';
 import '../../cursor/node_position.dart';
 import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
 import '../../widget/nodes/table.dart';
 import '../basic.dart';
+import '../rich_text/rich_text_span.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
 import 'generator/newline.dart';
 import 'generator/select_all.dart';
+import 'generator/styles.dart';
 import 'generator/typing.dart';
 import 'table_cell.dart';
 import 'table_cell_list.dart';
@@ -68,9 +71,7 @@ class TableNode extends EditorNode {
   List<TableCell> column(int column) =>
       List.generate(columnCount, (i) => table[i].getCell(column));
 
-  TableCell getCell(int row, int column) => table[row].getCell(column);
-
-  TableCell getCellByPosition(TablePosition p) => getCell(p.row, p.column);
+  TableCell getCell(CellPosition p) => table[p.row].getCell(p.column);
 
   TableNode insertRows(int index, List<TableCellList> rows) {
     for (var r in rows) {
@@ -134,7 +135,7 @@ class TableNode extends EditorNode {
 
   TableNode updateMore(TablePosition begin, TablePosition end,
       ValueCopier<List<TableCellList>> copier) {
-    assert(!begin.inSameCell(end));
+    assert(!begin.sameCell(end));
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
     final leftColumn = min(left.column, right.column);
@@ -176,11 +177,11 @@ class TableNode extends EditorNode {
 
   @override
   TablePosition get beginPosition =>
-      TablePosition(CellIndex.zero(), firstCell.beginCursor);
+      TablePosition(CellPosition.zero(), firstCell.beginCursor);
 
   @override
   TablePosition get endPosition => TablePosition(
-      CellIndex(rowCount - 1, columnCount - 1), lastCell.endCursor);
+      CellPosition(rowCount - 1, columnCount - 1), lastCell.endCursor);
 
   @override
   EditorNode frontPartNode(covariant TablePosition end, {String? newId}) =>
@@ -204,17 +205,21 @@ class TableNode extends EditorNode {
     final right = begin.isLowerThan(end) ? end : begin;
     final leftColumn = min(left.column, right.column);
     final rightColumn = max(left.column, right.column);
-    if (left.inSameCell(right)) {
+    if (left.sameCell(right)) {
       final newWidths = [widths[leftColumn]];
-      final cell = getCellByPosition(left);
-      if (cell.isBegin(left.cursor) && cell.isEnd(right.cursor)) {
+      final cell = getCell(left.cellPosition);
+      final sameIndex = left.index == right.index;
+      BasicCursor cursor = sameIndex
+          ? SelectingNodeCursor(left.index, left.position, right.position)
+          : SelectingNodesCursor(left.cursor, right.cursor);
+      if (cell.wholeSelected(cursor)) {
         return from([
           TableCellList([cell])
         ], newWidths, id: newId);
       } else {
-        ///TODO:deal with this exception
-        throw GetFromPositionButAcquireMoreNodes(
-            runtimeType, cell.getNodes(left.cursor, right.cursor), left, right);
+        return from([
+          TableCellList([TableCell(cell.getNodes(left.cursor, right.cursor))])
+        ], newWidths, id: newId);
       }
     } else {
       final newWidths = widths.sublist(leftColumn, rightColumn + 1);
@@ -231,21 +236,17 @@ class TableNode extends EditorNode {
   @override
   List<EditorNode> getInlineNodesFromPosition(
       covariant TablePosition begin, covariant TablePosition end) {
-    try {
-      final node = getFromPosition(begin, end);
-      if (node is TableNode) {
-        List<EditorNode> nodes = [];
-        for (var cellList in node.table) {
-          for (var cell in cellList.cells) {
-            nodes.addAll(cell.nodes);
-          }
+    final node = getFromPosition(begin, end);
+    if (node is TableNode) {
+      List<EditorNode> nodes = [];
+      for (var cellList in node.table) {
+        for (var cell in cellList.cells) {
+          nodes.addAll(cell.nodes);
         }
-        return nodes;
-      } else {
-        return [node];
       }
-    } on GetFromPositionButAcquireMoreNodes catch (e) {
-      return e.nodes;
+      return nodes;
+    } else {
+      return [node];
     }
   }
 
@@ -338,6 +339,8 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   // EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileSelecting(d, n),
+  ...Map.fromEntries(RichTextTag.values.map((e) => MapEntry(
+      e.name, (d, n) => styleRichTextNodeWhileSelecting(d, n, e.name))))
 };
 
 typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(

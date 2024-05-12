@@ -8,11 +8,12 @@ import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
+import '../../shortcuts/arrows/arrows.dart';
 
 class RichTableCell extends StatefulWidget {
   final tc.TableCell cell;
   final TableNode node;
-  final CellIndex cellIndex;
+  final CellPosition cellIndex;
   final NodeContext context;
   final NodeBuildParam param;
   final BasicCursor? cursor;
@@ -44,63 +45,76 @@ class _RichTableCellState extends State<RichTableCell> {
 
   TableNode get node => widget.node;
 
-  CellIndex get cellIndex => widget.cellIndex;
+  CellPosition get cellIndex => widget.cellIndex;
 
   int get index => widget.param.index;
 
   late tc.TableCellNodeContext cellContext;
 
+  late ListenerCollection localListeners;
+
   @override
   void initState() {
+    localListeners = listeners.copy(nodeListeners: {}, nodesListeners: {});
     cellContext = tc.TableCellNodeContext(
-      () => cursor ?? NoneCursor(),
-      () => cell,
-      listeners,
-      (v) {
+      cursorGetter: () => cursor ?? NoneCursor(),
+      cellGetter: () => cell,
+      listeners: localListeners,
+      onReplace: (v) {
         final newCell = cell.replaceMore(v.begin, v.end, v.newNodes);
         nodeContext.execute(ModifyNode(
             _cursorToCursor(v.cursor, cellIndex, index),
             node.updateCell(cellIndex.row, cellIndex.column, (t) => newCell)));
       },
-      (v) {
+      onUpdate: (v) {
         final newCell = cell.update(v.index, (n) => v.node);
         nodeContext.execute(ModifyNode(
             _cursorToCursor(v.cursor, cellIndex, index),
             node.updateCell(cellIndex.row, cellIndex.column, (t) => newCell)));
       },
-      (newCursor) {
-        nodeContext.onCursor(_cursorToCursor(newCursor, cellIndex, index));
-      },
-      (v) {
-        nodeContext.onCursorOffset(v);
-      },
-      (v) {
-        nodeContext
-            .onPanUpdate(EditingCursor(index, TablePosition(cellIndex, v)));
-      },
+      onBasicCursor: (newCursor) =>
+          nodeContext.onCursor(_cursorToCursor(newCursor, cellIndex, index)),
+      cursorOffset: (v) => nodeContext.onCursorOffset(v),
+      onPan: (v) => nodeContext
+          .onPanUpdate(EditingCursor(index, TablePosition(cellIndex, v))),
     );
-
     nodeContext.addContext(cell.id, cellContext);
+    listeners.addGestureListener(cell.id, onGesture);
+    listeners.addArrowDelegate(cell.id, onArrowAccept);
     super.initState();
+  }
+
+  void onGesture(GestureState s) => localListeners.notifyGestures(s);
+
+  void onArrowAccept(AcceptArrowData d) {}
+
+  @override
+  void didUpdateWidget(covariant RichTableCell oldWidget) {
+    if (cell.hashCode != oldWidget.cell.hashCode) {
+      localListeners.notifyNodes();
+      for (var n in cell.nodes) {
+        localListeners.notifyNode(n);
+      }
+    }
+    if (cursor != oldWidget.cursor) {
+      localListeners.notifyCursor(cursor ?? NoneCursor());
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
+    localListeners.dispose();
+    listeners.removeGestureListener(cell.id, onGesture);
+    listeners.removeArrowDelegate(cell.id, onArrowAccept);
     nodeContext.removeContext(cell.id, cellContext);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    bool wholeSelected = false;
-    final c = cursor;
-    if (c is SelectingNodesCursor) {
-      if (cell.wholeSelected(c.begin, c.right)) wholeSelected = true;
-    }
-    return Container(
-      foregroundDecoration: wholeSelected
-          ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
-          : null,
+    bool wholeSelected = cell.wholeSelected(cursor);
+    return Padding(
       padding: EdgeInsets.all(8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -112,8 +126,11 @@ class _RichTableCellState extends State<RichTableCell> {
             child: innerNode.build(
                 cellContext,
                 NodeBuildParam(
-                    index: i,
-                    position: cursor?.getSingleNodePosition(i, innerNode)),
+                  index: i,
+                  position: wholeSelected
+                      ? null
+                      : cursor?.getSingleNodePosition(i, innerNode),
+                ),
                 context),
           );
         }),
@@ -123,7 +140,7 @@ class _RichTableCellState extends State<RichTableCell> {
 }
 
 SingleNodeCursor<TablePosition> _cursorToCursor(
-    BasicCursor cursor, CellIndex cellIndex, int index) {
+    BasicCursor cursor, CellPosition cellIndex, int index) {
   if (cursor is EditingCursor) {
     return EditingCursor(index, TablePosition(cellIndex, cursor));
   } else if (cursor is SelectingNodeCursor) {

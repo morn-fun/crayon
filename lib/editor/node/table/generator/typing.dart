@@ -11,22 +11,24 @@ import '../table.dart';
 NodeWithPosition typingWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   final p = data.position;
-  final cell = node.getCellByPosition(p);
+  final cell = node.getCell(p.cellPosition);
   final index = p.index;
   final innerNode = cell.getNode(index);
   late NodeWithPosition nodeWithPosition;
   try {
     nodeWithPosition = innerNode.onEdit(EditingData(
-        p.position, EventType.typing, data.context,
+        p.position, EventType.typing, data.context.getChildContext(cell.id)!,
         extras: data.extras));
   } on TypingToChangeNodeException catch (e) {
     nodeWithPosition = e.current;
   } on TypingRequiredOptionalMenuException catch (e) {
     nodeWithPosition = e.nodeWithPosition;
-    throw TypingRequiredOptionalMenuException(NodeWithPosition(
-        node.updateCell(
-            p.row, p.column, to(cell.update(index, to(nodeWithPosition.node)))),
-        p.cursorToPosition(nodeWithPosition.position.toCursor(index))));
+    throw TypingRequiredOptionalMenuException(
+        NodeWithPosition(
+            node.updateCell(p.row, p.column,
+                to(cell.update(index, to(nodeWithPosition.node)))),
+            p.cursorToPosition(nodeWithPosition.position.toCursor(index))),
+        e.context);
   }
   return NodeWithPosition(
       node.updateCell(
@@ -38,10 +40,13 @@ NodeWithPosition typingWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
-  if (left.inSameCell(right)) {
-    final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cursor, right.cursor)) {
-      final sameIndex = left.index == right.index;
+  if (left.sameCell(right)) {
+    final cell = node.getCell(left.cellPosition);
+    final sameIndex = left.index == right.index;
+    BasicCursor cursor = sameIndex
+        ? SelectingNodeCursor(left.index, left.position, right.position)
+        : SelectingNodesCursor(left.cursor, right.cursor);
+    if (!cell.wholeSelected(cursor)) {
       if (sameIndex) {
         final index = left.index;
         final innerNode = cell.getNode(index);
@@ -50,17 +55,19 @@ NodeWithPosition typingWhileSelecting(
           nodeWithPosition = innerNode.onSelect(SelectingData(
               SelectingPosition(left.position, right.position),
               EventType.typing,
-              data.context,
+              data.context.getChildContext(cell.id)!,
               extras: data.extras));
         } on TypingToChangeNodeException catch (e) {
           nodeWithPosition = e.current;
         } on TypingRequiredOptionalMenuException catch (e) {
           nodeWithPosition = e.nodeWithPosition;
-          throw TypingRequiredOptionalMenuException(NodeWithPosition(
-              node.updateCell(left.row, left.column,
-                  to(cell.update(index, to(nodeWithPosition.node)))),
-              left.cursorToPosition(
-                  nodeWithPosition.position.toCursor(index))));
+          throw TypingRequiredOptionalMenuException(
+              NodeWithPosition(
+                  node.updateCell(left.row, left.column,
+                      to(cell.update(index, to(nodeWithPosition.node)))),
+                  left.cursorToPosition(
+                      nodeWithPosition.position.toCursor(index))),
+              e.context);
         }
         return NodeWithPosition(
             node.updateCell(left.row, left.column,

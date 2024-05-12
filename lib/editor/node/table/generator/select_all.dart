@@ -17,10 +17,13 @@ NodeWithPosition selectAllWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
-  if (left.inSameCell(right)) {
-    final cell = node.getCellByPosition(left);
-    if (!cell.wholeSelected(left.cursor, right.cursor)) {
-      final sameIndex = left.index == right.index;
+  if (left.sameCell(right)) {
+    final cell = node.getCell(left.cellPosition);
+    final sameIndex = left.index == right.index;
+    BasicCursor cursor = sameIndex
+        ? SelectingNodeCursor(left.index, left.position, right.position)
+        : SelectingNodesCursor(left.cursor, right.cursor);
+    if (!cell.wholeSelected(cursor)) {
       if (sameIndex) {
         final innerNode = cell.getNode(left.index);
         if (left.position != innerNode.beginPosition ||

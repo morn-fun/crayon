@@ -23,7 +23,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   final ValueGetter<EditorContext> contextGetter;
 
   final ValueChanged<BasicCommand> onCommand;
-  final ValueChanged<NodeWithPosition> onOptionalMenu;
+  final ValueChanged<NodeContext> onOptionalMenu;
   final VoidCallback focusCall;
 
   EditorContext get editorContext => contextGetter.call();
@@ -113,7 +113,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onOptionalMenu.call(e.nodeWithPosition);
+        onOptionalMenu.call(e.context);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }
@@ -129,7 +129,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         return ReplaceNode(Replace(
             index, index + 1, [e.current.node], e.current.toCursor(c.index)));
       } on TypingRequiredOptionalMenuException catch (e) {
-        onOptionalMenu.call(e.nodeWithPosition);
+        onOptionalMenu.call(e.context);
         return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
             e.nodeWithPosition.node);
       }

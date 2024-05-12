@@ -212,19 +212,6 @@ class EmptyNodeToSelectAllException implements EditorNodeException {
   String get message => 'the node:$id is empty, to select all';
 }
 
-class GetFromPositionButAcquireMoreNodes implements EditorNodeException {
-  final Type type;
-  final List<EditorNode> nodes;
-  final NodePosition begin;
-  final NodePosition end;
-
-  GetFromPositionButAcquireMoreNodes(
-      this.type, this.nodes, this.begin, this.end);
-
-  String get message =>
-      'get node from position [begin:$begin,  end:$end] in $type, but acquire more nodes:${nodes.length}';
-}
-
 class NodeUnsupportedException implements EditorNodeException {
   final Type type;
   final String operation;

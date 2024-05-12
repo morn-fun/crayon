@@ -12,7 +12,7 @@ NodeWithPosition operateWhileEditing<T extends Intent>(
     TableNode node,
     ValueChanged<ActionContext> onAction) {
   final p = data.position;
-  final cell = node.getCellByPosition(p);
+  final cell = node.getCell(p.cellPosition);
   final context =
       data.context.getChildContext(cell.id)!;
   onAction

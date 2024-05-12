@@ -10,6 +10,7 @@ import 'editor_controller.dart';
 class EntryManager {
   OverlayEntry? _showingEntry;
   MenuType? _lastShowingType;
+  Type? _lastShowingContextType;
 
   final ValueChanged<MenuType>? _onMenuShowing;
   final ValueChanged<MenuType>? _onMenuHide;
@@ -25,6 +26,7 @@ class EntryManager {
     }
     _showingEntry = null;
     _lastShowingType = null;
+    _lastShowingContextType = null;
   }
 
   void _notifyMenuShowing() {
@@ -33,10 +35,11 @@ class EntryManager {
     }
   }
 
-  void showOptionalMenu(
-      EditingOffset offset, OverlayState state, ValueGetter<NodeContext> contextGetter) async {
+  void showOptionalMenu(EditingOffset offset, OverlayState state,
+      ValueGetter<NodeContext> contextGetter) async {
     removeEntry();
     _lastShowingType = MenuType.optional;
+    _lastShowingContextType = contextGetter.call().runtimeType;
     _showingEntry =
         OverlayEntry(builder: (_) => OptionalMenu(offset, contextGetter, this));
     state.insert(_showingEntry!);
@@ -47,6 +50,7 @@ class EntryManager {
       ValueGetter<NodeContext> contextGetter) {
     removeEntry();
     _lastShowingType = MenuType.text;
+    _lastShowingContextType = contextGetter.call().runtimeType;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
               child: TextMenu(contextGetter, info, this),
@@ -57,10 +61,11 @@ class EntryManager {
     _notifyMenuShowing();
   }
 
-  void showLinkMenu(
-      OverlayState state, LinkMenuInfo linkMenuInfo, ValueGetter<NodeContext> contextGetter) {
+  void showLinkMenu(OverlayState state, LinkMenuInfo linkMenuInfo,
+      ValueGetter<NodeContext> contextGetter) {
     removeEntry();
     _lastShowingType = MenuType.text;
+    _lastShowingContextType = contextGetter.call().runtimeType;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
               child: LinkMenu(contextGetter, linkMenuInfo.menuInfo, this,
@@ -77,6 +82,8 @@ class EntryManager {
   }
 
   MenuType? get showingType => _lastShowingType;
+
+  Type? get lastShowingContextType => _lastShowingContextType;
 }
 
 class MenuInfo {
