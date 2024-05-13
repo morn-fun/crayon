@@ -50,12 +50,12 @@ class _TextMenuState extends State<TextMenu> {
   }
 
   void onCursorChanged(BasicCursor cursor) {
+    if (cursor is EditingCursor) {
+      hideMenu();
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
-      if (cursor is EditingCursor) {
-        hideMenu();
-        return;
-      }
       final newTags = nodeContext.tagIntersection(cursor);
       if (!newTags.equalsTo(tagSets)) refresh();
       tagSets = newTags;

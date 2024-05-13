@@ -28,16 +28,18 @@ NodeWithPosition selectAllWhileSelecting(
         final innerNode = cell.getNode(left.index);
         if (left.position != innerNode.beginPosition ||
             right.position != innerNode.endPosition) {
-          return NodeWithPosition(
-            node,
-            SelectingPosition(
-              left.copy(
-                  cursor: (c) =>
-                      EditingCursor(c.index, innerNode.beginPosition)),
-              right.copy(
-                  cursor: (c) => EditingCursor(c.index, innerNode.endPosition)),
-            ),
-          );
+          final ctx = data.context.getChildContext(cell.id)!;
+          final r = innerNode.onSelect(SelectingData(
+              SelectingPosition(left.position, right.position),
+              EventType.selectAll,
+              ctx));
+          final p = r.position;
+          if (p is SelectingPosition) {
+            final rp = SelectingPosition(
+                left.copy(cursor: (c) => EditingCursor(c.index, p.begin)),
+                left.copy(cursor: (c) => EditingCursor(c.index, p.end)));
+            return NodeWithPosition(node, rp);
+          }
         }
       }
       return NodeWithPosition(

@@ -1,11 +1,13 @@
-import '../core/editor_controller.dart';
+import '../extension/node_context.dart';
 import '../node/rich_text/rich_text.dart';
 import 'basic.dart';
 
 BasicCursor? generateSelectingCursor(
-    EditingCursor editingCursor, RichEditorController controller) {
-  final oldCursor = controller.panStartCursor;
-
+  EditingCursor editingCursor,
+  EditingCursor panStartCursor,
+  NodeGetter nodeGetter,
+) {
+  final oldCursor = panStartCursor;
   final index = editingCursor.index;
   final endPosition = editingCursor.position;
   BasicCursor? newCursor;
@@ -14,36 +16,19 @@ BasicCursor? generateSelectingCursor(
     newCursor = SelectingNodeCursor(index, oldCursor.position, endPosition);
   } else {
     newCursor = getSelectingNodesCursor(
-        controller, oldIndex, index, oldCursor.position, endPosition);
+        nodeGetter, oldIndex, index, oldCursor.position, endPosition);
   }
-  // else if (oldCursor is SelectingNodeCursor) {
-  //   final oldIndex = oldCursor.index;
-  //   if (index == oldCursor.index) {
-  //     newCursor = SelectingNodeCursor(index, oldCursor.begin, endPosition);
-  //   } else {
-  //     newCursor = getSelectingNodesCursor(
-  //         controller, oldIndex, index, oldCursor.begin, endPosition);
-  //   }
-  // } else if (oldCursor is SelectingNodesCursor) {
-  //   if (oldCursor.beginIndex == index) {
-  //     newCursor =
-  //         SelectingNodeCursor(index, oldCursor.beginPosition, endPosition);
-  //   } else {
-  //     newCursor = getSelectingNodesCursor(controller, oldCursor.beginIndex,
-  //         index, oldCursor.beginPosition, endPosition);
-  //   }
-  // }
   return newCursor;
 }
 
 BasicCursor<NodePosition>? getSelectingNodesCursor(
-    RichEditorController controller,
+    NodeGetter nodeGetter,
     int oldIndex,
     int newIndex,
     NodePosition oldPosition,
     NodePosition newPosition) {
-  final oldNode = controller.getNode(oldIndex);
-  final node = controller.getNode(newIndex);
+  final oldNode = nodeGetter.call(oldIndex);
+  final node = nodeGetter.call(newIndex);
   bool isOldNodeInLower = newIndex > oldIndex;
 
   BasicCursor newCursor;

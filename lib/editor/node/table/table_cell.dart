@@ -225,5 +225,5 @@ class TableCellNodeContext extends NodeContext {
   void onCursorOffset(CursorOffset o) => cursorOffset.call(o);
 
   @override
-  void onPanUpdate(EditingCursor cursor) => onPan.call(cursor);
+  void onPanUpdate(EditingCursor cursor) => onPan(cursor);
 }

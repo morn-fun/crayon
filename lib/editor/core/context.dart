@@ -118,7 +118,8 @@ class EditorContext extends NodeContext {
 
   @override
   void onPanUpdate(EditingCursor cursor) {
-    final c = generateSelectingCursor(cursor, controller);
+    final c = generateSelectingCursor(
+        cursor, controller.panStartCursor, (i) => controller.getNode(i));
     if (c != null) controller.updateCursor(c);
   }
 

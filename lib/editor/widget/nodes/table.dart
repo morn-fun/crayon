@@ -44,6 +44,7 @@ class _RichTableState extends State<RichTable> {
 
   int get index => widget.param.index;
 
+  final ValueNotifier<bool> operatorShowerNotifier = ValueNotifier(false);
   final ValueNotifier<double?> heightNotifier = ValueNotifier(null);
   final ValueNotifier<List<double>> heightsNotifier = ValueNotifier([]);
   final ValueNotifier<_MouseState?> mouseNotifier = ValueNotifier(null);
@@ -52,8 +53,6 @@ class _RichTableState extends State<RichTable> {
   late ListenerCollection localListeners;
 
   final LayerLink layerLink = LayerLink();
-
-  final operatorSize = 10.0;
 
   @override
   void initState() {
@@ -152,9 +151,11 @@ class _RichTableState extends State<RichTable> {
     if (box == null) return;
     final heights = List.of(heightsNotifier.value);
     final widths = List.of(node.widths);
-    final lastCellPosition = box.getCellPosition(o.beginOffset, heights, widths);
+    final lastCellPosition =
+        box.getCellPosition(o.beginOffset, heights, widths);
     final cellPosition = box.getCellPosition(o.globalOffset, heights, widths);
-    logger.i('last:$lastCellPosition,  current:$cellPosition,  global:${o.globalOffset}');
+    logger.i(
+        'last:$lastCellPosition,  current:$cellPosition,  global:${o.globalOffset}');
     if (cellPosition == null) return;
     final cell = node.getCell(cellPosition);
     if (lastCellPosition != null) {
@@ -181,10 +182,9 @@ class _RichTableState extends State<RichTable> {
           final globalY = widgetPosition.dy;
           Offset? tapOffset;
           if (p == node.endPosition) {
-            tapOffset =
-                Offset(extra.dx, globalY + box.size.height - operatorSize);
+            tapOffset = Offset(extra.dx, globalY + box.size.height);
           } else if (p == node.beginPosition) {
-            tapOffset = Offset(extra.dx, globalY + operatorSize);
+            tapOffset = Offset(extra.dx, globalY);
           }
           if (tapOffset == null) return;
           listeners.notifyGestures(TapGestureState(tapOffset));
@@ -211,6 +211,13 @@ class _RichTableState extends State<RichTable> {
       default:
         break;
     }
+  }
+
+  void toggleShowerNotifier(bool show) {
+    if (!mounted) return;
+    final v = operatorShowerNotifier.value;
+    if (v == show) return;
+    operatorShowerNotifier.value = show;
   }
 
   bool containsOffset(Offset global) =>
@@ -261,83 +268,86 @@ class _RichTableState extends State<RichTable> {
     final table = node.table;
     final wholeContain = node.wholeContain(position);
     final tableBorderWidth = 1.0;
+    final operatorSize = 16.0;
     final nodeContext = ShareEditorContextWidget.of(context)!.context;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Stack(
-        children: [
-          CompositedTransformTarget(
-            link: layerLink,
-            child: Container(
-              alignment: Alignment.topLeft,
-              padding: EdgeInsets.only(
-                  left: operatorSize, top: operatorSize, bottom: operatorSize),
+      child: MouseRegion(
+        onHover: (d) => toggleShowerNotifier(true),
+        onExit: (d) => toggleShowerNotifier(false),
+        child: Stack(
+          children: [
+            CompositedTransformTarget(
+              link: layerLink,
               child: Container(
-                foregroundDecoration: wholeContain
-                    ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
-                    : null,
-                child: Table(
-                  key: key,
-                  columnWidths: widthsMap,
-                  border: TableBorder.all(width: tableBorderWidth),
-                  children: List.generate(table.length, (r) {
-                    final cellList = table[r];
-                    return TableRow(
-                        children: List.generate(cellList.length, (c) {
-                      return Builder(builder: (context) {
-                        final cellIndex = CellPosition(r, c);
-                        final cell = cellList.getCell(c);
-                        BasicCursor? cursor;
-                        if (wholeContain) {
-                          cursor = null;
-                        } else {
-                          cursor = cell.getCursor(position, cellIndex);
-                        }
-                        return Stack(
-                          children: [
-                            RichTableCell(
-                              key: ValueKey(cell.id),
-                              cursor: cursor,
-                              listeners: localListeners,
-                              cell: cell,
-                              cellIndex: cellIndex,
-                              param: widget.param,
-                              context: nodeContext,
-                              node: node,
-                            ),
-                            ValueListenableBuilder(
-                                valueListenable: heightsNotifier,
-                                builder: (ctx, heights, child) {
-                                  final w = widths[c];
-                                  if (heights.length <= r) {
+                alignment: Alignment.topLeft,
+                child: Container(
+                  foregroundDecoration: wholeContain
+                      ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
+                      : null,
+                  padding: EdgeInsets.only(
+                      right: operatorSize,
+                      top: operatorSize,
+                      bottom: operatorSize),
+                  child: Table(
+                    key: key,
+                    columnWidths: widthsMap,
+                    border: TableBorder.all(width: tableBorderWidth),
+                    children: List.generate(table.length, (r) {
+                      final cellList = table[r];
+                      return TableRow(
+                          children: List.generate(cellList.length, (c) {
+                        return Builder(builder: (context) {
+                          final cellIndex = CellPosition(r, c);
+                          final cell = cellList.getCell(c);
+                          BasicCursor? cursor;
+                          if (wholeContain) {
+                            cursor = null;
+                          } else {
+                            cursor = cell.getCursor(position, cellIndex);
+                          }
+                          return Stack(
+                            children: [
+                              RichTableCell(
+                                key: ValueKey(cell.id),
+                                cursor: cursor,
+                                listeners: localListeners,
+                                cell: cell,
+                                cellIndex: cellIndex,
+                                param: widget.param,
+                                context: nodeContext,
+                                node: node,
+                              ),
+                              ValueListenableBuilder(
+                                  valueListenable: heightsNotifier,
+                                  builder: (ctx, heights, child) {
+                                    final w = widths[c];
+                                    if (heights.length <= r) {
+                                      return Container(width: w);
+                                    }
+                                    final h = heights[r];
+                                    if (cell.wholeSelected(cursor)) {
+                                      return Container(
+                                          height: h,
+                                          width: w,
+                                          color: Colors.blue.withOpacity(0.5));
+                                    }
                                     return Container(width: w);
-                                  }
-                                  final h = heights[r];
-                                  if (cell.wholeSelected(cursor)) {
-                                    return Container(
-                                        height: h,
-                                        width: w,
-                                        color: Colors.blue.withOpacity(0.5));
-                                  }
-                                  return Container(width: w);
-                                }),
-                          ],
-                        );
-                      });
-                    }));
-                  }),
+                                  }),
+                            ],
+                          );
+                        });
+                      }));
+                    }),
+                  ),
                 ),
               ),
             ),
-          ),
-          ValueListenableBuilder(
-              valueListenable: heightNotifier,
-              builder: (ctx, height, c) {
-                if (height == null) return Container();
-                return Padding(
-                  padding:
-                      EdgeInsets.only(left: operatorSize, top: operatorSize),
-                  child: Row(
+            ValueListenableBuilder(
+                valueListenable: heightNotifier,
+                builder: (ctx, height, c) {
+                  if (height == null) return Container();
+                  return Row(
                       children: List.generate(widths.length, (index) {
                     var left = widths[index];
                     final w = 5.0;
@@ -411,36 +421,72 @@ class _RichTableState extends State<RichTable> {
                             }),
                       ),
                     );
-                  })),
-                );
-              }),
-          ValueListenableBuilder(
-              valueListenable: heightsNotifier,
-              builder: (ctx, heights, c) {
-                return Padding(
-                  padding: EdgeInsets.only(top: operatorSize),
-                  child: TableRowOperator(
-                    heights: heights,
-                    onSelect: (i) {
-                      final cellList = node.table[i];
-                      nodeContext.onCursor(SelectingNodeCursor(
-                          index,
-                          TablePosition(
-                              CellPosition(i, 0), cellList.first.beginCursor),
-                          TablePosition(CellPosition(i, cellList.length - 1),
-                              cellList.last.endCursor)));
-                    },
-                    onAdd: (i) {
-                      final newNode = node.insertRows(i, [
-                        TableCellList(List.generate(
-                            node.columnCount, (index) => tc.TableCell.empty()))
-                      ]);
-                      nodeContext.onNode(newNode, index);
-                    },
-                  ),
-                );
-              })
-        ],
+                  }));
+                }),
+            ValueListenableBuilder(
+                valueListenable: operatorShowerNotifier,
+                builder: (context, v, c) {
+                  if (!v) return Container();
+                  return ValueListenableBuilder(
+                      valueListenable: heightsNotifier,
+                      builder: (ctx, heights, c) {
+                        return TableOperator(
+                          iconSize: operatorSize,
+                          heights: heights,
+                          selectedRow: node.wholeContainsRow(position),
+                          selectedColumn: node.wholeContainsColumn(position),
+                          onColumnAdd: (i) {
+                            final newNode = node.insertColumns(i, [
+                              TableCellList(List.generate(node.rowCount,
+                                  (index) => tc.TableCell.empty()))
+                            ], [
+                              node.initWidth
+                            ]);
+                            nodeContext.onNode(newNode, index);
+                          },
+                          onColumnDelete: (i){
+                            final newNode = node.removeColumns(i, i + 1);
+                            nodeContext.onNode(newNode, index);
+                          },
+                          onColumnSelected: (i) {
+                            final beginPosition = CellPosition(0, i);
+                            final beginCell = node.getCell(beginPosition);
+                            final endPosition =
+                                CellPosition(node.table.length - 1, i);
+                            final endCell = node.getCell(endPosition);
+                            nodeContext.onCursor(SelectingNodeCursor(
+                                index,
+                                TablePosition(
+                                    beginPosition, beginCell.beginCursor),
+                                TablePosition(endPosition, endCell.endCursor)));
+                          },
+                          onRowSelected: (i) {
+                            final cellList = node.table[i];
+                            nodeContext.onCursor(SelectingNodeCursor(
+                                index,
+                                TablePosition(CellPosition(i, 0),
+                                    cellList.first.beginCursor),
+                                TablePosition(
+                                    CellPosition(i, cellList.length - 1),
+                                    cellList.last.endCursor)));
+                          },
+                          onRowAdd: (i) {
+                            final newNode = node.insertRows(i, [
+                              TableCellList(List.generate(node.columnCount,
+                                  (index) => tc.TableCell.empty()))
+                            ]);
+                            nodeContext.onNode(newNode, index);
+                          },
+                          onRowDelete: (i) {
+                            final newNode = node.removeRows(i, i + 1);
+                            nodeContext.onNode(newNode, index);
+                          },
+                          widths: widths,
+                        );
+                      });
+                }),
+          ],
+        ),
       ),
     );
   }

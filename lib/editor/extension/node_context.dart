@@ -59,12 +59,13 @@ extension NodeContextExtension on NodeContext {
     int i = 0;
     while (i < list.length && basicSets.isNotEmpty) {
       final node = list[i];
-      if (node is! RichTextNode) continue;
-      int j = 0;
-      while (j < node.spans.length && basicSets.isNotEmpty) {
-        final span = node.spans[j];
-        basicSets = basicSets.intersection(span.tags);
-        j++;
+      if (node is RichTextNode) {
+        int j = 0;
+        while (j < node.spans.length && basicSets.isNotEmpty) {
+          final span = node.spans[j];
+          basicSets = basicSets.intersection(span.tags);
+          j++;
+        }
       }
       i++;
     }

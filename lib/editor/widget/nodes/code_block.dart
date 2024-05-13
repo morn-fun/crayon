@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 
+import '../../../../editor/extension/render_box.dart';
 import 'package:flutter/material.dart';
 import 'package:highlight/languages/all.dart';
 
@@ -47,6 +48,8 @@ class _CodeBlockState extends State<CodeBlock> {
 
   ListenerCollection get listeners => nodeContext.listeners;
 
+  ListenerCollection localListeners = ListenerCollection();
+
   List<String> get codes => node.codes;
 
   Offset lastEditOffset = Offset.zero;
@@ -66,21 +69,40 @@ class _CodeBlockState extends State<CodeBlock> {
     return key.currentContext?.findRenderObject() as RenderBox?;
   }
 
-  void refresh() {
-    if (mounted) setState(() {});
-  }
-
   @override
   void initState() {
     super.initState();
     listeners.addArrowDelegate(node.id, onArrowAccept);
+    listeners.addGestureListener(node.id, onGesture);
   }
 
   @override
   void dispose() {
     listeners.removeArrowDelegate(node.id, onArrowAccept);
+    listeners.removeGestureListener(node.id, onGesture);
+    localListeners.dispose();
     hoveredNotifier.dispose();
     super.dispose();
+  }
+
+  void onGesture(GestureState s) {
+    final box = renderBox;
+    if (box == null) return;
+    if (s is TapGestureState) {
+      bool contains = box.containsOffset(s.globalOffset);
+      if (contains) localListeners.notifyGestures(s);
+    } else if (s is PanGestureState) {
+      final currentOffsetContains = box.containsOffset(s.globalOffset);
+      if (!currentOffsetContains) return;
+      final beginOffsetContains = box.containsOffset(s.beginOffset);
+      if (beginOffsetContains) {
+        localListeners.notifyGestures(s);
+      } else {
+        final beginHigherThanCurrent = s.beginOffset.dy < s.globalOffset.dy;
+        nodeContext.onPanUpdate(EditingCursor(widgetIndex,
+            beginHigherThanCurrent ? node.endPosition : node.beginPosition));
+      }
+    }
   }
 
   void onArrowAccept(AcceptArrowData data) {
@@ -106,7 +128,7 @@ class _CodeBlockState extends State<CodeBlock> {
             tapOffset = Offset(extra.dx, globalY + h + padding.top);
           }
           if (tapOffset == null) return;
-          listeners.notifyGestures(TapGestureState(tapOffset));
+          localListeners.notifyGestures(TapGestureState(tapOffset));
         } else {
           newPosition = p;
         }
@@ -207,7 +229,7 @@ class _CodeBlockState extends State<CodeBlock> {
                                   nodeContext.onPanUpdate(EditingCursor(
                                       widgetIndex,
                                       CodeBlockPosition(index, o))),
-                              listeners: nodeContext.listeners,
+                              listeners: localListeners,
                               onEditingPosition: (o) => nodeContext.onCursor(
                                   EditingCursor(widgetIndex,
                                       CodeBlockPosition(index, o))),
@@ -314,7 +336,7 @@ class _CodeBlockState extends State<CodeBlock> {
     if (position is! SelectingPosition) return false;
     final left = position.left;
     final right = position.right;
-    if (left == node.beginPosition && right == node.endPosition) {
+    if (left == node.beginPosition || right == node.endPosition) {
       return true;
     }
     return false;

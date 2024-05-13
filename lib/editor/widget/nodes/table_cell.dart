@@ -55,9 +55,13 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void initState() {
-    localListeners = listeners.copy(nodeListeners: {}, nodesListeners: {});
+    localListeners = listeners.copy(
+        nodeListeners: {},
+        nodesListeners: {},
+        gestureListeners: {},
+        arrowDelegates: {});
     cellContext = tc.TableCellNodeContext(
-      cursorGetter: () => cursor ?? NoneCursor(),
+      cursorGetter: () => cursor!,
       cellGetter: () => cell,
       listeners: localListeners,
       onReplace: (v) {

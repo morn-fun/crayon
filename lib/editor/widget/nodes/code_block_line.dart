@@ -9,7 +9,6 @@ import '../../../../editor/extension/render_box.dart';
 import '../../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
-import '../../core/logger.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';
 
@@ -218,7 +217,6 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     if (!containsY(global)) return;
     final box = renderBox;
     if (box == null) return;
-    logger.i('code_block_inline,  onPanUpdate:$global');
     final widgetPosition = box.localToGlobal(Offset.zero);
     final localPosition =
         global.translate(-widgetPosition.dx, -widgetPosition.dy);

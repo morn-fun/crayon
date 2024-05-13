@@ -108,7 +108,7 @@ class TableNode extends EditorNode {
     for (var cellList in table) {
       newTable.add(cellList.replace(begin, end, []));
     }
-    return from(table, newWidths);
+    return from(newTable, newWidths);
   }
 
   TableNode updateCell(int row, int column, ValueCopier<TableCell> copier) {
@@ -169,6 +169,35 @@ class TableNode extends EditorNode {
     left = left as TablePosition;
     right = right as TablePosition;
     return left == beginPosition && right == endPosition;
+  }
+
+  int? wholeContainsRow(SingleNodePosition? position) {
+    if (position is! SelectingPosition) return null;
+    try {
+      final p = position.as<TablePosition>();
+      final lp = p.left.cellPosition;
+      final rp = p.right.cellPosition;
+      final sameRow = lp.row == rp.row;
+      final wholeColumn =
+          lp.column == 0 && rp.column == table[rp.row].length - 1;
+      return (sameRow && wholeColumn) ? lp.row : null;
+    } on TypeError {
+      return null;
+    }
+  }
+
+  int? wholeContainsColumn(SingleNodePosition? position) {
+    if (position is! SelectingPosition) return null;
+    try {
+      final p = position.as<TablePosition>();
+      final lp = p.left.cellPosition;
+      final rp = p.right.cellPosition;
+      final sameColumn = lp.column == rp.column;
+      final wholeRow = lp.row == 0 && rp.row == table.length - 1;
+      return (sameColumn && wholeRow) ? lp.column : null;
+    } on TypeError {
+      return null;
+    }
   }
 
   @override
