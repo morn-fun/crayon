@@ -5,7 +5,6 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
-import '../cursor/node_position.dart';
 
 class SelectAllIntent extends Intent {
   const SelectAllIntent();
@@ -26,9 +25,10 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) {
       try {
-        final r = nodeContext.getNode(cursor.index).onEdit(
-            EditingData(cursor.position, EventType.selectAll, nodeContext));
-        nodeContext.onCursor(r.toCursor(cursor.index));
+        final r = nodeContext
+            .getNode(cursor.index)
+            .onEdit(EditingData(cursor, EventType.selectAll, nodeContext));
+        nodeContext.onCursor(r.cursor);
       } on EmptyNodeToSelectAllException {
         nodeContext.onCursor(nodeContext.selectAllCursor);
       } on NodeUnsupportedException catch (e) {
@@ -41,11 +41,9 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
         nodeContext.onCursor(nodeContext.selectAllCursor);
       } else {
         try {
-          final r = node.onSelect(SelectingData(
-              SelectingPosition(cursor.begin, cursor.end),
-              EventType.selectAll,
-              nodeContext));
-          nodeContext.onCursor(r.toCursor(cursor.index));
+          final r = node.onSelect(
+              SelectingData(cursor, EventType.selectAll, nodeContext));
+          nodeContext.onCursor(r.cursor);
         } on NodeUnsupportedException catch (e) {
           logger.e('$runtimeType, ${e.message}');
         }

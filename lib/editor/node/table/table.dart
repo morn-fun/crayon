@@ -6,8 +6,9 @@ import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
+import '../../core/editor_controller.dart';
+import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
-import '../../cursor/node_position.dart';
 import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
 import '../../widget/nodes/table.dart';
@@ -99,15 +100,21 @@ class TableNode extends EditorNode {
     return from(list, this.widths.insertMore(index, widths));
   }
 
-  TableNode removeRows(int begin, int end) =>
-      from(table.replaceMore(begin, end, []), widths);
+  TableNode removeRows(int begin, int end) {
+    final newTable = table.replaceMore(begin, end, []);
+    if (newTable.isEmpty) throw TableIsEmptyException();
+    return from(newTable, widths);
+  }
 
   TableNode removeColumns(int begin, int end) {
     final newWidths = widths.replaceMore(begin, end, []);
     List<TableCellList> newTable = [];
     for (var cellList in table) {
-      newTable.add(cellList.replace(begin, end, []));
+      final list = cellList.replace(begin, end, []);
+      if (list.length == 0) throw TableIsEmptyException();
+      newTable.add(list);
     }
+    if (newTable.isEmpty) throw TableIsEmptyException();
     return from(newTable, newWidths);
   }
 
@@ -159,22 +166,21 @@ class TableNode extends EditorNode {
     return from(newTable, widths);
   }
 
-  bool wholeContain(SingleNodePosition? position) {
-    if (position is! SelectingPosition) return false;
-    var left = position.left;
-    var right = position.right;
-    if (left is! TablePosition && right is! TablePosition) {
+  bool wholeContain(SingleNodeCursor? cursor) {
+    if (cursor is! SelectingNodeCursor) return false;
+    try {
+      var left = cursor.left;
+      var right = cursor.right;
+      return left == beginPosition && right == endPosition;
+    } on TypeError {
       return false;
     }
-    left = left as TablePosition;
-    right = right as TablePosition;
-    return left == beginPosition && right == endPosition;
   }
 
-  int? wholeContainsRow(SingleNodePosition? position) {
-    if (position is! SelectingPosition) return null;
+  int? wholeContainsRow(SingleNodeCursor? cursor) {
+    if (cursor is! SelectingNodeCursor) return null;
     try {
-      final p = position.as<TablePosition>();
+      final p = cursor.as<TablePosition>();
       final lp = p.left.cellPosition;
       final rp = p.right.cellPosition;
       final sameRow = lp.row == rp.row;
@@ -186,10 +192,10 @@ class TableNode extends EditorNode {
     }
   }
 
-  int? wholeContainsColumn(SingleNodePosition? position) {
-    if (position is! SelectingPosition) return null;
+  int? wholeContainsColumn(SingleNodeCursor? cursor) {
+    if (cursor is! SelectingNodeCursor) return null;
     try {
-      final p = position.as<TablePosition>();
+      final p = cursor.as<TablePosition>();
       final lp = p.left.cellPosition;
       final rp = p.right.cellPosition;
       final sameColumn = lp.column == rp.column;
@@ -198,6 +204,32 @@ class TableNode extends EditorNode {
     } on TypeError {
       return null;
     }
+  }
+
+  TableCellNodeContext buildContext({
+    required CellPosition position,
+    required BasicCursor cursor,
+    required ListenerCollection listeners,
+    required ValueChanged<Replace> onReplace,
+    required ValueChanged<Update> onUpdate,
+    required ValueChanged<BasicCursor> onBasicCursor,
+    required ValueChanged<CursorOffset> cursorOffset,
+    required ValueChanged<EditingCursor> onPan,
+    required ValueChanged<NodeWithIndex> onNodeUpdate,
+  }) {
+    final cell = getCell(position);
+    final childListener =
+        listeners.getListener(cell.id) ?? ListenerCollection();
+    return TableCellNodeContext(
+        cellGetter: () => cell,
+        cursorGetter: () => cursor,
+        onReplace: onReplace,
+        onUpdate: onUpdate,
+        onBasicCursor: onBasicCursor,
+        cursorOffset: cursorOffset,
+        onPan: onPan,
+        onNodeUpdate: onNodeUpdate,
+        listeners: childListener);
   }
 
   @override
@@ -322,22 +354,23 @@ class TableNode extends EditorNode {
       from(table, widths, id: id, depth: depth);
 
   @override
-  NodeWithPosition onEdit(EditingData data) {
+  NodeWithCursor onEdit(EditingData data) {
     final type = data.type;
     final generator = _editingGenerator[type.name];
     if (generator == null) {
-      return NodeWithPosition(this, EditingPosition(data.position));
+      throw NodeUnsupportedException(
+          runtimeType, 'onEdit without generator', data);
     }
     return generator.call(data.as<TablePosition>(), this);
   }
 
   @override
-  NodeWithPosition onSelect(SelectingData data) {
+  NodeWithCursor onSelect(SelectingData data) {
     final type = data.type;
     final generator = _selectingGenerator[type.name];
     if (generator == null) {
-      return NodeWithPosition(
-          this, SelectingPosition(data.position.begin, data.position.end));
+      throw NodeUnsupportedException(
+          runtimeType, 'onSelect without generator', data);
     }
     return generator.call(data.as<TablePosition>(), this);
   }
@@ -372,10 +405,10 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
       e.name, (d, n) => styleRichTextNodeWhileSelecting(d, n, e.name))))
 };
 
-typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
+typedef _NodeGeneratorWhileEditing = NodeWithCursor Function(
     EditingData<TablePosition> data, TableNode node);
 
-typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
+typedef _NodeGeneratorWhileSelecting = NodeWithCursor Function(
     SelectingData<TablePosition> data, TableNode node);
 
 class TableAndWidths {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../command/modification.dart';
 import '../cursor/cursor_generator.dart';
-import '../cursor/node_position.dart';
 
 import '../command/basic.dart';
 import '../cursor/basic.dart';
@@ -85,33 +85,6 @@ class EditorContext extends NodeContext {
       controller.replace(data, record: record);
 
   @override
-  NodeContext? getChildContext(String id) {
-    final set = _id2ContextMap[id];
-    if (set == null || set.isEmpty) return null;
-    return set.first;
-  }
-
-  @override
-  void addContext(String id, NodeContext context) {
-    var set = _id2ContextMap[id];
-    set ??= {};
-    set.add(context);
-    _id2ContextMap[id] = set;
-  }
-
-  @override
-  void removeContext(String id, NodeContext context) {
-    var set = _id2ContextMap[id];
-    set ??= {};
-    set.remove(id);
-    if (set.isEmpty) {
-      _id2ContextMap.remove(id);
-    } else {
-      _id2ContextMap[id] = set;
-    }
-  }
-
-  @override
   void onCursor(BasicCursor cursor) {
     controller.updateCursor(cursor);
   }
@@ -130,10 +103,15 @@ class EditorContext extends NodeContext {
     final offset = editingOff.offset;
     inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
         Rect.fromPoints(
-            offset, editingOff.offset.translate(0, editingOff.height)),
+            offset, offset.translate(0, editingOff.height)),
         Matrix4.translationValues(offset.dx, offset.dy, 0.0)
           ..translate(-offset.dx, -offset.dy),
         Size(400, editingOff.height)));
+  }
+
+  @override
+  void onNode(EditorNode node, int index) {
+    execute(ModifyNodeWithoutChangeCursor(index, node));
   }
 }
 
@@ -152,6 +130,8 @@ abstract class NodeContext {
 
   void onPanUpdate(EditingCursor cursor);
 
+  void onNode(EditorNode node, int index);
+
   void onCursorOffset(CursorOffset o);
 
   UpdateControllerOperation? update(Update data, {bool record = true});
@@ -161,44 +141,18 @@ abstract class NodeContext {
   BasicCursor get selectAllCursor;
 
   ListenerCollection get listeners;
-
-  final Map<String, Set<NodeContext>> _id2ContextMap = {};
-
-  NodeContext? getChildContext(String id) {
-    final set = _id2ContextMap[id];
-    if (set == null || set.isEmpty) return null;
-    return set.first;
-  }
-
-  void addContext(String id, NodeContext context) {
-    var set = _id2ContextMap[id];
-    set ??= {};
-    set.add(context);
-    _id2ContextMap[id] = set;
-  }
-
-  void removeContext(String id, NodeContext context) {
-    var set = _id2ContextMap[id];
-    set ??= {};
-    set.remove(context);
-    if (set.isEmpty) {
-      _id2ContextMap.remove(id);
-    } else {
-      _id2ContextMap[id] = set;
-    }
-  }
 }
 
 class NodeBuildParam {
-  final SingleNodePosition? position;
+  final SingleNodeCursor? cursor;
   final int index;
   final dynamic extras;
 
-  NodeBuildParam({this.position, required this.index, this.extras});
+  NodeBuildParam({this.cursor, required this.index, this.extras});
 
   NodeBuildParam.empty()
       : index = 0,
-        position = null,
+        cursor = null,
         extras = null;
 }
 

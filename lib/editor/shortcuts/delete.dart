@@ -10,7 +10,6 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
-import '../cursor/node_position.dart';
 import '../../../editor/extension/node_context.dart';
 
 class DeleteIntent extends Intent {
@@ -34,9 +33,9 @@ class DeleteAction extends ContextAction<DeleteIntent> {
       final index = cursor.index;
       final node = nodeContext.getNode(index);
       try {
-        final r = node.onEdit(
-            EditingData(cursor.position, EventType.delete, nodeContext));
-        nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
+        final r =
+            node.onEdit(EditingData(cursor, EventType.delete, nodeContext));
+        nodeContext.execute(ModifyNode(r));
       } on DeleteRequiresNewLineException catch (e) {
         logger.e('$runtimeType, ${e.message}');
         if (index == 0) return;
@@ -54,10 +53,10 @@ class DeleteAction extends ContextAction<DeleteIntent> {
               EditingCursor(index - 1, lastNode.endPosition))));
         } on UnableToMergeException catch (e) {
           logger.e('$runtimeType, ${e.message}');
-          nodeContext.execute(ModifyNode(
+          nodeContext.execute(ModifyNode(NodeWithCursor(
+              node,
               SelectingNodeCursor(
-                  index - 1, lastNode.beginPosition, lastNode.endPosition),
-              node));
+                  index - 1, lastNode.beginPosition, lastNode.endPosition))));
         }
       } on DeleteToChangeNodeException catch (e) {
         logger.e('$runtimeType, ${e.message}');
@@ -68,12 +67,10 @@ class DeleteAction extends ContextAction<DeleteIntent> {
       }
     } else if (cursor is SelectingNodeCursor) {
       try {
-        final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end),
-            EventType.delete,
-            nodeContext));
-        nodeContext
-            .execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+        final r = nodeContext
+            .getNode(cursor.index)
+            .onSelect(SelectingData(cursor, EventType.delete, nodeContext));
+        nodeContext.execute(ModifyNode(r));
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }

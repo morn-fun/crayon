@@ -1,12 +1,14 @@
+import 'package:crayon/editor/cursor/basic.dart';
+
 import '../../../cursor/rich_text.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../rich_text.dart';
 
-NodeWithPosition deleteRichTextNodeWhileSelecting(
+NodeWithCursor deleteRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node) {
   final newLeft = node.frontPartNode(data.left);
   final newRight = node.rearPartNode(data.right);
   final newNode = newLeft.merge(newRight);
-  return NodeWithPosition(newNode, EditingPosition(newLeft.endPosition));
+  return NodeWithCursor(
+      newNode, EditingCursor(data.index, newLeft.endPosition));
 }

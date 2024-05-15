@@ -44,13 +44,13 @@ class TestEditorNode extends EditorNode {
   }
 
   @override
-  NodeWithPosition<NodePosition> onEdit(EditingData<NodePosition> data) {
+  NodeWithCursor<NodePosition> onEdit(EditingData<NodePosition> data) {
     // TODO: implement onEdit
     throw UnimplementedError();
   }
 
   @override
-  NodeWithPosition<NodePosition> onSelect(SelectingData<NodePosition> data) {
+  NodeWithCursor<NodePosition> onSelect(SelectingData<NodePosition> data) {
     // TODO: implement onSelect
     throw UnimplementedError();
   }

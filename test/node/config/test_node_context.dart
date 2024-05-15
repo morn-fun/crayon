@@ -5,6 +5,7 @@ import 'package:crayon/editor/core/editor_controller.dart';
 import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 
 class TestNodeContext extends NodeContext{
   @override
@@ -17,10 +18,7 @@ class TestNodeContext extends NodeContext{
   }
 
   @override
-  EditorNode getNode(int index) {
-    // TODO: implement getNode
-    throw UnimplementedError();
-  }
+  EditorNode getNode(int index) => RichTextNode.from([]);
 
   @override
   Iterable<EditorNode> getRange(int begin, int end) {
@@ -30,7 +28,7 @@ class TestNodeContext extends NodeContext{
 
   @override
   // TODO: implement listeners
-  ListenerCollection get listeners => throw UnimplementedError();
+  ListenerCollection get listeners => ListenerCollection();
 
   @override
   // TODO: implement nodes
@@ -65,5 +63,10 @@ class TestNodeContext extends NodeContext{
   UpdateControllerOperation? update(Update data, {bool record = true}) {
     // TODO: implement update
     throw UnimplementedError();
+  }
+
+  @override
+  void onNode(EditorNode node, int index) {
+    // TODO: implement onNode
   }
 }

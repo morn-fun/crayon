@@ -10,7 +10,6 @@ import '../../cursor/rich_text.dart';
 import '../../exception/editor_node.dart';
 import '../../widget/nodes/rich_text.dart';
 import '../basic.dart';
-import '../../cursor/node_position.dart';
 import 'generator/depth.dart';
 import 'generator/paste.dart';
 import 'generator/styles.dart';
@@ -220,7 +219,8 @@ class RichTextNode extends EditorNode {
     }
   }
 
-  NodeWithPosition delete(covariant RichTextNodePosition position) {
+  NodeWithCursor delete(
+      covariant RichTextNodePosition position, int nodeIndex) {
     if (position == beginPosition) {
       throw DeleteRequiresNewLineException(position);
     }
@@ -231,8 +231,8 @@ class RichTextNode extends EditorNode {
       final newSpan = lastSpan.copy(text: (t) => t.removeLast());
       final newOffset = newSpan.text.length;
       final newPosition = RichTextNodePosition(lastIndex, newOffset);
-      return NodeWithPosition(
-          update(lastIndex, newSpan), EditingPosition(newPosition));
+      return NodeWithCursor(
+          update(lastIndex, newSpan), newPosition.toCursor(nodeIndex));
     } else {
       final span = spans[index];
       final text = span.text;
@@ -242,14 +242,14 @@ class RichTextNode extends EditorNode {
       final newPosition = RichTextNodePosition(index, newOffset);
       if (newSpan.isEmpty && index > 0) {
         final lastSpan = spans[lastIndex];
-        return NodeWithPosition(
+        return NodeWithCursor(
             replace(RichTextNodePosition(lastIndex, 0),
                 RichTextNodePosition(index, span.textLength), [lastSpan]),
-            EditingPosition(
-                RichTextNodePosition(lastIndex, lastSpan.textLength)));
+            RichTextNodePosition(lastIndex, lastSpan.textLength)
+                .toCursor(nodeIndex));
       }
-      return NodeWithPosition(
-          update(position.index, newSpan), EditingPosition(newPosition));
+      return NodeWithCursor(
+          update(position.index, newSpan), newPosition.toCursor(nodeIndex));
     }
   }
 
@@ -314,19 +314,20 @@ class RichTextNode extends EditorNode {
       spans[position.index].offset + position.offset;
 
   @override
-  NodeWithPosition onEdit(EditingData data) {
+  NodeWithCursor onEdit(EditingData data) {
     final generator = _editingGenerator[data.type.name];
     if (generator == null) {
-      return NodeWithPosition(this, EditingPosition(data.position));
+      throw NodeUnsupportedException(
+          runtimeType, 'onEdit without generator', data);
     }
     return generator.call(data.as<RichTextNodePosition>(), this);
   }
 
   @override
-  NodeWithPosition onSelect(SelectingData data) {
+  NodeWithCursor onSelect(SelectingData data) {
     final generator = _selectingGenerator[data.type.name];
     if (generator == null) {
-      return NodeWithPosition(this, data.position);
+      return NodeWithCursor(this, data.cursor);
     }
     return generator.call(data.as<RichTextNodePosition>(), this);
   }
@@ -352,7 +353,7 @@ class RichTextNode extends EditorNode {
 }
 
 final _editingGenerator = <String, _NodeGeneratorWhileEditing>{
-  EventType.delete.name: (d, n) => n.delete(d.position),
+  EventType.delete.name: (d, n) => n.delete(d.position, d.index),
   EventType.newline.name: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
   EventType.selectAll.name: (d, n) => selectAllRichTextNodeWhileEditing(d, n),
   EventType.typing.name: (d, n) => typingRichTextNodeWhileEditing(d, n),
@@ -377,10 +378,10 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
       e.name, (d, n) => styleRichTextNodeWhileSelecting(d, n, e.name)))),
 };
 
-typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
+typedef _NodeGeneratorWhileEditing = NodeWithCursor Function(
     EditingData<RichTextNodePosition> data, RichTextNode node);
 
-typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
+typedef _NodeGeneratorWhileSelecting = NodeWithCursor Function(
     SelectingData<RichTextNodePosition> data, RichTextNode node);
 
 abstract class SpanNode {

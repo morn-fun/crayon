@@ -1,15 +1,15 @@
 import '../../../../editor/extension/unmodifiable.dart';
 
+import '../../../cursor/basic.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../code_block.dart';
 
-NodeWithPosition pasteWhileEditing(
+NodeWithCursor pasteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final nodes = data.extras;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
-    return NodeWithPosition(node, EditingPosition(data.position));
+    return NodeWithCursor(node, EditingCursor(data.index, data.position));
   }
   final newCodes = nodes.map((e) => e.text).toList();
   final p = data.position;
@@ -24,16 +24,16 @@ NodeWithPosition pasteWhileEditing(
   final newOffset = newCodes.length == 1 ? p.offset + lastOffset : lastOffset;
   final newPosition =
       CodeBlockPosition(p.index + newCodes.length - 1, newOffset);
-  return NodeWithPosition(newNode, EditingPosition(newPosition));
+  return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
 }
 
-NodeWithPosition pasteWhileSelecting(
+NodeWithCursor pasteWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final nodes = data.extras;
-  final p = data.position;
+  final p = data.cursor;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
     final newNode = node.replace(p.left, p.right, []);
-    return NodeWithPosition(newNode, EditingPosition(p.left));
+    return NodeWithCursor(newNode, EditingCursor(data.index, p.left));
   }
   final newCodes = nodes.map((e) => e.text).toList();
   bool oneLine = newCodes.length == 1;
@@ -41,5 +41,5 @@ NodeWithPosition pasteWhileSelecting(
   final newPosition = CodeBlockPosition(p.left.index + newCodes.length - 1,
       oneLine ? p.left.offset + lastCodeLength : lastCodeLength);
   final newNode = node.replace(p.left, p.right, newCodes);
-  return NodeWithPosition(newNode, EditingPosition(newPosition));
+  return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
 }

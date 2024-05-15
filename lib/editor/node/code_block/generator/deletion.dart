@@ -1,18 +1,19 @@
 import '../../../../editor/extension/string.dart';
 import '../../../../editor/extension/unmodifiable.dart';
 
+import '../../../cursor/basic.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../../rich_text/rich_text.dart';
 import '../code_block.dart';
 
-NodeWithPosition deleteWhileEditing(
+NodeWithCursor deleteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
+  final nodeIndex = data.index;
   if (p == node.beginPosition.copy(atEdge: false) || p == node.beginPosition) {
-    return NodeWithPosition(
-        node, SelectingPosition(node.beginPosition, node.endPosition));
+    return NodeWithCursor(node,
+        SelectingNodeCursor(nodeIndex, node.beginPosition, node.endPosition));
   }
   final index = p.index;
   final lastIndex = index - 1;
@@ -20,26 +21,28 @@ NodeWithPosition deleteWhileEditing(
   if (p.offset == 0) {
     final code = codes[lastIndex] + codes[index];
     final newPosition = CodeBlockPosition(lastIndex, codes[lastIndex].length);
-    return NodeWithPosition(
+    return NodeWithCursor(
         node.from(codes.replaceMore(lastIndex, lastIndex + 2, [code])),
-        EditingPosition(newPosition));
+        EditingCursor(nodeIndex, newPosition));
   } else {
     final codeWithOffset = codes[index].removeAt(p.offset);
-    final newPosition =
-        EditingPosition(CodeBlockPosition(index, codeWithOffset.offset));
-    return NodeWithPosition(
-        node.from(codes.replaceOne(index, [codeWithOffset.text])), newPosition);
+    return NodeWithCursor(
+        node.from(codes.replaceOne(index, [codeWithOffset.text])),
+        EditingCursor(
+            nodeIndex, CodeBlockPosition(index, codeWithOffset.offset)));
   }
 }
 
-NodeWithPosition deleteWhileSelecting(
+NodeWithCursor deleteWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   if (data.left == node.beginPosition && data.right == node.endPosition) {
     final newNode = RichTextNode.from([]);
-    return NodeWithPosition(newNode, EditingPosition(newNode.beginPosition));
+    return NodeWithCursor(
+        newNode, EditingCursor(data.index, newNode.beginPosition));
   }
   final newLeft = node.frontPartNode(data.left);
   final newRight = node.rearPartNode(data.right);
   final newNode = newLeft.merge(newRight);
-  return NodeWithPosition(newNode, EditingPosition(newLeft.endPosition));
+  return NodeWithCursor(
+      newNode, EditingCursor(data.index, newLeft.endPosition));
 }

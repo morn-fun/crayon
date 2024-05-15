@@ -6,18 +6,17 @@ import '../../core/context.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
-import '../../cursor/node_position.dart';
 import '../../node/basic.dart';
 import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class LinkMenu extends StatefulWidget {
-  final ValueGetter<NodeContext> contextGetter;
+  final NodeContext nodeContext;
   final MenuInfo info;
   final EntryManager manager;
   final UrlWithPosition? urlWithPosition;
 
-  const LinkMenu(this.contextGetter, this.info, this.manager,
+  const LinkMenu(this.nodeContext, this.info, this.manager,
       {super.key, this.urlWithPosition});
 
   @override
@@ -25,7 +24,7 @@ class LinkMenu extends StatefulWidget {
 }
 
 class _LinkMenuState extends State<LinkMenu> {
-  NodeContext get nodeContext => widget.contextGetter.call();
+  NodeContext get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
@@ -124,10 +123,7 @@ class _LinkMenuState extends State<LinkMenu> {
                             final r = nodeContext
                                 .getNode(linkCursor.index)
                                 .onSelect(SelectingData(
-                                    SelectingPosition(
-                                        linkCursor.begin, linkCursor.end),
-                                    EventType.link,
-                                    nodeContext,
+                                    linkCursor, EventType.link, nodeContext,
                                     extras: StyleExtra(false, {})));
                             nodeContext.execute(ModifyNodeWithoutChangeCursor(
                                 linkCursor.index, r.node));
@@ -147,11 +143,8 @@ class _LinkMenuState extends State<LinkMenu> {
                                       widget.urlWithPosition!.cursor;
                                   final r = nodeContext
                                       .getNode(linkCursor.index)
-                                      .onSelect(SelectingData(
-                                          SelectingPosition(
-                                              linkCursor.begin, linkCursor.end),
-                                          EventType.link,
-                                          nodeContext,
+                                      .onSelect(SelectingData(linkCursor,
+                                          EventType.link, nodeContext,
                                           extras:
                                               StyleExtra(true, {'url': text})));
                                   nodeContext.execute(

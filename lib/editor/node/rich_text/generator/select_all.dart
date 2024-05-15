@@ -1,10 +1,10 @@
+import '../../../cursor/basic.dart';
 import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../rich_text.dart';
 
-NodeWithPosition selectAllRichTextNodeWhileEditing(
+NodeWithCursor selectAllRichTextNodeWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {
   int i = 0;
   final spans = node.spans;
@@ -14,15 +14,15 @@ NodeWithPosition selectAllRichTextNodeWhileEditing(
     i++;
   }
   if (i < spans.length) {
-    return NodeWithPosition(
-        node, SelectingPosition(node.beginPosition, node.endPosition));
+    return NodeWithCursor(node,
+        SelectingNodeCursor(data.index, node.beginPosition, node.endPosition));
   } else {
     throw EmptyNodeToSelectAllException(node.id);
   }
 }
 
-NodeWithPosition selectAllRichTextNodeWhileSelecting(
+NodeWithCursor selectAllRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node) {
-  return NodeWithPosition(
-      node, SelectingPosition(node.beginPosition, node.endPosition));
+  return NodeWithCursor(node,
+      SelectingNodeCursor(data.index, node.beginPosition, node.endPosition));
 }

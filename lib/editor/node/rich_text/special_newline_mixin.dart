@@ -5,7 +5,7 @@ import 'rich_text.dart';
 
 mixin SpecialNewlineMixin on RichTextNode {
   @override
-  NodeWithPosition onEdit(EditingData data) {
+  NodeWithCursor onEdit(EditingData data) {
     final d = data.as<RichTextNodePosition>();
     final type = d.type;
     if (type == EventType.newline) {
@@ -26,7 +26,7 @@ mixin SpecialNewlineMixin on RichTextNode {
   }
 
   @override
-  NodeWithPosition onSelect(SelectingData data) {
+  NodeWithCursor onSelect(SelectingData data) {
     final d = data.as<RichTextNodePosition>();
     final type = data.type;
     if (type == EventType.newline) {

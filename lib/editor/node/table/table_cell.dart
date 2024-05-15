@@ -11,7 +11,6 @@ import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
-import '../../cursor/node_position.dart';
 import '../../cursor/table.dart';
 import '../basic.dart';
 
@@ -81,27 +80,23 @@ class TableCell {
     return false;
   }
 
-  BasicCursor? getCursor(SingleNodePosition? position, CellPosition cellIndex) {
+  BasicCursor? getCursor(SingleNodeCursor? cursor, CellPosition cellIndex) {
     final row = cellIndex.row;
     final column = cellIndex.column;
-    final p = position;
-    if (p == null) return null;
-    if (p is EditingPosition) {
-      var pTable = p.position;
-      if (pTable is! TablePosition) return null;
-      if (pTable.column == column && pTable.row == row) {
-        return pTable.cursor;
+    final c = cursor;
+    if (c == null) return null;
+    if (c is EditingCursor) {
+      final editingCursor = c.as<TablePosition>();
+      if (editingCursor.position.column == column &&
+          editingCursor.position.row == row) {
+        return editingCursor.position.cursor;
       }
       return null;
     }
-    if (p is SelectingPosition) {
-      var left = p.left;
-      var right = p.right;
-      if (left is! TablePosition && right is! TablePosition) {
-        return null;
-      }
-      left = left as TablePosition;
-      right = right as TablePosition;
+    if (c is SelectingNodeCursor) {
+      final selectingCursor = c.as<TablePosition>();
+      final left = selectingCursor.left;
+      final right = selectingCursor.right;
       bool containsSelf =
           cellIndex.containSelf(left.cellPosition, right.cellPosition);
       if (!containsSelf) return null;
@@ -156,13 +151,14 @@ class TableCell {
 class TableCellNodeContext extends NodeContext {
   final ValueGetter<BasicCursor> cursorGetter;
   final ValueGetter<TableCell> cellGetter;
-  @override
-  final ListenerCollection listeners;
   final ValueChanged<Replace> onReplace;
   final ValueChanged<Update> onUpdate;
   final ValueChanged<BasicCursor> onBasicCursor;
   final ValueChanged<CursorOffset> cursorOffset;
   final ValueChanged<EditingCursor> onPan;
+  final ValueChanged<NodeWithIndex> onNodeUpdate;
+  @override
+  final ListenerCollection listeners;
 
   TableCellNodeContext({
     required this.cursorGetter,
@@ -173,6 +169,7 @@ class TableCellNodeContext extends NodeContext {
     required this.onBasicCursor,
     required this.cursorOffset,
     required this.onPan,
+    required this.onNodeUpdate,
   });
 
   final tag = 'TableCellNodeContext';
@@ -226,4 +223,14 @@ class TableCellNodeContext extends NodeContext {
 
   @override
   void onPanUpdate(EditingCursor cursor) => onPan(cursor);
+
+  @override
+  void onNode(EditorNode node, int index) => onNodeUpdate.call(NodeWithIndex(node, index));
+}
+
+class NodeWithIndex{
+  final EditorNode node;
+  final int index;
+
+  NodeWithIndex(this.node, this.index);
 }

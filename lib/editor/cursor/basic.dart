@@ -3,6 +3,8 @@ abstract class BasicCursor<T extends NodePosition> {}
 abstract class NodePosition {
   ///the two compare objects must be same type, or it will throw [NodePositionDifferentException]
   bool isLowerThan(NodePosition other);
+
+  EditingCursor toCursor(int index) => EditingCursor(index, this);
 }
 
 class NoneCursor extends BasicCursor {}
@@ -55,6 +57,10 @@ class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
   T get left => begin.isLowerThan(end) ? begin : end;
 
   T get right => begin.isLowerThan(end) ? end : begin;
+
+  EditingCursor<T> get leftCursor => EditingCursor(index, left);
+
+  EditingCursor<T> get rightCursor => EditingCursor(index, right);
 
   SelectingNodeCursor<E> as<E extends NodePosition>() =>
       SelectingNodeCursor<E>(index, begin as E, end as E);

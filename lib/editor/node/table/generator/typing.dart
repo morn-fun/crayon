@@ -1,42 +1,49 @@
 import '../../../command/selecting/replacement.dart';
 import '../../../core/copier.dart';
 import '../../../cursor/basic.dart';
-import '../../../cursor/node_position.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
 import '../../../exception/menu.dart';
 import '../../basic.dart';
 import '../table.dart';
+import 'common.dart';
 
-NodeWithPosition typingWhileEditing(
+NodeWithCursor typingWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   final p = data.position;
   final cell = node.getCell(p.cellPosition);
   final index = p.index;
   final innerNode = cell.getNode(index);
-  late NodeWithPosition nodeWithPosition;
+  late NodeWithCursor nodeWithCursor;
+  final ctx = buildTableCellNodeContext(
+      data.context, p.cellPosition, node, p.cursor, data.index);
   try {
-    nodeWithPosition = innerNode.onEdit(EditingData(
-        p.position, EventType.typing, data.context.getChildContext(cell.id)!,
-        extras: data.extras));
+    nodeWithCursor = innerNode.onEdit(
+        EditingData(p.cursor, EventType.typing, ctx, extras: data.extras));
   } on TypingToChangeNodeException catch (e) {
-    nodeWithPosition = e.current;
+    nodeWithCursor = e.current;
   } on TypingRequiredOptionalMenuException catch (e) {
-    nodeWithPosition = e.nodeWithPosition;
+    nodeWithCursor = e.nodeWithCursor;
     throw TypingRequiredOptionalMenuException(
-        NodeWithPosition(
+        NodeWithCursor(
             node.updateCell(p.row, p.column,
-                to(cell.update(index, to(nodeWithPosition.node)))),
-            p.cursorToPosition(nodeWithPosition.position.toCursor(index))),
+                to(cell.update(index, to(nodeWithCursor.node)))),
+            EditingCursor(
+                data.index,
+                TablePosition(
+                    p.cellPosition, nodeWithCursor.cursor as EditingCursor))),
         e.context);
   }
-  return NodeWithPosition(
+  return NodeWithCursor(
       node.updateCell(
-          p.row, p.column, to(cell.update(index, to(nodeWithPosition.node)))),
-      p.cursorToPosition(nodeWithPosition.position.toCursor(index)));
+          p.row, p.column, to(cell.update(index, to(nodeWithCursor.node)))),
+      EditingCursor(
+          data.index,
+          TablePosition(
+              p.cellPosition, nodeWithCursor.cursor as EditingCursor)));
 }
 
-NodeWithPosition typingWhileSelecting(
+NodeWithCursor typingWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -50,34 +57,43 @@ NodeWithPosition typingWhileSelecting(
       if (sameIndex) {
         final index = left.index;
         final innerNode = cell.getNode(index);
-        late NodeWithPosition nodeWithPosition;
+        late NodeWithCursor nodeWithCursor;
         try {
-          nodeWithPosition = innerNode.onSelect(SelectingData(
-              SelectingPosition(left.position, right.position),
+          final c =
+              SelectingNodeCursor(left.index, left.position, right.position);
+          nodeWithCursor = innerNode.onSelect(SelectingData(
+              c,
               EventType.typing,
-              data.context.getChildContext(cell.id)!,
+              buildTableCellNodeContext(
+                  data.context, left.cellPosition, node, c, data.index),
               extras: data.extras));
         } on TypingToChangeNodeException catch (e) {
-          nodeWithPosition = e.current;
+          nodeWithCursor = e.current;
         } on TypingRequiredOptionalMenuException catch (e) {
-          nodeWithPosition = e.nodeWithPosition;
+          nodeWithCursor = e.nodeWithCursor;
           throw TypingRequiredOptionalMenuException(
-              NodeWithPosition(
+              NodeWithCursor(
                   node.updateCell(left.row, left.column,
-                      to(cell.update(index, to(nodeWithPosition.node)))),
-                  left.cursorToPosition(
-                      nodeWithPosition.position.toCursor(index))),
+                      to(cell.update(index, to(nodeWithCursor.node)))),
+                  EditingCursor(
+                      data.index,
+                      TablePosition(left.cellPosition,
+                          nodeWithCursor.cursor as EditingCursor))),
               e.context);
         }
-        return NodeWithPosition(
+        return NodeWithCursor(
             node.updateCell(left.row, left.column,
-                to(cell.update(index, to(nodeWithPosition.node)))),
-            left.cursorToPosition(nodeWithPosition.position.toCursor(index)));
+                to(cell.update(index, to(nodeWithCursor.node)))),
+            EditingCursor(
+                data.index,
+                TablePosition(left.cellPosition,
+                    nodeWithCursor.cursor as EditingCursor)));
       }
       BasicCursor cursor = SelectingNodesCursor(
           EditingCursor(left.index, left.position),
           EditingCursor(right.index, right.position));
-      final context = data.context.getChildContext(cell.id)!;
+      final context = buildTableCellNodeContext(
+          data.context, left.cellPosition, node, cursor, data.index);
       context.execute(ReplaceSelectingNodes(
           cursor as SelectingNodesCursor, EventType.typing, data.extras));
       throw NodeUnsupportedException(
@@ -85,5 +101,5 @@ NodeWithPosition typingWhileSelecting(
     }
   }
   throw NodeUnsupportedException(
-      node.runtimeType, 'increaseDepthWhileSelecting', data.position);
+      node.runtimeType, 'increaseDepthWhileSelecting', data.cursor);
 }

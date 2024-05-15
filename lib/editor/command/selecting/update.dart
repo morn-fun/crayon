@@ -4,7 +4,6 @@ import '../../core/editor_controller.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
 import '../../node/basic.dart';
-import '../../cursor/node_position.dart';
 import '../basic.dart';
 
 class UpdateSelectingNodes implements BasicCommand {
@@ -20,33 +19,33 @@ class UpdateSelectingNodes implements BasicCommand {
     final right = cursor.right;
     List<EditorNode> nodes = [];
     int i = left.index;
-    late SingleNodePosition leftPosition;
-    late SingleNodePosition rightPosition;
+    late SingleNodeCursor leftPosition;
+    late SingleNodeCursor rightPosition;
     while (i <= right.index) {
       final node = nodeContext.getNode(i);
-      NodeWithPosition np;
+      NodeWithCursor nc;
       if (i == left.index) {
-        np = node.onSelect(SelectingData(
-            SelectingPosition(left.position, node.endPosition),
+        nc = node.onSelect(SelectingData(
+            SelectingNodeCursor(i, left.position, node.endPosition),
             type,
             nodeContext,
             extras: extra));
-        leftPosition = np.position;
+        leftPosition = nc.cursor;
       } else if (i == right.index) {
-        np = node.onSelect(SelectingData(
-            SelectingPosition(node.beginPosition, right.position),
+        nc = node.onSelect(SelectingData(
+            SelectingNodeCursor(i, node.beginPosition, right.position),
             type,
             nodeContext,
             extras: extra));
-        rightPosition = np.position;
+        rightPosition = nc.cursor;
       } else {
-        np = node.onSelect(SelectingData(
-            SelectingPosition(node.beginPosition, node.endPosition),
+        nc = node.onSelect(SelectingData(
+            SelectingNodeCursor(i, node.beginPosition, node.endPosition),
             type,
             nodeContext,
             extras: extra));
       }
-      nodes.add(np.node);
+      nodes.add(nc.node);
       i++;
     }
     final newCursor = SelectingNodesCursor(
@@ -58,10 +57,10 @@ class UpdateSelectingNodes implements BasicCommand {
         .replace(Replace(left.index, right.index + 1, nodes, newCursor));
   }
 
-  NodePosition _getBySingleNodePosition(SingleNodePosition p, bool isLeft) {
-    if (p is EditingPosition) {
+  NodePosition _getBySingleNodePosition(SingleNodeCursor p, bool isLeft) {
+    if (p is EditingCursor) {
       return p.position;
-    } else if (p is SelectingPosition) {
+    } else if (p is SelectingNodeCursor) {
       return isLeft ? p.left : p.right;
     }
     throw NodePositionInvalidException('do not match for 【$p】');

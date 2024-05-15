@@ -169,7 +169,7 @@ class UnablePasteException implements EditorNodeException {
 
 class TypingToChangeNodeException implements EditorNodeException {
   final RichTextNode old;
-  final NodeWithPosition current;
+  final NodeWithCursor current;
 
   TypingToChangeNodeException(this.old, this.current);
 
@@ -219,5 +219,8 @@ class NodeUnsupportedException implements EditorNodeException {
 
   NodeUnsupportedException(this.type, this.operation, this.extras);
 
-  String get message => 'the node $type not supported for $operation with $extras';
+  String get message =>
+      'the node $type not supported for $operation with $extras';
 }
+
+class TableIsEmptyException implements EditorNodeException {}

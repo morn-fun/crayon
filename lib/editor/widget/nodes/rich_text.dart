@@ -11,7 +11,6 @@ import '../../extension/offset.dart';
 import '../../extension/painter.dart';
 import '../../core/logger.dart';
 import '../../cursor/rich_text.dart';
-import '../../cursor/node_position.dart';
 import '../../node/rich_text/rich_text.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
@@ -49,7 +48,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   RichTextNode get node => widget.richTextNode;
 
   late ValueNotifier<RichTextNodePosition?> editingCursorNotifier;
-  late ValueNotifier<SelectingPosition?> selectingCursorNotifier;
+  late ValueNotifier<SelectingNodeCursor?> selectingCursorNotifier;
   late ValueNotifier<RichTextNode> nodeChangedNotifier;
 
   double recordWidth = 0;
@@ -58,11 +57,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   NodeContext get nodeContext => widget.context;
 
-  SingleNodePosition? get nodePosition => widget.param.position;
+  SingleNodeCursor? get nodeCursor => widget.param.cursor;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
-  int get widgetIndex => widget.param.index;
+  int get nodeIndex => widget.param.index;
 
   RenderBox? get renderBox {
     if (!mounted) return null;
@@ -72,8 +71,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void initState() {
     super.initState();
-    editingCursorNotifier = ValueNotifier(editorPosition(nodePosition));
-    selectingCursorNotifier = ValueNotifier(selectingPosition(nodePosition));
+    editingCursorNotifier = ValueNotifier(editorPosition(nodeCursor));
+    selectingCursorNotifier = ValueNotifier(selectingPosition(nodeCursor));
     nodeChangedNotifier = ValueNotifier(node);
     painter = TextPainter(
       text: textSpan,
@@ -81,7 +80,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       textDirection: TextDirection.ltr,
     );
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      notifyEditingOffset(editorPosition(nodePosition));
+      notifyEditingOffset(editorPosition(nodeCursor));
     });
     listeners.addGestureListener(node.id, onGesture);
     listeners.addArrowDelegate(node.id, onArrowAccept);
@@ -181,7 +180,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
     }
     if (newPosition != null) {
-      nodeContext.onCursor(EditingCursor(widgetIndex, newPosition));
+      nodeContext.onCursor(EditingCursor(nodeIndex, newPosition));
       notifyEditingOffset(newPosition);
     }
   }
@@ -197,7 +196,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     final textPosition = painter.getPositionForOffset(localPosition);
     final richPosition = node.getPositionByOffset(textPosition.offset);
-    nodeContext.onPanUpdate(EditingCursor(widgetIndex, richPosition));
+    nodeContext.onPanUpdate(EditingCursor(nodeIndex, richPosition));
   }
 
   void confirmToShowTextMenu(Offset offset) {
@@ -215,8 +214,12 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
-    entryManager.showTextMenu(Overlay.of(context),
-        MenuInfo(offset, node.id, h, layerLink), () => nodeContext);
+    final box = renderBox;
+    if (box == null) return;
+    entryManager.showTextMenu(
+        Overlay.of(context),
+        MenuInfo(box.globalToLocal(offset), node.id, h, layerLink),
+        nodeContext);
   }
 
   bool containsOffset(Offset global) =>
@@ -227,18 +230,16 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     painter.layout(maxWidth: recordWidth);
   }
 
-  RichTextNodePosition? editorPosition(SingleNodePosition? position) {
-    final p = position;
-    if (p is EditingPosition) {
-      return p.as<RichTextNodePosition>().position;
+  RichTextNodePosition? editorPosition(SingleNodeCursor? cursor) {
+    if (cursor is EditingCursor && cursor.position is RichTextNodePosition) {
+      return cursor.position as RichTextNodePosition;
     }
     return null;
   }
 
-  SelectingPosition? selectingPosition(SingleNodePosition? position) {
-    final p = position;
-    if (p is SelectingPosition) {
-      return p;
+  SelectingNodeCursor? selectingPosition(SingleNodeCursor? cursor) {
+    if (cursor is SelectingNodeCursor) {
+      return cursor;
     }
     return null;
   }
@@ -246,25 +247,36 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void didUpdateWidget(covariant RichTextWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldListeners = oldWidget.context.listeners;
+    if (oldListeners.hashCode != listeners.hashCode) {
+      oldListeners.removeGestureListener(node.id, onGesture);
+      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
+      listeners.addGestureListener(node.id, onGesture);
+      listeners.addArrowDelegate(node.id, onArrowAccept);
+      logger.i(
+          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    }
     if (node != oldWidget.richTextNode) {
       nodeChangedNotifier.value = node;
       updatePainter();
     }
-    if (nodePosition != oldWidget.param.position) {
-      final position = editorPosition(nodePosition);
+    if (nodeCursor != oldWidget.param.cursor) {
+      final position = editorPosition(nodeCursor);
       editingCursorNotifier.value = position;
-      selectingCursorNotifier.value = selectingPosition(nodePosition);
+      selectingCursorNotifier.value = selectingPosition(nodeCursor);
       notifyEditingOffset(position);
     }
   }
 
   void notifyEditingOffset(RichTextNodePosition? position) {
+    final box = renderBox;
+    if (box == null) return;
     if (position != null && y != null) {
       final offset = painter.getOffsetFromTextOffset(position.offset);
-      nodeContext.onCursorOffset(CursorOffset(
-          widgetIndex,
-          EditingOffset(Offset(offset.dx, offset.dy + y!),
-              getCurrentCursorHeight(position), node.id)));
+      final newOffset =
+          Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
+      nodeContext.onCursorOffset(CursorOffset(nodeIndex,
+          EditingOffset(newOffset, getCurrentCursorHeight(position), node.id)));
     }
   }
 
@@ -345,7 +357,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                       valueListenable: nodeChangedNotifier,
                       builder: (ctx, v, c) {
                         return Stack(
-                            children: painter.buildLinkGestures(v,
+                            children: painter.buildLinkGestures(nodeIndex, v,
                                 onEnter: (o, s, p) {
                           final url = s.attributes['url'] ?? '';
                           final h = painter.getFullHeightForCaret(
@@ -355,18 +367,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                           if (entryManager == null) return;
                           entryManager.showLinkMenu(
                               Overlay.of(context),
-                              LinkMenuInfo(
-                                  MenuInfo(o, node.id, h, layerLink),
-                                  UrlWithPosition(
-                                      url, p.toCursor(widgetIndex))), () {
-                            final c =
-                                ShareEditorContextWidget.of(context)?.context;
-                            if (c != null) {
-                              return c;
-                            }
-                            entryManager.removeEntry();
-                            return nodeContext;
-                          });
+                              LinkMenuInfo(MenuInfo(o, node.id, h, layerLink),
+                                  UrlWithPosition(url, p)),
+                              nodeContext);
                         }, onExit: (e) {
                           final entryManager = editorContext?.entryManager;
                           entryManager?.removeEntry();
@@ -401,9 +404,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
-    nodeContext.onCursor(EditingCursor(widgetIndex, richPosition));
+    nodeContext.onCursor(EditingCursor(nodeIndex, richPosition));
     nodeContext.onCursorOffset(CursorOffset(
-        widgetIndex,
+        nodeIndex,
         EditingOffset(
             globalOffset, getCurrentCursorHeight(richPosition), node.id)));
   }

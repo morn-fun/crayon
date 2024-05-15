@@ -7,13 +7,13 @@ import '../../basic.dart';
 import '../table.dart';
 import 'common.dart';
 
-NodeWithPosition newlineWhileEditing(
+NodeWithCursor newlineWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   return operateWhileEditing(
       data, node, (c) => NewlineAction(c).invoke(NewlineIntent()));
 }
 
-NodeWithPosition newlineWhileSelecting(
+NodeWithCursor newlineWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -24,7 +24,8 @@ NodeWithPosition newlineWhileSelecting(
         ? SelectingNodeCursor(left.index, left.position, right.position)
         : SelectingNodesCursor(left.cursor, right.cursor);
     if (!cell.wholeSelected(cursor)) {
-      final context = data.context.getChildContext(cell.id)!;
+      final context = buildTableCellNodeContext(
+          data.context, left.cellPosition, node, cursor, data.index);
       NewlineAction(ActionContext(context, () => cursor))
           .invoke(NewlineIntent());
       throw NodeUnsupportedException(
@@ -32,5 +33,5 @@ NodeWithPosition newlineWhileSelecting(
     }
   }
   throw NodeUnsupportedException(
-      node.runtimeType, 'newlineWhileSelecting', data.position);
+      node.runtimeType, 'newlineWhileSelecting', data.cursor);
 }

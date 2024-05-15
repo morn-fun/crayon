@@ -4,7 +4,6 @@ import '../core/context.dart';
 import '../core/listener_collection.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
-import '../cursor/node_position.dart';
 
 @immutable
 abstract class EditorNode {
@@ -27,9 +26,9 @@ abstract class EditorNode {
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});
 
-  NodeWithPosition onEdit(EditingData data);
+  NodeWithCursor onEdit(EditingData data);
 
-  NodeWithPosition onSelect(SelectingData data);
+  NodeWithCursor onSelect(SelectingData data);
 
   /// if cannot merge, this function will throw an exception [UnableToMergeException]
   EditorNode merge(EditorNode other, {String? newId});
@@ -52,28 +51,37 @@ String get randomNodeId => _uuid.v1();
 
 const _uuid = Uuid();
 
-class NodeWithPosition<T extends NodePosition> {
+class NodeWithCursor<T extends NodePosition> {
   final EditorNode node;
-  final SingleNodePosition<T> position;
+  final SingleNodeCursor<T> cursor;
 
-  NodeWithPosition(this.node, this.position);
+  NodeWithCursor(this.node, this.cursor);
 
-  SingleNodeCursor<T> toCursor(int index) => position.toCursor(index);
+  int get index => cursor.index;
+
+  @override
+  String toString() {
+    return 'NodeWithCursor{node: $node, cursor: $cursor}';
+  }
 }
 
 class EditingData<T extends NodePosition> {
-  final T position;
+  final EditingCursor<T> cursor;
   final EventType type;
   final NodeContext context;
   final dynamic extras;
 
-  EditingData(this.position, this.type, this.context, {this.extras});
+  EditingData(this.cursor, this.type, this.context, {this.extras});
 
   EditingData<E> as<E extends NodePosition>({NodeContext? context}) =>
-      EditingData<E>(position as E, type, context ?? this.context,
+      EditingData<E>(cursor.as<E>(), type, context ?? this.context,
           extras: extras);
 
   ListenerCollection get listeners => context.listeners;
+
+  T get position => cursor.position;
+
+  int get index => cursor.index;
 
   @override
   String toString() {
@@ -82,27 +90,29 @@ class EditingData<T extends NodePosition> {
 }
 
 class SelectingData<T extends NodePosition> {
-  final SelectingPosition<T> position;
+  final SelectingNodeCursor<T> cursor;
   final EventType type;
   final NodeContext context;
 
   final dynamic extras;
 
-  SelectingData(this.position, this.type, this.context, {this.extras});
+  SelectingData(this.cursor, this.type, this.context, {this.extras});
 
-  T get left => position.left;
+  T get left => cursor.left;
 
-  T get right => position.right;
+  T get right => cursor.right;
+
+  int get index => cursor.index;
 
   ListenerCollection get listeners => context.listeners;
 
   SelectingData<E> as<E extends NodePosition>({NodeContext? context}) =>
-      SelectingData<E>(position.as<E>(), type, context ?? this.context,
+      SelectingData<E>(cursor.as<E>(), type, context ?? this.context,
           extras: extras);
 
   @override
   String toString() {
-    return 'SelectingData{position: $position, type: $type, extras: $extras}';
+    return 'SelectingData{cursor: $cursor, type: $type, extras: $extras}';
   }
 }
 

@@ -9,7 +9,6 @@ import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../exception/menu.dart';
 import '../node/basic.dart';
-import '../cursor/node_position.dart';
 import 'context.dart';
 import 'editor_controller.dart';
 import 'logger.dart';
@@ -104,34 +103,34 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     if (c is EditingCursor) {
       final node = controller.getNode(c.index);
       try {
-        final newOne = node.onEdit(EditingData(
-            c.position, EventType.typing, editorContext,
-            extras: delta));
-        return ModifyNode(newOne.toCursor(c.index), newOne.node);
+        final newOne = node.onEdit(
+            EditingData(c, EventType.typing, editorContext, extras: delta));
+        return ModifyNode(newOne);
       } on TypingToChangeNodeException catch (e) {
         final index = c.index;
-        return ReplaceNode(Replace(
-            index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+        return ReplaceNode(
+            Replace(index, index + 1, [e.current.node], e.current.cursor));
       } on TypingRequiredOptionalMenuException catch (e) {
         onOptionalMenu.call(e.context);
-        return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
-            e.nodeWithPosition.node);
+        return ModifyNode(e.nodeWithCursor);
+      } on NodeUnsupportedException catch (e) {
+        logger.e('error while typing: ${e.message}');
       }
     } else if (c is SelectingNodeCursor) {
       final node = controller.getNode(c.index);
       try {
-        final newOne = node.onSelect(SelectingData(
-            SelectingPosition(c.begin, c.end), EventType.typing, editorContext,
-            extras: delta));
-        return ModifyNode(newOne.toCursor(c.index), newOne.node);
+        final newOne = node.onSelect(
+            SelectingData(c, EventType.typing, editorContext, extras: delta));
+        return ModifyNode(newOne);
       } on TypingToChangeNodeException catch (e) {
         final index = c.index;
-        return ReplaceNode(Replace(
-            index, index + 1, [e.current.node], e.current.toCursor(c.index)));
+        return ReplaceNode(
+            Replace(index, index + 1, [e.current.node], e.current.cursor));
       } on TypingRequiredOptionalMenuException catch (e) {
         onOptionalMenu.call(e.context);
-        return ModifyNode(e.nodeWithPosition.position.toCursor(c.index),
-            e.nodeWithPosition.node);
+        return ModifyNode(e.nodeWithCursor);
+      } on NodeUnsupportedException catch (e) {
+        logger.e('error while typing: ${e.message}');
       }
     } else if (c is SelectingNodesCursor) {
       return ReplaceSelectingNodes(c, EventType.typing, delta);

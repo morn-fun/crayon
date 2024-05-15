@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:crayon/editor/node/table/table_cell.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
@@ -21,12 +22,12 @@ import '../../node/table/table.dart';
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final EditingOffset offset;
-  final ValueGetter<NodeContext> contextGetter;
+  final NodeContext nodeContext;
   final EntryManager manager;
 
   const OptionalMenu(
     this.offset,
-    this.contextGetter,
+    this.nodeContext,
     this.manager, {
     super.key,
   });
@@ -38,7 +39,7 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   EditingOffset get offset => widget.offset;
 
-  NodeContext get nodeContext => widget.contextGetter.call();
+  NodeContext get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
@@ -51,11 +52,15 @@ class _OptionalMenuState extends State<OptionalMenu> {
   final list = List.of(defaultMenus);
 
   late String nodeId;
+  late EditingCursor cursor;
+  late RichTextNode node;
 
   @override
   void initState() {
-    final cursor = nodeContext.cursor as EditingCursor;
-    nodeId = nodeContext.getNode(cursor.index).id;
+    cursor = nodeContext.cursor as EditingCursor;
+    node = nodeContext.getNode(cursor.index) as RichTextNode;
+    nodeId = node.id;
+    if(nodeContext is TableCellNodeContext) list.removeWhere((e) => e.text == '表格');
     listeners.addCursorChangedListener(_onCursorChanged);
     listeners.addNodeChangedListener(nodeId, _onNodeChanged);
     listeners.addOptionalMenuListener(_onOptionalMenuSelected);
@@ -76,24 +81,41 @@ class _OptionalMenuState extends State<OptionalMenu> {
       hideMenu();
       return;
     }
-    final node = nodeContext.getNode(cursor.index);
-    if (node.id != nodeId) return;
-    checkText(node, cursor);
+    if(cursor.position is! RichTextNodePosition){
+      hideMenu();
+      return;
+    }
+    this.cursor = cursor;
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      checkText(node, cursor);
+    });
   }
 
-  void hideMenu() => manager.removeEntry();
+  void hideMenu() {
+    if (mounted) manager.removeEntry();
+  }
 
   void _onNodeChanged(EditorNode node) {
-    final c = nodeContext.cursor;
-    if (c is! EditingCursor) return;
-    checkText(node, c);
+    if(node.id != nodeId) hideMenu();
+    if(node is! RichTextNode) {
+      hideMenu();
+      return;
+    }
+    this.node = node;
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      final c = cursor;
+      checkText(node, c);
+    });
   }
 
-  void checkText(EditorNode node, EditingCursor<NodePosition> cursor) {
+  void checkText(EditorNode node, EditingCursor cursor) {
     if (isCheckingText) return;
     isCheckingText = true;
     final text = node.frontPartNode(cursor.position).text;
-    if (!text.contains('/')) hideMenu();
+    if (!text.contains('/')) {
+      hideMenu();
+      return;
+    }
     isCheckingText = false;
   }
 

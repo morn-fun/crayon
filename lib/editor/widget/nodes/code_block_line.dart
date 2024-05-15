@@ -9,6 +9,7 @@ import '../../../../editor/extension/render_box.dart';
 import '../../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
+import '../../core/logger.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';
 
@@ -87,6 +88,13 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   @override
   void didUpdateWidget(covariant CodeBlockLine oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldListeners = oldWidget.controller.listeners;
+    if (oldListeners.hashCode != listeners.hashCode) {
+      oldListeners.removeGestureListener(nodeId, onGesture);
+      listeners.addGestureListener(nodeId, onGesture);
+      logger.i(
+          'CodeBlockLine onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    }
     bool needRefresh = false;
     if (codeNotifier.value != code) {
       codeNotifier.value = code;

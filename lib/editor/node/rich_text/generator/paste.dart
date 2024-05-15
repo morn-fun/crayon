@@ -2,21 +2,23 @@ import '../../../cursor/basic.dart';
 import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../rich_text.dart';
 
-NodeWithPosition pasteWhileEditing(
+NodeWithCursor pasteWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {
   final extra = data.extras as List<EditorNode>, position = data.position;
-  if (extra.isEmpty) return NodeWithPosition(node, EditingPosition(position));
+  if (extra.isEmpty) {
+    throw NodeUnsupportedException(
+        node.runtimeType, 'pasteWhileEditing without extra', data);
+  }
   final leftNode = node.frontPartNode(position),
       rightNode = node.rearPartNode(position, newId: randomNodeId);
   if (extra.length == 1) {
     try {
       final newLeftNode = leftNode.merge(extra.first);
       final newNode = newLeftNode.merge(rightNode);
-      return NodeWithPosition(
-          newNode, EditingPosition(newLeftNode.endPosition));
+      return NodeWithCursor(
+          newNode, EditingCursor(data.index, newLeftNode.endPosition));
     } on UnableToMergeException {
       throw UnablePasteException([leftNode, extra.first, rightNode],
           node.runtimeType, rightNode.beginPosition);
@@ -44,19 +46,21 @@ NodeWithPosition pasteWhileEditing(
   }
 }
 
-NodeWithPosition pasteWhileSelecting(
+NodeWithCursor pasteWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node) {
-  final extra = data.extras as List<EditorNode>, position = data.position;
-  var result = NodeWithPosition(node, EditingPosition(data.left));
-  if (extra.isEmpty) return result;
+  final extra = data.extras as List<EditorNode>, position = data.cursor;
+  if (extra.isEmpty) {
+    throw NodeUnsupportedException(
+        node.runtimeType, 'pasteWhileSelecting without extra', data);
+  }
   final leftNode = node.frontPartNode(position.left),
       rightNode = node.rearPartNode(position.right, newId: randomNodeId);
   if (extra.length == 1) {
     try {
       final newLeftNode = leftNode.merge(extra.first);
       final newNode = newLeftNode.merge(rightNode);
-      return NodeWithPosition(
-          newNode, EditingPosition(newLeftNode.endPosition));
+      return NodeWithCursor(
+          newNode, EditingCursor(position.index, newLeftNode.endPosition));
     } on UnableToMergeException {
       throw UnablePasteException([leftNode, extra.first, rightNode],
           node.runtimeType, rightNode.beginPosition);

@@ -30,7 +30,7 @@ class TableOperator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = Theme.of(context).dividerColor.withOpacity(0.5);
+    final dividerColor = Theme.of(context).dividerColor.withOpacity(0.2);
     final yList = [0.0];
     final xList = [0.0];
     for (var h in heights) {
@@ -58,14 +58,13 @@ class TableOperator extends StatelessWidget {
                     onRowSelected?.call(index);
                   },
                   child: Container(
-                    width: iconSize,
                     height: height,
                     color: selected ? Colors.blue : dividerColor,
                     child: Center(
                         child: GestureDetector(
                       onTap: () => onRowDelete?.call(index),
                       child:
-                          Icon(Icons.delete, size: iconSize, color: Colors.red),
+                          Icon(Icons.remove_rounded, size: iconSize, color: Colors.red),
                     )),
                   ),
                 ),
@@ -87,7 +86,7 @@ class TableOperator extends StatelessWidget {
                 child: Icon(
                   Icons.add,
                   size: iconSize,
-                  color: Colors.green,
+                  color: Colors.blue,
                 ),
               ),
             ),
@@ -117,7 +116,7 @@ class TableOperator extends StatelessWidget {
                         child: GestureDetector(
                       onTap: () => onColumnDelete?.call(index),
                       child:
-                          Icon(Icons.delete, size: iconSize, color: Colors.red),
+                          Icon(Icons.remove_rounded, size: iconSize, color: Colors.red),
                     )),
                   ),
                 ),
@@ -139,7 +138,7 @@ class TableOperator extends StatelessWidget {
                 child: Icon(
                   Icons.add,
                   size: iconSize,
-                  color: Colors.green,
+                  color: Colors.blue,
                 ),
               ),
             ),

@@ -35,25 +35,24 @@ class EntryManager {
     }
   }
 
-  void showOptionalMenu(EditingOffset offset, OverlayState state,
-      ValueGetter<NodeContext> contextGetter) async {
+  void showOptionalMenu(
+      EditingOffset offset, OverlayState state, NodeContext context) async {
     removeEntry();
     _lastShowingType = MenuType.optional;
-    _lastShowingContextType = contextGetter.call().runtimeType;
+    _lastShowingContextType = context.runtimeType;
     _showingEntry =
-        OverlayEntry(builder: (_) => OptionalMenu(offset, contextGetter, this));
+        OverlayEntry(builder: (_) => OptionalMenu(offset, context, this));
     state.insert(_showingEntry!);
     _notifyMenuShowing();
   }
 
-  void showTextMenu(OverlayState state, MenuInfo info,
-      ValueGetter<NodeContext> contextGetter) {
+  void showTextMenu(OverlayState state, MenuInfo info, NodeContext context) {
     removeEntry();
     _lastShowingType = MenuType.text;
-    _lastShowingContextType = contextGetter.call().runtimeType;
+    _lastShowingContextType = context.runtimeType;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: TextMenu(contextGetter, info, this),
+              child: TextMenu(context, info, this),
               showWhenUnlinked: false,
               link: info.layerLink,
             ));
@@ -61,14 +60,14 @@ class EntryManager {
     _notifyMenuShowing();
   }
 
-  void showLinkMenu(OverlayState state, LinkMenuInfo linkMenuInfo,
-      ValueGetter<NodeContext> contextGetter) {
+  void showLinkMenu(
+      OverlayState state, LinkMenuInfo linkMenuInfo, NodeContext context) {
     removeEntry();
     _lastShowingType = MenuType.text;
-    _lastShowingContextType = contextGetter.call().runtimeType;
+    _lastShowingContextType = context.runtimeType;
     _showingEntry = OverlayEntry(
         builder: (_) => CompositedTransformFollower(
-              child: LinkMenu(contextGetter, linkMenuInfo.menuInfo, this,
+              child: LinkMenu(context, linkMenuInfo.menuInfo, this,
                   urlWithPosition: linkMenuInfo.urlWithPosition),
               showWhenUnlinked: false,
               link: linkMenuInfo.link,

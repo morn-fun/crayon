@@ -108,12 +108,8 @@ extension NodeContextExtension on NodeContext {
 
   int get nodeLength => nodes.length;
 
-  void onNodeWithPosition(NodeWithPosition p, int index) {
-    execute(ModifyNode(p.position.toCursor(index), p.node));
-  }
-
-  void onNode(EditorNode node, int index) {
-    execute(ModifyNodeWithoutChangeCursor(index, node));
+  void onNodeWithCursor(NodeWithCursor p) {
+    execute(ModifyNode(p));
   }
 }
 

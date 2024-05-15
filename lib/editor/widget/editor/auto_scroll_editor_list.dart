@@ -201,7 +201,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
               itemBuilder: (ctx, index) {
                 final current = nodes[index];
                 return Container(
-                  key: ValueKey(current.id),
+                  key: ValueKey('${current.id}-${current.runtimeType}'),
                   padding: EdgeInsets.only(left: current.depth * 12, right: 4),
                   child: StatefulLifecycleWidget(
                     onInit: () {
@@ -218,8 +218,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                         editorContext,
                         NodeBuildParam(
                           index: index,
-                          position:
-                              cursor.getSingleNodePosition(index, current),
+                          cursor:
+                              cursor.getSingleNodeCursor(index, current),
                         ),
                         context),
                   ),

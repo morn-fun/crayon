@@ -16,7 +16,7 @@ abstract class HeadNode extends RichTextNode {
   final double fontSize;
 
   @override
-  NodeWithPosition onEdit(EditingData data) {
+  NodeWithCursor onEdit(EditingData data) {
     final d = data.as<RichTextNodePosition>();
     final type = d.type;
     if (type == EventType.newline) {
@@ -31,7 +31,7 @@ abstract class HeadNode extends RichTextNode {
   }
 
   @override
-  NodeWithPosition<NodePosition> onSelect(SelectingData<NodePosition> data) {
+  NodeWithCursor<NodePosition> onSelect(SelectingData<NodePosition> data) {
     final d = data.as<RichTextNodePosition>();
     final type = d.type;
     if (type == EventType.newline) {

@@ -1,24 +1,26 @@
 import 'dart:math';
 
+import 'package:crayon/editor/cursor/basic.dart';
+
 import '../../../cursor/code_block.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../code_block.dart';
 import '../../../../editor/extension/unmodifiable.dart';
 
-NodeWithPosition increaseDepthWhileEditing(
+NodeWithCursor increaseDepthWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final codes = node.codes;
   final code = _tab + codes[p.index];
-  return NodeWithPosition(
+  return NodeWithCursor(
     node.from(codes.replaceOne(p.index, [code])),
-    EditingPosition(CodeBlockPosition(p.index, p.offset + _tab.length)),
+    EditingCursor(
+        data.index, CodeBlockPosition(p.index, p.offset + _tab.length)),
   );
 }
 
-NodeWithPosition decreaseDepthWhileEditing(
+NodeWithCursor decreaseDepthWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final codes = node.codes;
@@ -30,21 +32,22 @@ NodeWithPosition decreaseDepthWhileEditing(
     removeOffset = code.length - newCode.length;
     code = newCode;
   }
-  return NodeWithPosition(
+  return NodeWithCursor(
     node.from(codes.replaceOne(p.index, [code])),
-    EditingPosition(CodeBlockPosition(p.index, p.offset - removeOffset)),
+    EditingCursor(
+        data.index, CodeBlockPosition(p.index, p.offset - removeOffset)),
   );
 }
 
-NodeWithPosition increaseDepthWhileSelecting(
+NodeWithCursor increaseDepthWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
   final extras = data.extras;
-  final p = data.position;
+  final p = data.cursor;
   if (node.isAllSelected(p) && extras is int) {
     if (extras < node.depth) {
       throw DepthNotAbleToIncreaseException(node.runtimeType, node.depth);
     }
-    return NodeWithPosition(node.newNode(depth: node.depth + 1), p);
+    return NodeWithCursor(node.newNode(depth: node.depth + 1), p);
   }
   final codes = node.codes;
   final leftIndex = p.left.index;
@@ -54,16 +57,17 @@ NodeWithPosition increaseDepthWhileSelecting(
   for (var c in selectingCodes) {
     newCodes.add(_tab + c);
   }
-  return NodeWithPosition(
+  return NodeWithCursor(
       node.from(codes.replaceMore(leftIndex, rightIndex + 1, newCodes)),
-      SelectingPosition(
+      SelectingNodeCursor(
+          data.index,
           CodeBlockPosition(leftIndex, p.left.offset + _tab.length),
           CodeBlockPosition(rightIndex, p.right.offset + _tab.length)));
 }
 
-NodeWithPosition decreaseDepthWhileSelecting(
+NodeWithCursor decreaseDepthWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
-  final p = data.position;
+  final p = data.cursor;
   if (node.isAllSelected(p)) {
     throw DepthNeedDecreaseMoreException(node.runtimeType, node.depth);
   }
@@ -84,9 +88,10 @@ NodeWithPosition decreaseDepthWhileSelecting(
   final rightOffset = p.right.offset;
   final newNode =
       node.from(codes.replaceMore(leftIndex, rightIndex + 1, newCodes));
-  return NodeWithPosition(
+  return NodeWithCursor(
       newNode,
-      SelectingPosition(
+      SelectingNodeCursor(
+          data.index,
           CodeBlockPosition(leftIndex,
               min(max(leftOffset - leftDecreaseOffset, 0), leftOffset)),
           CodeBlockPosition(rightIndex,

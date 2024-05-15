@@ -2,13 +2,16 @@ import '../../../../editor/extension/cursor.dart';
 import '../../../../editor/node/table/table_cell_list.dart';
 
 import '../../../core/copier.dart';
-import '../../../cursor/node_position.dart';
+import '../../../core/logger.dart';
+import '../../../cursor/basic.dart';
 import '../../../cursor/table.dart';
+import '../../../exception/editor_node.dart';
 import '../../basic.dart';
 import '../table.dart';
 import '../table_cell.dart';
+import 'common.dart';
 
-NodeWithPosition styleRichTextNodeWhileSelecting(
+NodeWithCursor styleRichTextNodeWhileSelecting(
     SelectingData<TablePosition> data, TableNode node, String tag) {
   final left = data.left;
   final right = data.right;
@@ -19,22 +22,29 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
     List<TableCell> cells = [];
     for (var j = 0; j < cellList.length; ++j) {
       var cell = cellList.getCell(j);
-      final ctx = data.context.getChildContext(cell.id)!;
       final cellIndex = CellPosition(i, j);
-      final cursor = cell.getCursor(data.position, cellIndex);
+      final cursor = cell.getCursor(data.cursor, cellIndex);
       if (cursor == null) {
         cells.add(cell);
       } else {
+        final ctx = buildTableCellNodeContext(
+            data.context, cellIndex, node, cursor, data.index);
         List<EditorNode> nodes = [];
         for (var k = 0; k < cell.length; ++k) {
           var innerNode = cell.getNode(k);
-          final p = cursor.getSingleNodePosition(k, innerNode);
-          if (p == null || p is EditingPosition) {
+          final p = cursor.getSingleNodeCursor(k, innerNode);
+          if (p == null || p is EditingCursor) {
             nodes.add(innerNode);
           } else {
-            final r = innerNode
-                .onSelect(SelectingData(p as SelectingPosition, type, ctx));
-            nodes.add(r.node);
+            try {
+              final r = innerNode
+                  .onSelect(SelectingData(p as SelectingNodeCursor, type, ctx));
+              nodes.add(r.node);
+            } on NodeUnsupportedException catch (e) {
+              nodes.add(innerNode);
+              logger.e(
+                  '${node.runtimeType} styleRichTextNodeWhileSelecting error: ${e.message}');
+            }
           }
         }
         cells.add(cell.copy(nodes: nodes));
@@ -45,8 +55,10 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
   final newNode = node.from(cellLists, node.widths);
   final leftCell = newNode.getCell(left.cellPosition);
   final rightCell = newNode.getCell(right.cellPosition);
-  return NodeWithPosition(
+  return NodeWithCursor(
       newNode,
-      SelectingPosition(left.copy(cursor: to(leftCell.beginCursor)),
+      SelectingNodeCursor(
+          data.index,
+          left.copy(cursor: to(leftCell.beginCursor)),
           right.copy(cursor: to(rightCell.endCursor))));
 }

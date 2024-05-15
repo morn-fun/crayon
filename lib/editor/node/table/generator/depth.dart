@@ -7,19 +7,19 @@ import '../../basic.dart';
 import '../table.dart';
 import 'common.dart';
 
-NodeWithPosition increaseDepthWhileEditing(
+NodeWithCursor increaseDepthWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   return operateWhileEditing(
       data, node, (c) => TabAction(c).invoke(TabIntent()));
 }
 
-NodeWithPosition decreaseDepthWhileEditing(
+NodeWithCursor decreaseDepthWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   return operateWhileEditing(
       data, node, (c) => ShiftTabAction(c).invoke(ShiftTabIntent()));
 }
 
-NodeWithPosition increaseDepthWhileSelecting(
+NodeWithCursor increaseDepthWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -29,7 +29,7 @@ NodeWithPosition increaseDepthWhileSelecting(
     if (lastDepth < depth) {
       throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
     }
-    return NodeWithPosition(node.newNode(depth: depth + 1), data.position);
+    return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
   }
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);
@@ -38,17 +38,18 @@ NodeWithPosition increaseDepthWhileSelecting(
         ? SelectingNodeCursor(left.index, left.position, right.position)
         : SelectingNodesCursor(left.cursor, right.cursor);
     if (!cell.wholeSelected(cursor)) {
-      final context = data.context.getChildContext(cell.id)!;
+      final context = buildTableCellNodeContext(
+          data.context, left.cellPosition, node, cursor, data.index);
       TabAction(ActionContext(context, () => cursor)).invoke(TabIntent());
       throw NodeUnsupportedException(
           node.runtimeType, 'operateWhileEditing', null);
     }
   }
   throw NodeUnsupportedException(
-      node.runtimeType, 'increaseDepthWhileSelecting', data.position);
+      node.runtimeType, 'increaseDepthWhileSelecting', data.cursor);
 }
 
-NodeWithPosition decreaseDepthWhileSelecting(
+NodeWithCursor decreaseDepthWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -58,7 +59,7 @@ NodeWithPosition decreaseDepthWhileSelecting(
     if (lastDepth < depth) {
       throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
     }
-    return NodeWithPosition(node.newNode(depth: depth + 1), data.position);
+    return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
   }
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);
@@ -67,7 +68,8 @@ NodeWithPosition decreaseDepthWhileSelecting(
         ? SelectingNodeCursor(left.index, left.position, right.position)
         : SelectingNodesCursor(left.cursor, right.cursor);
     if (!cell.wholeSelected(cursor)) {
-      final context = data.context.getChildContext(cell.id)!;
+      final context = buildTableCellNodeContext(
+          data.context, left.cellPosition, node, cursor, data.index);
       ShiftTabAction(ActionContext(context, () => cursor))
           .invoke(ShiftTabIntent());
       throw NodeUnsupportedException(
@@ -75,5 +77,5 @@ NodeWithPosition decreaseDepthWhileSelecting(
     }
   }
   throw NodeUnsupportedException(
-      node.runtimeType, 'decreaseDepthWhileSelecting', data.position);
+      node.runtimeType, 'decreaseDepthWhileSelecting', data.cursor);
 }

@@ -1,11 +1,11 @@
 import '../../../../editor/extension/unmodifiable.dart';
 
+import '../../../cursor/basic.dart';
 import '../../../cursor/code_block.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../code_block.dart';
 
-NodeWithPosition newlineWhileEditing(
+NodeWithCursor newlineWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final codes = node.codes;
@@ -17,14 +17,16 @@ NodeWithPosition newlineWhileEditing(
   ];
   final newNode = node.from(codes.replaceOne(p.index, newCodes));
   final newPosition = CodeBlockPosition(p.index + 1, tab.length);
-  return NodeWithPosition(newNode, EditingPosition(newPosition));
+  return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
 }
 
-NodeWithPosition newlineWhileSelecting(
+NodeWithCursor newlineWhileSelecting(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
-  final p = data.position;
+  final p = data.cursor;
   final newNode = node.replace(p.left, p.right, []);
-  return newlineWhileEditing(EditingData(p.left, EventType.newline, data.context), newNode);
+  return newlineWhileEditing(
+      EditingData(p.leftCursor, EventType.newline, data.context),
+      newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

@@ -2,7 +2,6 @@ import '../../../editor/extension/node_context.dart';
 
 import '../../../editor/extension/int.dart';
 import '../../core/context.dart';
-import '../../cursor/node_position.dart';
 
 import '../../core/command_invoker.dart';
 import '../../core/editor_controller.dart';
@@ -64,7 +63,7 @@ class DecreaseNodesDepth implements BasicCommand {
     final lastNode = nodeContext.getNode(r);
     try {
       final nodePosition = lastNode.onSelect(SelectingData(
-          SelectingPosition(lastNode.beginPosition, rightCursor.position),
+          SelectingNodeCursor(r, lastNode.beginPosition, rightCursor.position),
           EventType.decreaseDepth,
           nodeContext));
       newNodes.add(nodePosition.node);

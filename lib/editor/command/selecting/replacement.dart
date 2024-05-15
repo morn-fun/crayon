@@ -5,7 +5,6 @@ import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
 import '../../node/basic.dart';
-import '../../cursor/node_position.dart';
 import '../basic.dart';
 
 class ReplaceSelectingNodes implements BasicCommand {
@@ -22,13 +21,13 @@ class ReplaceSelectingNodes implements BasicCommand {
     final leftNode = nodeContext.getNode(left.index);
     final rightNode = nodeContext.getNode(right.index);
     final newLeftNP = leftNode.onSelect(SelectingData(
-        SelectingPosition(left.position, leftNode.endPosition),
+        SelectingNodeCursor(left.index, left.position, leftNode.endPosition),
         type,
         nodeContext,
         extras: extra));
     final newRight =
         rightNode.rearPartNode(right.position, newId: randomNodeId);
-    final newCursor = newLeftNP.position.toCursor(left.index);
+    final newCursor = newLeftNP.cursor;
     try {
       final newNode = newLeftNP.node.merge(newRight);
       return nodeContext

@@ -11,18 +11,18 @@ import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class TextMenu extends StatefulWidget {
-  final ValueGetter<NodeContext> contextGetter;
+  final NodeContext nodeContext;
   final MenuInfo info;
   final EntryManager manager;
 
-  const TextMenu(this.contextGetter, this.info, this.manager, {super.key});
+  const TextMenu(this.nodeContext, this.info, this.manager, {super.key});
 
   @override
   State<TextMenu> createState() => _TextMenuState();
 }
 
 class _TextMenuState extends State<TextMenu> {
-  NodeContext get nodeContext => widget.contextGetter.call();
+  NodeContext get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
@@ -79,7 +79,7 @@ class _TextMenuState extends State<TextMenu> {
 
   @override
   Widget build(BuildContext context) {
-    double dy = info.lineHeight;
+    double dy = info.lineHeight + info.offset.dy;
     double dx = info.offset.dx / 2;
     final c = cursor;
     return Stack(
@@ -142,11 +142,13 @@ class _TextMenuState extends State<TextMenu> {
                               nodeContext, RichTextTag.link, nodeContext.cursor,
                               attributes: {});
                         } else {
-                          ///TODO:complete the logic here
-                          // nodeContext.updateEntryStatus(
-                          //     EntryStatus.readyToShowingLinkMenu);
-                          // nodeContext.showLinkMenu(
-                          //     Overlay.of(context), info, widget.link);
+                          manager.showLinkMenu(
+                              Overlay.of(context),
+                              LinkMenuInfo(
+                                  info,
+                                  UrlWithPosition(
+                                      '', cursor as SelectingNodeCursor)),
+                              nodeContext);
                         }
                       },
                       contains: tagSets.contains(RichTextTag.link.name),

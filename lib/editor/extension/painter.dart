@@ -1,10 +1,10 @@
 import 'dart:math';
 
+import 'package:crayon/editor/cursor/basic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../cursor/rich_text.dart';
-import '../cursor/node_position.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 import '../widget/menu/link.dart';
@@ -51,6 +51,7 @@ extension PainterExtension on TextPainter {
   }
 
   List<Widget> buildLinkGestures(
+    int nodeIndex,
     RichTextNode node, {
     OnLinkWidgetEnter? onEnter,
     PointerExitEventListener? onExit,
@@ -63,7 +64,7 @@ extension PainterExtension on TextPainter {
       final boxList = getBoxesForSelection(
           TextSelection(baseOffset: span.offset, extentOffset: span.endOffset));
       Map<int, double> baseline2MaxHeight = baseline2MaxHeightMap(boxList);
-      final selectingPosition = SelectingPosition(
+      final selectingPosition = SelectingNodeCursor(nodeIndex,
           RichTextNodePosition(i, 0), RichTextNodePosition(i, span.textLength));
       widgets.add(Theme(
         data: ThemeData(
@@ -158,4 +159,4 @@ extension PainterExtension on TextPainter {
 }
 
 typedef OnLinkWidgetEnter = void Function(
-    Offset offset, RichTextSpan span, SelectingPosition position);
+    Offset offset, RichTextSpan span, SelectingNodeCursor cursor);

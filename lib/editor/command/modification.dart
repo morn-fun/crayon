@@ -1,24 +1,23 @@
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
-import '../cursor/basic.dart';
 import '../node/basic.dart';
 import 'basic.dart';
 
 class ModifyNode implements BasicCommand {
-  final SingleNodeCursor cursor;
-  final EditorNode node;
+  final NodeWithCursor nodeWithCursor;
 
-  ModifyNode(this.cursor, this.node);
+  ModifyNode(this.nodeWithCursor);
 
   @override
   UpdateControllerOperation? run(NodeContext nodeContext) {
-    return nodeContext.update(Update(cursor.index, node, cursor));
+    return nodeContext.update(Update(
+        nodeWithCursor.index, nodeWithCursor.node, nodeWithCursor.cursor));
   }
 
   @override
   String toString() {
-    return 'ModifyNode{cursor: $cursor, node: $node}';
+    return 'ModifyNode{nodeWithCursor: $nodeWithCursor}';
   }
 }
 

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import '../../../editor/extension/string.dart';
 import '../../../editor/extension/unmodifiable.dart';
 import '../../core/context.dart';
+import '../../cursor/basic.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
 import '../../exception/string.dart';
 import '../../widget/nodes/code_block.dart';
 import '../basic.dart';
-import '../../cursor/node_position.dart';
 import '../rich_text/rich_text.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
@@ -88,7 +88,7 @@ class CodeBlockNode extends EditorNode {
     }
   }
 
-  bool isAllSelected(SelectingPosition<CodeBlockPosition> p) =>
+  bool isAllSelected(SelectingNodeCursor<CodeBlockPosition> p) =>
       p.left == beginPosition && p.right == endPosition;
 
   CodeBlockNode replace(
@@ -192,22 +192,21 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  NodeWithPosition onEdit(EditingData data) {
+  NodeWithCursor onEdit(EditingData data) {
     final type = data.type;
     final generator = _editingGenerator[type.name];
     if (generator == null) {
-      return NodeWithPosition(this, EditingPosition(data.position));
+      throw NodeUnsupportedException(runtimeType, 'onEdit', data);
     }
     return generator.call(data.as<CodeBlockPosition>(), this);
   }
 
   @override
-  NodeWithPosition onSelect(SelectingData data) {
+  NodeWithCursor onSelect(SelectingData data) {
     final type = data.type;
     final generator = _selectingGenerator[type.name];
     if (generator == null) {
-      return NodeWithPosition(
-          this, SelectingPosition(data.position.begin, data.position.end));
+      throw NodeUnsupportedException(runtimeType, 'onSelect', data);
     }
     return generator.call(data.as<CodeBlockPosition>(), this);
   }
@@ -244,8 +243,8 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileSelecting(d, n),
 };
 
-typedef _NodeGeneratorWhileEditing = NodeWithPosition Function(
+typedef _NodeGeneratorWhileEditing = NodeWithCursor Function(
     EditingData<CodeBlockPosition> data, CodeBlockNode node);
 
-typedef _NodeGeneratorWhileSelecting = NodeWithPosition Function(
+typedef _NodeGeneratorWhileSelecting = NodeWithCursor Function(
     SelectingData<CodeBlockPosition> data, CodeBlockNode node);

@@ -18,6 +18,7 @@ class ListenerCollection {
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
+  final Map<String, Set<ListenerCollection>> _id2Listeners = {};
 
   ListenerCollection({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
@@ -85,7 +86,7 @@ class ListenerCollection {
     _gestureListeners[id] = set;
   }
 
-  void removeGestureListener(String id,ValueChanged<GestureState> listener){
+  void removeGestureListener(String id, ValueChanged<GestureState> listener) {
     final set = _gestureListeners[id] ?? {};
     set.remove(listener);
     _gestureListeners[id] = set;
@@ -170,7 +171,7 @@ class ListenerCollection {
     //     '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
-  void notifyGesture(String id, GestureState state){
+  void notifyGesture(String id, GestureState state) {
     final set = Set.of(_gestureListeners[id] ?? {});
     for (var c in set) {
       c.call(state);
@@ -201,6 +202,28 @@ class ListenerCollection {
   void notifyOptionalMenu(OptionalSelectedType type) {
     for (var c in Set.of(_optionalMenuListeners)) {
       c.call(type);
+    }
+  }
+
+  ListenerCollection? getListener(String id) {
+    final set = _id2Listeners[id];
+    if (set == null || set.isEmpty) return null;
+    return set.first;
+  }
+
+  void addListener(String id, ListenerCollection l) {
+    final set = _id2Listeners[id] ?? {};
+    set.add(l);
+    _id2Listeners[id] = set;
+  }
+
+  void removeListener(String id, ListenerCollection l) {
+    final set = _id2Listeners[id] ?? {};
+    set.remove(l);
+    if (set.isEmpty) {
+      _id2Listeners.remove(id);
+    } else {
+      _id2Listeners[id] = set;
     }
   }
 }

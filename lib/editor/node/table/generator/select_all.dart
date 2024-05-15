@@ -1,19 +1,18 @@
 import '../../../core/copier.dart';
 import '../../../cursor/basic.dart';
-import '../../../cursor/node_position.dart';
 import '../../../cursor/table.dart';
 import '../../../shortcuts/select_all.dart';
 import '../../basic.dart';
 import '../table.dart';
 import 'common.dart';
 
-NodeWithPosition selectAllWhileEditing(
+NodeWithCursor selectAllWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   return operateWhileEditing(
       data, node, (c) => SelectAllAction(c).invoke(SelectAllIntent()));
 }
 
-NodeWithPosition selectAllWhileSelecting(
+NodeWithCursor selectAllWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -28,27 +27,29 @@ NodeWithPosition selectAllWhileSelecting(
         final innerNode = cell.getNode(left.index);
         if (left.position != innerNode.beginPosition ||
             right.position != innerNode.endPosition) {
-          final ctx = data.context.getChildContext(cell.id)!;
+          final ctx = buildTableCellNodeContext(
+              data.context, left.cellPosition, node, cursor, data.index);
           final r = innerNode.onSelect(SelectingData(
-              SelectingPosition(left.position, right.position),
+              SelectingNodeCursor(left.index, left.position, right.position),
               EventType.selectAll,
               ctx));
-          final p = r.position;
-          if (p is SelectingPosition) {
-            final rp = SelectingPosition(
+          final p = r.cursor;
+          if (p is SelectingNodeCursor) {
+            final rp = SelectingNodeCursor(
+                data.index,
                 left.copy(cursor: (c) => EditingCursor(c.index, p.begin)),
                 left.copy(cursor: (c) => EditingCursor(c.index, p.end)));
-            return NodeWithPosition(node, rp);
+            return NodeWithCursor(node, rp);
           }
         }
       }
-      return NodeWithPosition(
+      return NodeWithCursor(
         node,
-        SelectingPosition(left.copy(cursor: to(cell.beginCursor)),
+        SelectingNodeCursor(data.index, left.copy(cursor: to(cell.beginCursor)),
             right.copy(cursor: to(cell.endCursor))),
       );
     }
   }
-  return NodeWithPosition(
-      node, SelectingPosition(node.beginPosition, node.endPosition));
+  return NodeWithCursor(node,
+      SelectingNodeCursor(data.index, node.beginPosition, node.endPosition));
 }

@@ -10,7 +10,6 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
-import '../cursor/node_position.dart';
 import '../node/rich_text/head.dart';
 import '../node/rich_text/ordered.dart';
 import '../node/rich_text/rich_text.dart';
@@ -120,10 +119,9 @@ class PasteAction extends ContextAction<PasteIntent> {
       final index = cursor.index;
       final node = nodeContext.getNode(index);
       try {
-        final r = node.onEdit(EditingData(
-            cursor.position, EventType.paste, nodeContext,
-            extras: nodes));
-        nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
+        final r = node.onEdit(
+            EditingData(cursor, EventType.paste, nodeContext, extras: nodes));
+        nodeContext.execute(ModifyNode(r));
       } on UnablePasteException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
@@ -134,12 +132,9 @@ class PasteAction extends ContextAction<PasteIntent> {
       final index = cursor.index;
       final node = nodeContext.getNode(index);
       try {
-        final r = node.onSelect(SelectingData(
-            SelectingPosition(cursor.left, cursor.right),
-            EventType.paste,
-            nodeContext,
-            extras: nodes));
-        nodeContext.execute(ModifyNode(r.position.toCursor(index), r.node));
+        final r = node.onSelect(
+            SelectingData(cursor, EventType.paste, nodeContext, extras: nodes));
+        nodeContext.execute(ModifyNode(r));
       } on UnablePasteException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));

@@ -1,14 +1,15 @@
+import 'package:crayon/editor/cursor/basic.dart';
+
 import '../../../../editor/extension/collection.dart';
 
 import '../../../core/logger.dart';
 import '../../../cursor/rich_text.dart';
 import '../../../shortcuts/styles.dart';
 import '../../basic.dart';
-import '../../../cursor/node_position.dart';
 import '../rich_text.dart';
 import '../rich_text_span.dart';
 
-NodeWithPosition styleRichTextNodeWhileEditing(
+NodeWithCursor styleRichTextNodeWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node, String tag) {
   final position = data.position;
   final offset = node.getOffset(position);
@@ -51,10 +52,10 @@ NodeWithPosition styleRichTextNodeWhileEditing(
       logger.e('style error $newPosition,  span:$span, error:$e');
     }
   }
-  return NodeWithPosition(newNode, EditingPosition(newPosition));
+  return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
 }
 
-NodeWithPosition styleRichTextNodeWhileSelecting(
+NodeWithCursor styleRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node, String tag) {
   final left = data.left;
   final right = data.right;
@@ -81,5 +82,6 @@ NodeWithPosition styleRichTextNodeWhileSelecting(
   final newNode = node.replace(left, right, newSpans);
   final pLeft = newNode.getPositionByOffset(leftOffset);
   final pRight = newNode.getPositionByOffset(rightOffset);
-  return NodeWithPosition(newNode, SelectingPosition(pLeft, pRight));
+  return NodeWithCursor(
+      newNode, SelectingNodeCursor(data.index, pLeft, pRight));
 }

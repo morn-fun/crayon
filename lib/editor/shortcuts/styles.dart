@@ -5,7 +5,6 @@ import '../command/selecting/update.dart';
 import '../core/context.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
-import '../cursor/node_position.dart';
 import '../cursor/rich_text.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
@@ -99,14 +98,14 @@ void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
     if (cursor is SingleNodeCursor) {
       if (cursor is EditingCursor) {
         final r = context.getNode(cursor.index).onEdit(EditingData(
-            cursor.position, type, context,
+            cursor, type, context,
             extras: StyleExtra(false, attributes)));
-        context.execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+        context.execute(ModifyNode(r));
       } else if (cursor is SelectingNodeCursor) {
         final r = context.getNode(cursor.index).onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end), type, context,
+            cursor, type, context,
             extras: StyleExtra(false, attributes)));
-        context.execute(ModifyNode(r.position.toCursor(cursor.index), r.node));
+        context.execute(ModifyNode(r));
       }
     } else if (cursor is SelectingNodesCursor) {
       final left = cursor.left;

@@ -3,9 +3,8 @@ import '../core/copier.dart';
 import '../exception/editor_node.dart';
 import '../../../editor/cursor/rich_text.dart';
 import 'basic.dart';
-import 'node_position.dart';
 
-class TablePosition implements NodePosition {
+class TablePosition extends NodePosition {
   final EditingCursor cursor;
   final CellPosition cellPosition;
 
@@ -57,24 +56,6 @@ class TablePosition implements NodePosition {
   @override
   String toString() {
     return 'TablePosition{cellIndex: $cellPosition, cursor: $cursor}';
-  }
-
-  SingleNodePosition cursorToPosition(BasicCursor cursor) {
-    if (cursor is EditingCursor) {
-      return EditingPosition(copy(cursor: to(cursor)));
-    }
-    if (cursor is SelectingNodeCursor) {
-      final index = cursor.index;
-      return SelectingPosition(
-        copy(cursor: to(EditingCursor(index, cursor.left))),
-        copy(cursor: to(EditingCursor(index, cursor.right))),
-      );
-    }
-    if (cursor is SelectingNodesCursor) {
-      return SelectingPosition(
-          copy(cursor: to(cursor.left)), copy(cursor: to(cursor.right)));
-    }
-    return EditingPosition(this);
   }
 }
 

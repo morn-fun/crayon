@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import '../../../editor/node/basic.dart';
+import '../../../editor/node/rich_text/rich_text.dart';
 import '../../../editor/extension/render_box.dart';
 import '../../../editor/extension/node_context.dart';
 import '../../../editor/cursor/basic.dart';
@@ -12,7 +14,8 @@ import '../../core/copier.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
-import '../../cursor/node_position.dart';
+import '../../exception/editor_node.dart';
+import '../../node/table/generator/common.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../node/table/table_cell_list.dart';
@@ -38,15 +41,15 @@ class _RichTableState extends State<RichTable> {
 
   NodeContext get nodeContext => widget.context;
 
-  SingleNodePosition? get position => widget.param.position;
+  SingleNodeCursor? get nodeCursor => widget.param.cursor;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
-  int get index => widget.param.index;
+  int get widgetIndex => widget.param.index;
 
-  final ValueNotifier<bool> operatorShowerNotifier = ValueNotifier(false);
   final ValueNotifier<double?> heightNotifier = ValueNotifier(null);
   final ValueNotifier<List<double>> heightsNotifier = ValueNotifier([]);
+  final ValueNotifier<bool> operatorShowerNotifier = ValueNotifier(false);
   final ValueNotifier<_MouseState?> mouseNotifier = ValueNotifier(null);
   final key = GlobalKey();
 
@@ -72,6 +75,15 @@ class _RichTableState extends State<RichTable> {
   @override
   void didUpdateWidget(covariant RichTable oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldListeners = oldWidget.context.listeners;
+    if (oldListeners.hashCode != listeners.hashCode) {
+      oldListeners.removeGestureListener(node.id, onGesture);
+      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
+      listeners.addGestureListener(node.id, onGesture);
+      listeners.addArrowDelegate(node.id, onArrowAccept);
+      logger.i(
+          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    }
     if (node.table.hashCode != oldWidget.node.table.hashCode) {
       localListeners.notifyNodes();
     }
@@ -88,7 +100,9 @@ class _RichTableState extends State<RichTable> {
     listeners.removeArrowDelegate(node.id, onArrowAccept);
     localListeners.dispose();
     heightNotifier.dispose();
+    heightsNotifier.dispose();
     mouseNotifier.dispose();
+    operatorShowerNotifier.dispose();
   }
 
   void onGesture(GestureState s) {
@@ -115,16 +129,16 @@ class _RichTableState extends State<RichTable> {
   void onHover(GestureState s) {
     final offset = s.globalOffset;
     if (!containsOffset(offset)) return;
-    var p = position;
+    var p = nodeCursor;
     if (p == null) return;
-    if (p is EditingPosition) return;
-    p = p as SelectingPosition;
+    if (p is EditingCursor) return;
+    p = p as SelectingNodeCursor;
     var left = p.left;
     var right = p.right;
     if (left is! TablePosition || right is! TablePosition) return;
     if (left.sameCell(right)) {
       final cell = node.getCell(left.cellPosition);
-      final cursor = cell.getCursor(position, left.cellPosition);
+      final cursor = cell.getCursor(p.as<TablePosition>(), left.cellPosition);
       if (!cell.wholeSelected(cursor)) {
         localListeners.notifyGestures(s);
         return;
@@ -138,11 +152,12 @@ class _RichTableState extends State<RichTable> {
     heights.insert(0, 0);
     final widths = List.of(node.widths);
     widths.insert(0, 0);
-    if (renderBox?.containsOffsetInTable(s.globalOffset, left.cellPosition,
-            right.cellPosition, heights, widths) ??
-        false) {
+    final box = renderBox;
+    if (box == null) return;
+    if (box.containsOffsetInTable(s.globalOffset, left.cellPosition,
+        right.cellPosition, heights, widths)) {
       entryManager.showTextMenu(Overlay.of(context),
-          MenuInfo(s.globalOffset, node.id, 0, layerLink), () => nodeContext);
+          MenuInfo(box.globalToLocal(s.globalOffset), node.id, 0, layerLink), nodeContext);
     }
   }
 
@@ -164,8 +179,8 @@ class _RichTableState extends State<RichTable> {
         return;
       }
     }
-    nodeContext.onPanUpdate(
-        EditingCursor(index, TablePosition(cellPosition, cell.endCursor)));
+    nodeContext.onPanUpdate(EditingCursor(
+        widgetIndex, TablePosition(cellPosition, cell.endCursor)));
   }
 
   void onArrowAccept(AcceptArrowData d) {
@@ -175,6 +190,8 @@ class _RichTableState extends State<RichTable> {
     if (p is! TablePosition) return;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final type = d.type;
+    final cell = node.getCell(p.cellPosition);
+    final cursor = cell.getCursor(nodeCursor, p.cellPosition);
     switch (type) {
       case ArrowType.current:
         final extra = d.extras;
@@ -192,19 +209,17 @@ class _RichTableState extends State<RichTable> {
         break;
       case ArrowType.left:
       case ArrowType.up:
-        final cell = node.getCell(p.cellPosition);
-        final ctx = nodeContext.getChildContext(cell.id);
-        final cursor = cell.getCursor(position, p.cellPosition);
-        if (ctx != null && cursor != null) {
+        if (cursor != null) {
+          final ctx = buildTableCellNodeContext(
+              nodeContext, p.cellPosition, node, cursor, widgetIndex);
           arrowOnLeftOrUp(type, ctx, runtimeType, cursor);
         }
         break;
       case ArrowType.right:
       case ArrowType.down:
-        final cell = node.getCell(p.cellPosition);
-        final ctx = nodeContext.getChildContext(cell.id);
-        final cursor = cell.getCursor(position, p.cellPosition);
-        if (ctx != null && cursor != null) {
+        if (cursor != null) {
+          final ctx = buildTableCellNodeContext(
+              nodeContext, p.cellPosition, node, cursor, widgetIndex);
           arrowOnRightOrDown(type, ctx, runtimeType, cursor);
         }
         break;
@@ -266,7 +281,7 @@ class _RichTableState extends State<RichTable> {
     final widths = node.widths;
     final Map<int, FixedColumnWidth> widthsMap = buildWidthsMap(node);
     final table = node.table;
-    final wholeContain = node.wholeContain(position);
+    final wholeContain = node.wholeContain(nodeCursor);
     final tableBorderWidth = 1.0;
     final operatorSize = 16.0;
     final nodeContext = ShareEditorContextWidget.of(context)!.context;
@@ -285,7 +300,7 @@ class _RichTableState extends State<RichTable> {
                   foregroundDecoration: wholeContain
                       ? BoxDecoration(color: Colors.blue.withOpacity(0.5))
                       : null,
-                  padding: EdgeInsets.only(
+                  margin: EdgeInsets.only(
                       right: operatorSize,
                       top: operatorSize,
                       bottom: operatorSize),
@@ -297,47 +312,44 @@ class _RichTableState extends State<RichTable> {
                       final cellList = table[r];
                       return TableRow(
                           children: List.generate(cellList.length, (c) {
-                        return Builder(builder: (context) {
-                          final cellIndex = CellPosition(r, c);
-                          final cell = cellList.getCell(c);
-                          BasicCursor? cursor;
-                          if (wholeContain) {
-                            cursor = null;
-                          } else {
-                            cursor = cell.getCursor(position, cellIndex);
-                          }
-                          return Stack(
-                            children: [
-                              RichTableCell(
-                                key: ValueKey(cell.id),
-                                cursor: cursor,
-                                listeners: localListeners,
-                                cell: cell,
-                                cellIndex: cellIndex,
-                                param: widget.param,
-                                context: nodeContext,
-                                node: node,
-                              ),
-                              ValueListenableBuilder(
-                                  valueListenable: heightsNotifier,
-                                  builder: (ctx, heights, child) {
-                                    final w = widths[c];
-                                    if (heights.length <= r) {
+                            CellPosition cp = CellPosition(r, c);
+                            tc.TableCell cell = node.getCell(cp);
+                            BasicCursor? cursor = wholeContain
+                                ? null
+                                : cell.getCursor(nodeCursor, cp);
+                            return Stack(
+                              key: ValueKey(cell.id),
+                              children: [
+                                RichTableCell(
+                                  cursor: cursor,
+                                  listeners: localListeners,
+                                  cell: cell,
+                                  cellPosition: cp,
+                                  param: widget.param,
+                                  context: nodeContext,
+                                  node: node,
+                                  cellId: cell.id,
+                                ),
+                                ValueListenableBuilder(
+                                    valueListenable: heightsNotifier,
+                                    builder: (ctx, heights, child) {
+                                      final w = widths[c];
+                                      if (heights.length <= r) {
+                                        return Container(width: w);
+                                      }
+                                      final h = heights[r];
+                                      if (cell.wholeSelected(cursor)) {
+                                        return Container(
+                                            height: h,
+                                            width: w,
+                                            color:
+                                                Colors.blue.withOpacity(0.5));
+                                      }
                                       return Container(width: w);
-                                    }
-                                    final h = heights[r];
-                                    if (cell.wholeSelected(cursor)) {
-                                      return Container(
-                                          height: h,
-                                          width: w,
-                                          color: Colors.blue.withOpacity(0.5));
-                                    }
-                                    return Container(width: w);
-                                  }),
-                            ],
-                          );
-                        });
-                      }));
+                                    }),
+                              ],
+                            );
+                          }));
                     }),
                   ),
                 ),
@@ -372,13 +384,12 @@ class _RichTableState extends State<RichTable> {
                         },
                         onHorizontalDragUpdate: (e) {
                           final delta = e.delta;
-                          logger.i('onHorizontalDragUpdate:$delta');
                           final left = widths[index];
                           final width = delta.dx + left;
                           if (width >= 100 && width <= 800) {
                             final newWidths = widths.update(index, to(width));
                             nodeContext.onNode(
-                                node.from(node.table, newWidths), index);
+                                node.from(node.table, newWidths), widgetIndex);
                           }
                           mouseNotifier.value =
                               _MouseState(index, _MouseStatus.dragging);
@@ -409,12 +420,11 @@ class _RichTableState extends State<RichTable> {
                                 },
                                 child: SizedBox(
                                   width: transparentArea,
-                                  child: Center(
-                                    child: Container(
-                                      width: w,
-                                      height: height,
-                                      color: borderColor,
-                                    ),
+                                  child: Container(
+                                    margin: EdgeInsets.only(top: operatorSize),
+                                    width: w,
+                                    height: height,
+                                    color: borderColor,
                                   ),
                                 ),
                               );
@@ -433,20 +443,54 @@ class _RichTableState extends State<RichTable> {
                         return TableOperator(
                           iconSize: operatorSize,
                           heights: heights,
-                          selectedRow: node.wholeContainsRow(position),
-                          selectedColumn: node.wholeContainsColumn(position),
-                          onColumnAdd: (i) {
-                            final newNode = node.insertColumns(i, [
-                              TableCellList(List.generate(node.rowCount,
-                                  (index) => tc.TableCell.empty()))
-                            ], [
-                              node.initWidth
-                            ]);
-                            nodeContext.onNode(newNode, index);
+                          selectedRow: node.wholeContainsRow(nodeCursor),
+                          selectedColumn: node.wholeContainsColumn(nodeCursor),
+                          onColumnDelete: (i) {
+                            try {
+                              final newNode = node.removeColumns(i, i + 1);
+                              final cp = CellPosition(
+                                  0,
+                                  i >= newNode.columnCount
+                                      ? newNode.columnCount - 1
+                                      : i);
+                              final cell = newNode.getCell(cp);
+                              nodeContext.onNodeWithCursor(NodeWithCursor(
+                                  newNode,
+                                  TablePosition(
+                                          cp,
+                                          EditingCursor(
+                                              0, cell.first.endPosition))
+                                      .toCursor(widgetIndex)));
+                            } on TableIsEmptyException {
+                              final newNode = RichTextNode.from([]);
+                              nodeContext.onNodeWithCursor(NodeWithCursor(
+                                  newNode,
+                                  newNode.beginPosition.toCursor(widgetIndex)));
+                            }
                           },
-                          onColumnDelete: (i){
-                            final newNode = node.removeColumns(i, i + 1);
-                            nodeContext.onNode(newNode, index);
+                          onRowDelete: (i) {
+                            try {
+                              final newNode = node.removeRows(i, i + 1);
+                              final cp = CellPosition(
+                                  i >= newNode.rowCount
+                                      ? newNode.rowCount - 1
+                                      : i,
+                                  0);
+                              final cell = newNode.getCell(cp);
+                              nodeContext.onNodeWithCursor(NodeWithCursor(
+                                  newNode,
+                                  TablePosition(
+                                          cp,
+                                          EditingCursor(
+                                              0, cell.first.endPosition))
+                                      .toCursor(widgetIndex)));
+                              nodeContext.onNode(newNode, widgetIndex);
+                            } on TableIsEmptyException {
+                              final newNode = RichTextNode.from([]);
+                              nodeContext.onNodeWithCursor(NodeWithCursor(
+                                  newNode,
+                                  newNode.beginPosition.toCursor(widgetIndex)));
+                            }
                           },
                           onColumnSelected: (i) {
                             final beginPosition = CellPosition(0, i);
@@ -455,7 +499,7 @@ class _RichTableState extends State<RichTable> {
                                 CellPosition(node.table.length - 1, i);
                             final endCell = node.getCell(endPosition);
                             nodeContext.onCursor(SelectingNodeCursor(
-                                index,
+                                widgetIndex,
                                 TablePosition(
                                     beginPosition, beginCell.beginCursor),
                                 TablePosition(endPosition, endCell.endCursor)));
@@ -463,7 +507,7 @@ class _RichTableState extends State<RichTable> {
                           onRowSelected: (i) {
                             final cellList = node.table[i];
                             nodeContext.onCursor(SelectingNodeCursor(
-                                index,
+                                widgetIndex,
                                 TablePosition(CellPosition(i, 0),
                                     cellList.first.beginCursor),
                                 TablePosition(
@@ -475,11 +519,26 @@ class _RichTableState extends State<RichTable> {
                               TableCellList(List.generate(node.columnCount,
                                   (index) => tc.TableCell.empty()))
                             ]);
-                            nodeContext.onNode(newNode, index);
+                            final cp = CellPosition(i, 0);
+                            final cell = newNode.getCell(cp);
+                            nodeContext.onNodeWithCursor(NodeWithCursor(
+                                newNode,
+                                TablePosition(cp, cell.beginCursor)
+                                    .toCursor(widgetIndex)));
                           },
-                          onRowDelete: (i) {
-                            final newNode = node.removeRows(i, i + 1);
-                            nodeContext.onNode(newNode, index);
+                          onColumnAdd: (i) {
+                            final newNode = node.insertColumns(i, [
+                              TableCellList(List.generate(node.rowCount,
+                                  (index) => tc.TableCell.empty()))
+                            ], [
+                              node.initWidth
+                            ]);
+                            final cp = CellPosition(0, i);
+                            final cell = newNode.getCell(cp);
+                            nodeContext.onNodeWithCursor(NodeWithCursor(
+                                newNode,
+                                TablePosition(cp, cell.beginCursor)
+                                    .toCursor(widgetIndex)));
                           },
                           widths: widths,
                         );

@@ -1,7 +1,7 @@
 import '../exception/editor_node.dart';
 import 'basic.dart';
 
-class CodeBlockPosition implements NodePosition {
+class CodeBlockPosition extends NodePosition {
   final int index;
   final int offset;
   final bool atEdge;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' hide RichText;
 
 import '../../core/context.dart';
-import '../../../editor/extension/node_context.dart';
 import '../../widget/nodes/rich_text.dart';
 import 'rich_text.dart';
 import 'rich_text_span.dart';

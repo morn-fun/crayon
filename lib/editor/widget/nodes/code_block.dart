@@ -1,10 +1,9 @@
 import 'dart:collection';
 import 'dart:math';
 
-import '../../../../editor/extension/render_box.dart';
 import 'package:flutter/material.dart';
 import 'package:highlight/languages/all.dart';
-
+import '../../../../editor/extension/render_box.dart';
 import '../../core/context.dart';
 import '../../../editor/cursor/basic.dart';
 import '../../core/listener_collection.dart';
@@ -12,10 +11,8 @@ import '../../core/logger.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
 import '../../node/code_block/code_block.dart';
-import '../../cursor/node_position.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../../../editor/core/editor_controller.dart';
-import '../../../editor/extension/node_context.dart';
 import '../menu/code_selector.dart';
 import 'code_block_line.dart';
 
@@ -54,7 +51,7 @@ class _CodeBlockState extends State<CodeBlock> {
 
   Offset lastEditOffset = Offset.zero;
 
-  SingleNodePosition? get nodePosition => widget.param.position;
+  SingleNodeCursor? get nodeCursor => widget.param.cursor;
 
   int get widgetIndex => widget.param.index;
 
@@ -74,6 +71,20 @@ class _CodeBlockState extends State<CodeBlock> {
     super.initState();
     listeners.addArrowDelegate(node.id, onArrowAccept);
     listeners.addGestureListener(node.id, onGesture);
+  }
+
+  @override
+  void didUpdateWidget(covariant CodeBlock oldWidget) {
+    final oldListeners = oldWidget.context.listeners;
+    if (oldListeners.hashCode != listeners.hashCode) {
+      oldListeners.removeGestureListener(node.id, onGesture);
+      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
+      listeners.addGestureListener(node.id, onGesture);
+      listeners.addArrowDelegate(node.id, onArrowAccept);
+      logger.i(
+          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -296,9 +307,9 @@ class _CodeBlockState extends State<CodeBlock> {
   }
 
   int? getEditingOffset(int index) {
-    final position = nodePosition;
-    if (position is EditingPosition) {
-      final p = position.position;
+    final cursor = nodeCursor;
+    if (cursor is EditingCursor) {
+      final p = cursor.position;
       if (p is! CodeBlockPosition) return null;
       if (p.index != index) return null;
       return p.offset;
@@ -308,10 +319,10 @@ class _CodeBlockState extends State<CodeBlock> {
 
   TextRange? getSelectingRange(int index) {
     if (isAllSelected()) return null;
-    final position = nodePosition;
-    if (position is! SelectingPosition) return null;
-    final left = position.left;
-    final right = position.right;
+    final cursor = nodeCursor;
+    if (cursor is! SelectingNodeCursor) return null;
+    final left = cursor.left;
+    final right = cursor.right;
     if (left is! CodeBlockPosition || right is! CodeBlockPosition) return null;
     if (index > left.index && index < right.index) {
       return TextRange(start: 0, end: codes[index].length);
@@ -332,10 +343,10 @@ class _CodeBlockState extends State<CodeBlock> {
   }
 
   bool isAllSelected() {
-    final position = nodePosition;
-    if (position is! SelectingPosition) return false;
-    final left = position.left;
-    final right = position.right;
+    final cursor = nodeCursor;
+    if (cursor is! SelectingNodeCursor) return false;
+    final left = cursor.left;
+    final right = cursor.right;
     if (left == node.beginPosition || right == node.endPosition) {
       return true;
     }

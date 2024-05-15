@@ -1,8 +1,8 @@
 import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
-import 'package:crayon/editor/cursor/node_position.dart';
 import 'package:crayon/editor/node/rich_text/head.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
@@ -53,12 +53,14 @@ void main() {
     H1Node node =
         H1Node.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
     expect(
-        () => node.onEdit(EditingData(
-            RichTextNodePosition.zero(), EventType.newline, TestNodeContext())),
+        () => node.onEdit(EditingData(RichTextNodePosition.zero().toCursor(0),
+            EventType.newline, TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
-    var np = node.from([]).onEdit(EditingData(RichTextNodePosition.zero(),
-        EventType.increaseDepth, TestNodeContext()));
+    var np = node.from([]).onEdit(EditingData(
+        RichTextNodePosition.zero().toCursor(0),
+        EventType.increaseDepth,
+        TestNodeContext()));
     assert(np.node.depth - node.depth == 1);
   });
 
@@ -68,15 +70,15 @@ void main() {
 
     expect(
         () => node.onSelect(SelectingData(
-            SelectingPosition(
-                RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
+            SelectingNodeCursor(
+                0, RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
             EventType.newline,
             TestNodeContext())),
         throwsA(const TypeMatcher<NewlineRequiresNewSpecialNode>()));
 
     var np = node.from([]).onSelect(SelectingData(
-        SelectingPosition(
-            RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
+        SelectingNodeCursor(
+            0, RichTextNodePosition.zero(), RichTextNodePosition(5, 0)),
         EventType.increaseDepth,
         TestNodeContext()));
     assert(np.node.depth > node.depth);

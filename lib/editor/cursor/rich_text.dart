@@ -1,7 +1,7 @@
 import '../exception/editor_node.dart';
 import 'basic.dart';
 
-class RichTextNodePosition implements NodePosition {
+class RichTextNodePosition extends NodePosition {
   final int index;
   final int offset;
 

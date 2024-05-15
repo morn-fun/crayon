@@ -8,7 +8,6 @@ import '../core/context.dart';
 import '../core/editor_controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
-import '../cursor/node_position.dart';
 import '../node/basic.dart';
 
 class NewlineIntent extends Intent {
@@ -24,7 +23,6 @@ class NewlineAction extends ContextAction<NewlineIntent> {
 
   NewlineAction(this.ac);
 
-
   @override
   void invoke(Intent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
@@ -33,8 +31,8 @@ class NewlineAction extends ContextAction<NewlineIntent> {
       try {
         final r = nodeContext
             .getNode(c.index)
-            .onEdit(EditingData(c.position, EventType.newline, nodeContext));
-        nodeContext.execute(ModifyNode(r.position.toCursor(c.index), r.node));
+            .onEdit(EditingData(c, EventType.newline, nodeContext));
+        nodeContext.execute(ModifyNode(r));
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;
@@ -52,9 +50,10 @@ class NewlineAction extends ContextAction<NewlineIntent> {
       }
     } else if (c is SelectingNodeCursor) {
       try {
-        final r = nodeContext.getNode(c.index).onSelect(SelectingData(
-            SelectingPosition(c.begin, c.end), EventType.newline, nodeContext));
-        nodeContext.execute(ModifyNode(r.position.toCursor(c.index), r.node));
+        final r = nodeContext
+            .getNode(c.index)
+            .onSelect(SelectingData(c, EventType.newline, nodeContext));
+        nodeContext.execute(ModifyNode(r));
       } on NewlineRequiresNewNode catch (e) {
         logger.e('$runtimeType $e');
         int index = c.index;

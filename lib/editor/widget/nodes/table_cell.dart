@@ -3,9 +3,9 @@ import '../../../../editor/core/context.dart';
 import '../../../../editor/core/listener_collection.dart';
 import '../../../../editor/cursor/basic.dart';
 import '../../../../editor/extension/cursor.dart';
-import '../../command/modification.dart';
+import '../../core/logger.dart';
 import '../../cursor/table.dart';
-import '../../exception/editor_node.dart';
+import '../../node/table/generator/common.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../shortcuts/arrows/arrows.dart';
@@ -13,17 +13,19 @@ import '../../shortcuts/arrows/arrows.dart';
 class RichTableCell extends StatefulWidget {
   final tc.TableCell cell;
   final TableNode node;
-  final CellPosition cellIndex;
-  final NodeContext context;
+  final CellPosition cellPosition;
   final NodeBuildParam param;
   final BasicCursor? cursor;
   final ListenerCollection listeners;
+  final NodeContext context;
+  final String cellId;
 
   const RichTableCell({
     super.key,
     required this.cell,
+    required this.cellId,
     required this.node,
-    required this.cellIndex,
+    required this.cellPosition,
     required this.context,
     required this.param,
     required this.cursor,
@@ -45,9 +47,11 @@ class _RichTableCellState extends State<RichTableCell> {
 
   TableNode get node => widget.node;
 
-  CellPosition get cellIndex => widget.cellIndex;
+  CellPosition get cellIndex => widget.cellPosition;
 
   int get index => widget.param.index;
+
+  String get cellId => widget.cellId;
 
   late tc.TableCellNodeContext cellContext;
 
@@ -55,36 +59,15 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void initState() {
+    logger.i('$cellId  init');
     localListeners = listeners.copy(
         nodeListeners: {},
         nodesListeners: {},
         gestureListeners: {},
         arrowDelegates: {});
-    cellContext = tc.TableCellNodeContext(
-      cursorGetter: () => cursor!,
-      cellGetter: () => cell,
-      listeners: localListeners,
-      onReplace: (v) {
-        final newCell = cell.replaceMore(v.begin, v.end, v.newNodes);
-        nodeContext.execute(ModifyNode(
-            _cursorToCursor(v.cursor, cellIndex, index),
-            node.updateCell(cellIndex.row, cellIndex.column, (t) => newCell)));
-      },
-      onUpdate: (v) {
-        final newCell = cell.update(v.index, (n) => v.node);
-        nodeContext.execute(ModifyNode(
-            _cursorToCursor(v.cursor, cellIndex, index),
-            node.updateCell(cellIndex.row, cellIndex.column, (t) => newCell)));
-      },
-      onBasicCursor: (newCursor) =>
-          nodeContext.onCursor(_cursorToCursor(newCursor, cellIndex, index)),
-      cursorOffset: (v) => nodeContext.onCursorOffset(v),
-      onPan: (v) => nodeContext
-          .onPanUpdate(EditingCursor(index, TablePosition(cellIndex, v))),
-    );
-    nodeContext.addContext(cell.id, cellContext);
-    listeners.addGestureListener(cell.id, onGesture);
-    listeners.addArrowDelegate(cell.id, onArrowAccept);
+    listeners.addGestureListener(cellId, onGesture);
+    listeners.addArrowDelegate(cellId, onArrowAccept);
+    nodeContext.listeners.addListener(cellId, localListeners);
     super.initState();
   }
 
@@ -94,6 +77,17 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void didUpdateWidget(covariant RichTableCell oldWidget) {
+    logger.i(
+        'onTableUpdateWidget , old:${oldWidget.cellId} ${oldWidget.cellPosition},  new:$cellId, $cellIndex');
+    final oldListeners = oldWidget.listeners;
+    if (oldListeners.hashCode != listeners.hashCode) {
+      oldListeners.removeGestureListener(node.id, onGesture);
+      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
+      listeners.addGestureListener(node.id, onGesture);
+      listeners.addArrowDelegate(node.id, onArrowAccept);
+      logger.i(
+          'TableCell onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    }
     if (cell.hashCode != oldWidget.cell.hashCode) {
       localListeners.notifyNodes();
       for (var n in cell.nodes) {
@@ -108,10 +102,11 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void dispose() {
+    nodeContext.listeners.removeListener(cellId, localListeners);
     localListeners.dispose();
-    listeners.removeGestureListener(cell.id, onGesture);
-    listeners.removeArrowDelegate(cell.id, onArrowAccept);
-    nodeContext.removeContext(cell.id, cellContext);
+    logger.i('$cellId  dispose');
+    listeners.removeGestureListener(cellId, onGesture);
+    listeners.removeArrowDelegate(cellId, onArrowAccept);
     super.dispose();
   }
 
@@ -128,12 +123,13 @@ class _RichTableCellState extends State<RichTableCell> {
           return Container(
             padding: EdgeInsets.only(left: innerNode.depth * 12, right: 4),
             child: innerNode.build(
-                cellContext,
+                buildTableCellNodeContext(nodeContext, cellIndex, node,
+                    cursor ?? NoneCursor(), index),
                 NodeBuildParam(
                   index: i,
-                  position: wholeSelected
+                  cursor: wholeSelected
                       ? null
-                      : cursor?.getSingleNodePosition(i, innerNode),
+                      : cursor?.getSingleNodeCursor(i, innerNode),
                 ),
                 context),
           );
@@ -141,22 +137,4 @@ class _RichTableCellState extends State<RichTableCell> {
       ),
     );
   }
-}
-
-SingleNodeCursor<TablePosition> _cursorToCursor(
-    BasicCursor cursor, CellPosition cellIndex, int index) {
-  if (cursor is EditingCursor) {
-    return EditingCursor(index, TablePosition(cellIndex, cursor));
-  } else if (cursor is SelectingNodeCursor) {
-    final i = cursor.index;
-    return SelectingNodeCursor(
-        index,
-        TablePosition(cellIndex, EditingCursor(i, cursor.left)),
-        TablePosition(cellIndex, EditingCursor(i, cursor.right)));
-  } else if (cursor is SelectingNodesCursor) {
-    return SelectingNodeCursor(index, TablePosition(cellIndex, cursor.left),
-        TablePosition(cellIndex, cursor.right));
-  }
-  throw NodeUnsupportedException(cursor.runtimeType,
-      'from cursor:$cursor to table cursor', '$cellIndex,  index:$index');
 }

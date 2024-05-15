@@ -9,7 +9,6 @@ import '../core/editor_controller.dart';
 import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../node/basic.dart';
-import '../cursor/node_position.dart';
 import '../../../editor/extension/node_context.dart';
 
 class TabIntent extends Intent {
@@ -29,7 +28,6 @@ class TabAction extends ContextAction<TabIntent> {
 
   TabAction(this.ac);
 
-
   @override
   void invoke(TabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
@@ -40,20 +38,18 @@ class TabAction extends ContextAction<TabIntent> {
         final node = nodeContext.getNode(index);
         int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
         final r = node.onEdit(EditingData(
-            cursor.position, EventType.increaseDepth, nodeContext,
+            cursor, EventType.increaseDepth, nodeContext,
             extras: lastDepth));
-        nodeContext.execute(ReplaceNode(
-            Replace(index, index + 1, [r.node], r.position.toCursor(index))));
+        nodeContext.execute(
+            ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
         int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
         final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end),
-            EventType.increaseDepth,
-            nodeContext,
+            cursor, EventType.increaseDepth, nodeContext,
             extras: lastDepth));
-        nodeContext.execute(ReplaceNode(
-            Replace(index, index + 1, [r.node], r.position.toCursor(index))));
+        nodeContext.execute(
+            ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodesCursor) {
         nodeContext.execute(IncreaseNodesDepth(cursor));
       }
@@ -74,7 +70,6 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
 
   ShiftTabAction(this.ac);
 
-
   @override
   void invoke(ShiftTabIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
@@ -83,18 +78,16 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
       if (cursor is EditingCursor) {
         final index = cursor.index;
         final node = nodeContext.getNode(index);
-        final r = node.onEdit(
-            EditingData(cursor.position, EventType.decreaseDepth, nodeContext));
-        nodeContext.execute(ReplaceNode(
-            Replace(index, index + 1, [r.node], r.position.toCursor(index))));
+        final r = node
+            .onEdit(EditingData(cursor, EventType.decreaseDepth, nodeContext));
+        nodeContext.execute(
+            ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        final r = nodeContext.getNode(index).onSelect(SelectingData(
-            SelectingPosition(cursor.begin, cursor.end),
-            EventType.decreaseDepth,
-            nodeContext));
-        nodeContext.execute(ReplaceNode(
-            Replace(index, index + 1, [r.node], r.position.toCursor(index))));
+        final r = nodeContext.getNode(index).onSelect(
+            SelectingData(cursor, EventType.decreaseDepth, nodeContext));
+        nodeContext.execute(
+            ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodesCursor) {
         nodeContext.execute(DecreaseNodesDepth(cursor));
       }

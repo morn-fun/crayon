@@ -1,16 +1,12 @@
 import 'dart:math';
-
-import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
-import 'package:crayon/editor/widget/nodes/rich_text.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
-import 'package:crayon/editor/cursor/node_position.dart';
-
 import '../config/const_texts.dart';
 import '../config/test_editor_node.dart';
 import '../config/test_node_context.dart';
@@ -251,30 +247,30 @@ void main() {
         texts: ['abc', 'xyz', 'l'],
         generator: (text, offset) =>
             RichTextSpan(text: text, offset: offset, tags: {'${i++}'}));
-    final np1 =
-        newNode.delete(RichTextNodePosition(0, newNode.spans.first.textLength));
-    assert((np1.position as EditingPosition).position is RichTextNodePosition);
-    assert(((np1.position as EditingPosition).position as RichTextNodePosition)
+    final np1 = newNode.delete(
+        RichTextNodePosition(0, newNode.spans.first.textLength), 0);
+    assert((np1.cursor as EditingCursor).position is RichTextNodePosition);
+    assert(((np1.cursor as EditingCursor).position as RichTextNodePosition)
             .offset ==
         newNode.spans.first.textLength - 1);
     final node1 = np1.node as RichTextNode;
     assert(node1.spans.first.text == 'ab');
-    expect(() => newNode.delete(RichTextNodePosition(0, 0)),
+    expect(() => newNode.delete(RichTextNodePosition(0, 0), 0),
         throwsA(const TypeMatcher<DeleteRequiresNewLineException>()));
 
-    final np2 = newNode.delete(RichTextNodePosition(0, 1));
+    final np2 = newNode.delete(RichTextNodePosition(0, 1), 0);
     final node2 = np2.node as RichTextNode;
     assert(node2.spans.first.text == 'bc');
-    assert(np2.position is EditingPosition);
+    assert(np2.cursor is EditingCursor);
 
-    final np3 = newNode.delete(RichTextNodePosition(1, 0));
-    assert(np3.position is EditingPosition);
+    final np3 = newNode.delete(RichTextNodePosition(1, 0), 0);
+    assert(np3.cursor is EditingCursor);
     final node3 = np3.node as RichTextNode;
     assert(node3.spans.first.text == 'ab');
 
-    final np4 = newNode.delete(RichTextNodePosition(2, 1));
-    assert(np4.position is EditingPosition);
-    assert(((np4.position as EditingPosition).position as RichTextNodePosition)
+    final np4 = newNode.delete(RichTextNodePosition(2, 1), 0);
+    assert(np4.cursor is EditingCursor);
+    assert(((np4.cursor as EditingCursor).position as RichTextNodePosition)
             .offset ==
         newNode.spans[1].textLength);
     final node4 = np4.node as RichTextNode;
@@ -353,18 +349,6 @@ void main() {
       assert(n.keys.contains('text'));
       assert(!n.keys.contains('tags'));
     }
-  });
-
-  test('build', () {
-    final newNode = basicNode(texts: ['aaa', 'bbb']);
-    final widget = Builder(
-        builder: (c) => newNode.build(
-            TestNodeContext(),
-            NodeBuildParam(
-                index: 0,
-                position: EditingPosition(RichTextNodePosition(0, 0))),
-            c));
-    assert(widget is RichTextWidget);
   });
 
   test('insertByPosition', () {
@@ -553,8 +537,8 @@ void main() {
     final newNode = basicNode();
     for (var t in EventType.values) {
       try {
-        newNode.onEdit(
-            EditingData(RichTextNodePosition.zero(), t, TestNodeContext()));
+        newNode.onEdit(EditingData(
+            RichTextNodePosition.zero().toCursor(0), t, TestNodeContext()));
       } catch (e) {
         print('e:$e');
       }
@@ -567,8 +551,8 @@ void main() {
     for (var t in EventType.values) {
       try {
         newNode.onSelect(SelectingData(
-            SelectingPosition(
-                RichTextNodePosition.zero(), RichTextNodePosition(1, 1)),
+            SelectingNodeCursor(
+                0, RichTextNodePosition.zero(), RichTextNodePosition(1, 1)),
             t,
             TestNodeContext()));
       } catch (e) {
