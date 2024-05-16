@@ -62,7 +62,7 @@ class _RichEditorPageState extends State<RichEditor> {
         });
     inputManager.startInput();
     editorContext = EditorContext(
-        controller, inputManager, focusNode, invoker, entryManager);
+        controller, inputManager, invoker, entryManager);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
     listeners.addNodesChangedListener(refresh);

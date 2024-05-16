@@ -7,7 +7,6 @@ import '../../core/context.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
-import '../../exception/string.dart';
 import '../../widget/nodes/code_block.dart';
 import '../basic.dart';
 import '../rich_text/rich_text.dart';
@@ -122,7 +121,7 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  EditorNode merge(EditorNode other, {String? newId}) {
+  CodeBlockNode merge(EditorNode other, {String? newId}) {
     if (other is RichTextNode) {
       return from(codes.addOne(other.text), id: newId);
     } else if (other is CodeBlockNode) {
@@ -138,10 +137,10 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  EditorNode newNode({String? id, int? depth}) =>
+  CodeBlockNode newNode({String? id, int? depth}) =>
       from(codes, id: id, depth: depth);
 
-  EditorNode newLanguage(String language) => from(codes, language: language);
+  CodeBlockNode newLanguage(String language) => from(codes, language: language);
 
   CodeBlockPosition lastPosition(CodeBlockPosition position) {
     final index = position.index;
@@ -153,8 +152,6 @@ class CodeBlockNode extends EditorNode {
         final newOffset = lastCode.length;
         return CodeBlockPosition(lastIndex, newOffset);
       } on RangeError {
-        throw ArrowLeftBeginException(position);
-      } on OffsetIsEndException {
         throw ArrowLeftBeginException(position);
       }
     } else {
@@ -174,20 +171,13 @@ class CodeBlockNode extends EditorNode {
     final offset = position.offset;
     final code = codes[index];
     if (offset == code.length) {
-      try {
-        return CodeBlockPosition(nextIndex, 0);
-      } on RangeError {
-        throw ArrowRightEndException(position);
-      } on OffsetIsEndException {
-        throw ArrowRightEndException(position);
-      }
-    } else {
-      try {
-        final newOffset = code.nextOffset(position.offset);
-        return CodeBlockPosition(index, newOffset);
-      } on RangeError {
-        throw ArrowRightEndException(position);
-      }
+      if (nextIndex >= codes.length) throw ArrowRightEndException(position);
+      return CodeBlockPosition(nextIndex, 0);
+    }
+    try {
+      return CodeBlockPosition(index, code.nextOffset(position.offset));
+    } on RangeError {
+      throw ArrowRightEndException(position);
     }
   }
 
@@ -215,7 +205,7 @@ class CodeBlockNode extends EditorNode {
   String get text => codes.join('\n');
 
   @override
-  Map<String, dynamic> toJson() => {'type': runtimeType, 'codes': codes};
+  Map<String, dynamic> toJson() => {'type': '$runtimeType', 'codes': codes};
 
   @override
   List<EditorNode> getInlineNodesFromPosition(

@@ -27,7 +27,10 @@ NodeWithCursor increaseDepthWhileSelecting(
   int depth = node.depth;
   if (left == node.beginPosition && right == node.endPosition) {
     if (lastDepth < depth) {
-      throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
+      throw NodeUnsupportedException(
+          node.runtimeType,
+          'increaseDepthWhileSelecting with depth $lastDepth small than $depth',
+          depth);
     }
     return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
   }
@@ -53,13 +56,8 @@ NodeWithCursor decreaseDepthWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
-  int lastDepth = data.extras is int ? data.extras : 0;
-  int depth = node.depth;
   if (left == node.beginPosition && right == node.endPosition) {
-    if (lastDepth < depth) {
-      throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
-    }
-    return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
+    throw DepthNeedDecreaseMoreException(node.runtimeType, node.depth);
   }
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);

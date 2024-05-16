@@ -7,9 +7,10 @@ import 'package:flutter/cupertino.dart' hide RichText;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
-import '../config/const_texts.dart';
-import '../config/test_editor_node.dart';
-import '../config/test_node_context.dart';
+
+import '../../config/const_texts.dart';
+import '../../config/test_editor_node.dart';
+import '../../config/test_node_context.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 

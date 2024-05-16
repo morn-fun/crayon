@@ -38,7 +38,6 @@ class EditingCursor<T extends NodePosition> extends SingleNodeCursor<T> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is EditingCursor &&
-          runtimeType == other.runtimeType &&
           index == other.index &&
           position == other.position;
 
@@ -74,7 +73,6 @@ class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is SelectingNodeCursor &&
-          runtimeType == other.runtimeType &&
           index == other.index &&
           begin == other.begin &&
           end == other.end;
@@ -111,10 +109,7 @@ class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SelectingNodesCursor &&
-          runtimeType == other.runtimeType &&
-          begin == other.begin &&
-          end == other.end;
+      other is SelectingNodesCursor && begin == other.begin && end == other.end;
 
   @override
   int get hashCode => begin.hashCode ^ end.hashCode;

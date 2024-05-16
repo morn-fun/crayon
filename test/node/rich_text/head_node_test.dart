@@ -8,8 +8,9 @@ import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../config/const_texts.dart';
-import '../config/test_node_context.dart';
+import '../../config/const_texts.dart';
+import '../../config/test_node_context.dart';
+
 
 void main() {
   test('from', () {

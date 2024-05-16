@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/node/rich_text/ordered.dart';
 
-import '../config/const_texts.dart';
-import '../config/test_node_context.dart';
+import '../../config/const_texts.dart';
+import '../../config/test_node_context.dart';
+
 
 void main() {
   test('test pre text RegExp', () {

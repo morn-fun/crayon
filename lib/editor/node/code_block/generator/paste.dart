@@ -1,7 +1,9 @@
+
 import '../../../../editor/extension/unmodifiable.dart';
 
 import '../../../cursor/basic.dart';
 import '../../../cursor/code_block.dart';
+import '../../../exception/editor_node.dart';
 import '../../basic.dart';
 import '../code_block.dart';
 
@@ -9,7 +11,7 @@ NodeWithCursor pasteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final nodes = data.extras;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
-    return NodeWithCursor(node, EditingCursor(data.index, data.position));
+    throw NodeUnsupportedException(node.runtimeType, 'pasteWhileEditing', nodes);
   }
   final newCodes = nodes.map((e) => e.text).toList();
   final p = data.position;

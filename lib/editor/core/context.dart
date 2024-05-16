@@ -16,12 +16,11 @@ import 'logger.dart';
 class EditorContext extends NodeContext {
   final RichEditorController controller;
   final InputManager inputManager;
-  final FocusNode focusNode;
   final CommandInvoker invoker;
   final EntryManager entryManager;
 
-  EditorContext(this.controller, this.inputManager, this.focusNode,
-      this.invoker, this.entryManager);
+  EditorContext(
+      this.controller, this.inputManager, this.invoker, this.entryManager);
 
   @override
   void execute(BasicCommand command) {
@@ -53,10 +52,6 @@ class EditorContext extends NodeContext {
 
   @override
   ListenerCollection get listeners => controller.listeners;
-
-  void requestFocus() {
-    if (!focusNode.hasFocus) focusNode.requestFocus();
-  }
 
   @override
   EditorNode getNode(int index) => controller.getNode(index);
@@ -102,8 +97,7 @@ class EditorContext extends NodeContext {
     final editingOff = o.offset;
     final offset = editingOff.offset;
     inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
-        Rect.fromPoints(
-            offset, offset.translate(0, editingOff.height)),
+        Rect.fromPoints(offset, offset.translate(0, editingOff.height)),
         Matrix4.translationValues(offset.dx, offset.dy, 0.0)
           ..translate(-offset.dx, -offset.dy),
         Size(400, editingOff.height)));

@@ -44,5 +44,5 @@ NodeWithCursor deleteWhileSelecting(
   final newRight = node.rearPartNode(data.right);
   final newNode = newLeft.merge(newRight);
   return NodeWithCursor(
-      newNode, EditingCursor(data.index, newLeft.endPosition));
+      newNode, EditingCursor(data.index, data.left));
 }

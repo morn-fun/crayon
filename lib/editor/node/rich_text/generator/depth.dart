@@ -8,7 +8,10 @@ NodeWithCursor increaseDepthWhileEditing(
   int lastDepth = data.extras is int ? data.extras : 0;
   int depth = node.depth;
   if (lastDepth < depth) {
-    throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
+    throw NodeUnsupportedException(
+        node.runtimeType,
+        'increaseDepthWhileEditing with depth $lastDepth small than $depth',
+        depth);
   }
   return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
 }
@@ -18,7 +21,10 @@ NodeWithCursor increaseDepthWhileSelecting(
   int lastDepth = data.extras is int ? data.extras : 0;
   int depth = node.depth;
   if (lastDepth < depth) {
-    throw DepthNotAbleToIncreaseException(node.runtimeType, depth);
+    throw NodeUnsupportedException(
+        node.runtimeType,
+        'increaseDepthWhileEditing with depth $lastDepth small than $depth',
+        depth);
   }
   return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
 }

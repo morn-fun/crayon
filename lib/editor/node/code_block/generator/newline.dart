@@ -10,11 +10,9 @@ NodeWithCursor newlineWhileEditing(
   final p = data.position;
   final codes = node.codes;
   final code = codes[p.index];
-  final tab = getTab(code);
-  final newCodes = [
-    code.substring(0, p.offset),
-    tab + code.substring(p.offset, code.length)
-  ];
+  final frontCode = code.substring(0, p.offset);
+  final tab = getTab(frontCode);
+  final newCodes = [frontCode, tab + code.substring(p.offset, code.length)];
   final newNode = node.from(codes.replaceOne(p.index, newCodes));
   final newPosition = CodeBlockPosition(p.index + 1, tab.length);
   return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
@@ -25,8 +23,7 @@ NodeWithCursor newlineWhileSelecting(
   final p = data.cursor;
   final newNode = node.replace(p.left, p.right, []);
   return newlineWhileEditing(
-      EditingData(p.leftCursor, EventType.newline, data.context),
-      newNode);
+      EditingData(p.leftCursor, EventType.newline, data.context), newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

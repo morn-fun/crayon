@@ -12,11 +12,11 @@ NodeWithCursor increaseDepthWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final codes = node.codes;
-  final code = _tab + codes[p.index];
+  final code = tab + codes[p.index];
   return NodeWithCursor(
     node.from(codes.replaceOne(p.index, [code])),
     EditingCursor(
-        data.index, CodeBlockPosition(p.index, p.offset + _tab.length)),
+        data.index, CodeBlockPosition(p.index, p.offset + tab.length)),
   );
 }
 
@@ -31,11 +31,14 @@ NodeWithCursor decreaseDepthWhileEditing(
     final newCode = code.replaceFirst(tabRegexp, '');
     removeOffset = code.length - newCode.length;
     code = newCode;
+  } else {
+    throw NodeUnsupportedException(
+        node.runtimeType, 'decreaseDepthWhileEditing without more tab', data);
   }
   return NodeWithCursor(
     node.from(codes.replaceOne(p.index, [code])),
-    EditingCursor(
-        data.index, CodeBlockPosition(p.index, p.offset - removeOffset)),
+    EditingCursor(data.index,
+        CodeBlockPosition(p.index, max(p.offset - removeOffset, 0))),
   );
 }
 
@@ -45,7 +48,10 @@ NodeWithCursor increaseDepthWhileSelecting(
   final p = data.cursor;
   if (node.isAllSelected(p) && extras is int) {
     if (extras < node.depth) {
-      throw DepthNotAbleToIncreaseException(node.runtimeType, node.depth);
+      throw NodeUnsupportedException(
+          node.runtimeType,
+          'increaseDepthWhileSelecting with $extras small than ${node.depth}',
+          node.depth);
     }
     return NodeWithCursor(node.newNode(depth: node.depth + 1), p);
   }
@@ -55,14 +61,14 @@ NodeWithCursor increaseDepthWhileSelecting(
   final selectingCodes = codes.getRange(leftIndex, rightIndex + 1);
   final newCodes = <String>[];
   for (var c in selectingCodes) {
-    newCodes.add(_tab + c);
+    newCodes.add(tab + c);
   }
   return NodeWithCursor(
       node.from(codes.replaceMore(leftIndex, rightIndex + 1, newCodes)),
       SelectingNodeCursor(
           data.index,
-          CodeBlockPosition(leftIndex, p.left.offset + _tab.length),
-          CodeBlockPosition(rightIndex, p.right.offset + _tab.length)));
+          CodeBlockPosition(leftIndex, p.left.offset + tab.length),
+          CodeBlockPosition(rightIndex, p.right.offset + tab.length)));
 }
 
 NodeWithCursor decreaseDepthWhileSelecting(
@@ -76,11 +82,17 @@ NodeWithCursor decreaseDepthWhileSelecting(
   final rightIndex = p.right.index;
   final selectingCodes = codes.getRange(leftIndex, rightIndex + 1);
   final newCodes = <String>[];
+  bool noCodeDecreased = true;
   for (var code in selectingCodes) {
     if (startWithTab(code)) {
       code = code.replaceFirst(tabRegexp, '');
+      noCodeDecreased = false;
     }
     newCodes.add(code);
+  }
+  if (noCodeDecreased) {
+    throw NodeUnsupportedException(node.runtimeType,
+        'decreaseDepthWhileSelecting without codes to decrease', data);
   }
   int leftDecreaseOffset = codes[leftIndex].length - newCodes.first.length;
   int rightDecreaseOffset = codes[rightIndex].length - newCodes.last.length;
@@ -92,14 +104,13 @@ NodeWithCursor decreaseDepthWhileSelecting(
       newNode,
       SelectingNodeCursor(
           data.index,
-          CodeBlockPosition(leftIndex,
-              min(max(leftOffset - leftDecreaseOffset, 0), leftOffset)),
-          CodeBlockPosition(rightIndex,
-              min(max(rightOffset - rightDecreaseOffset, 0), rightOffset))));
+          CodeBlockPosition(leftIndex, max(leftOffset - leftDecreaseOffset, 0)),
+          CodeBlockPosition(
+              rightIndex, max(rightOffset - rightDecreaseOffset, 0))));
 }
 
 bool startWithTab(String code) => code.startsWith(tabRegexp);
 
-final _tab = '\t' * 4;
+final tab = '\t' * 4;
 
 RegExp tabRegexp = RegExp(r'^[\t\s]{1,4}');

@@ -7,9 +7,11 @@ NodeWithCursor selectAllWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final p = data.position;
   final code = node.codes[p.index];
-  if (node.codes.length == 1 && node.codes.first.isEmpty) {
-    return NodeWithCursor(node,
-        SelectingNodeCursor(data.index, node.beginPosition, node.endPosition));
+  if (code.isEmpty) {
+    return NodeWithCursor(
+        node,
+        SelectingNodeCursor(data.index, node.beginPosition.copy(atEdge: false),
+            node.endPosition.copy(atEdge: false)));
   }
   return NodeWithCursor(
       node,

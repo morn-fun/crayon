@@ -25,7 +25,8 @@ class IncreaseNodesDepth implements BasicCommand {
     final leftNode = nodeContext.getNode(leftCursor.index);
     int depth = leftNode.depth;
     if (lastDepth < depth) {
-      throw DepthNotAbleToIncreaseException(leftNode.runtimeType, depth);
+      throw NodeUnsupportedException(leftNode.runtimeType,
+          'IncreaseNodesDepth with $lastDepth small than $depth', depth);
     }
     int l = leftCursor.index;
     final r = rightCursor.index;
