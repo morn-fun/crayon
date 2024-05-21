@@ -16,47 +16,21 @@ import '../unordered.dart';
 
 NodeWithCursor typingRichTextNodeWhileEditing(
     EditingData<RichTextNodePosition> data, RichTextNode node) {
-  final delta = data.extras as TextEditingDelta;
-  if (delta is TextEditingDeltaInsertion) {
-    final position = data.position;
-    final text = delta.textInserted;
+  final v = data.extras;
+  if (v is TextEditingValue) {
+    final position = data.position,
+        index = position.index,
+        text = v.text,
+        oldOffset = position.offset,
+        valueOffset = v.selection.baseOffset,
+        span = node.getSpan(index);
     checkNeedChangeNodeTyp(text, node, position, data.index);
-    final span = node.getSpan(position.index);
-    final newNode = node.update(position.index,
-        span.copy(text: (v) => v.insert(position.offset, text)));
-    final newPosition =
-        RichTextNodePosition(position.index, position.offset + text.length);
+    final newNode =
+        node.update(index, span.copy(text: (v) => v.insert(oldOffset, text)));
+    final newPosition = RichTextNodePosition(index, oldOffset + valueOffset);
     checkNeedShowSelectingMenu(
         text, newNode, newPosition, data.context, data.index);
     return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
-  } else if (delta is TextEditingDeltaReplacement) {
-    final position = data.position;
-    final text = delta.replacementText;
-    final range = delta.replacedRange;
-    final index = position.index;
-    final span = node.getSpan(index);
-    final offset = position.offset;
-    final correctRange = TextRange(start: offset - range.end, end: offset);
-    final newNode = node.update(
-        index, span.copy(text: (v) => v.replace(correctRange, text)));
-    return NodeWithCursor(
-        newNode,
-        EditingCursor(data.index,
-            RichTextNodePosition(index, correctRange.start + text.length)));
-  } else if (delta is TextEditingDeltaDeletion) {
-    final position = data.position;
-    final index = position.index;
-    final span = node.getSpan(index);
-    final offset = position.offset - span.offset;
-    final range = delta.deletedRange;
-    final deltaPosition = range.end - range.start;
-    final correctRange = TextRange(start: offset - deltaPosition, end: offset);
-    final newNode =
-        node.update(index, span.copy(text: (v) => v.remove(correctRange)));
-    return NodeWithCursor(
-        newNode,
-        EditingCursor(
-            data.index, RichTextNodePosition(index, correctRange.start)));
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'typingRichTextNodeWhileEditing', data);

@@ -213,7 +213,7 @@ class TableNode extends EditorNode {
     required ValueChanged<Replace> onReplace,
     required ValueChanged<Update> onUpdate,
     required ValueChanged<BasicCursor> onBasicCursor,
-    required ValueChanged<CursorOffset> cursorOffset,
+    required ValueChanged<EditingOffset> editingOffset,
     required ValueChanged<EditingCursor> onPan,
     required ValueChanged<NodeWithIndex> onNodeUpdate,
   }) {
@@ -226,7 +226,7 @@ class TableNode extends EditorNode {
         onReplace: onReplace,
         onUpdate: onUpdate,
         onBasicCursor: onBasicCursor,
-        cursorOffset: cursorOffset,
+        editingOffset: editingOffset,
         onPan: onPan,
         onNodeUpdate: onNodeUpdate,
         listeners: childListener);

@@ -1,10 +1,10 @@
+import 'package:crayon/editor/extension/node_context.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../command/basic.dart';
 import '../command/modification.dart';
-import '../command/replace.dart';
-import '../command/selecting/replacement.dart';
+import '../command/replacement.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../exception/menu.dart';
@@ -18,6 +18,8 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   TextInputConnection? _inputConnection;
   InputConnectionAttribute _attribute = InputConnectionAttribute.empty();
+  TextEditingValue _localValue = TextEditingValue();
+  NodeWithCursor? _typingData;
 
   final ValueGetter<EditorContext> contextGetter;
 
@@ -46,7 +48,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   AutofillScope? get currentAutofillScope => null;
 
   @override
-  TextEditingValue? get currentTextEditingValue => null;
+  TextEditingValue? get currentTextEditingValue => _localValue;
 
   @override
   void performAction(TextInputAction action) {
@@ -77,19 +79,18 @@ class InputManager with TextInputClient, DeltaTextInputClient {
 
   @override
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
-    final c = cursor;
-    if (c is NoneCursor) return;
-    final last = textEditingDeltas.last;
-    // logger.i('updateEditingValueWithDeltas:$textEditingDeltas');
-    final noComposing = last.composing == TextRange.empty;
-    final isZeroComposing = last.composing == const TextRange(start: 0, end: 0);
-    BasicCommand? command = _buildCommand(last);
-
-    if ((last is TextEditingDeltaNonTextUpdate &&
-            (noComposing || isZeroComposing)) ||
-        (last is TextEditingDeltaReplacement && noComposing) ||
-        (last is TextEditingDeltaInsertion && noComposing) ||
-        (last is TextEditingDeltaDeletion && isZeroComposing)) {
+    TextEditingValue newValue = _localValue;
+    for (var delta in textEditingDeltas) {
+      newValue = delta.apply(newValue);
+    }
+    _localValue = newValue;
+    if (cursor is NoneCursor) return;
+    logger.i(
+        'updateEditingValueWithDeltas, localValue：$_localValue,   detail: $textEditingDeltas');
+    BasicCommand? command = _buildCommand();
+    final composing = _localValue.composing;
+    if (composing == TextRange.empty ||
+        composing == TextRange(start: 0, end: 0)) {
       controller.updateStatus(ControllerStatus.idle);
       restartInput();
     } else {
@@ -98,13 +99,15 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     if (command != null) onCommand.call(command);
   }
 
-  BasicCommand? _buildCommand(TextEditingDelta delta) {
-    final c = cursor;
+  BasicCommand? _buildCommand() {
+    final c = _typingData?.cursor ?? cursor;
     if (c is EditingCursor) {
-      final node = controller.getNode(c.index);
+      final node = _typingData?.node ?? controller.getNode(c.index);
+      _typingData ??= NodeWithCursor(node, c);
       try {
-        final newOne = node.onEdit(
-            EditingData(c, EventType.typing, editorContext, extras: delta));
+        final newOne = node.onEdit(EditingData(
+            c, EventType.typing, editorContext,
+            extras: _localValue));
         return ModifyNode(newOne);
       } on TypingToChangeNodeException catch (e) {
         final index = c.index;
@@ -117,29 +120,46 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         logger.e('error while typing: ${e.message}');
       }
     } else if (c is SelectingNodeCursor) {
-      final node = controller.getNode(c.index);
       try {
-        final newOne = node.onSelect(
-            SelectingData(c, EventType.typing, editorContext, extras: delta));
+        final r = controller
+            .getNode(c.index)
+            .onSelect(SelectingData(c, EventType.delete, editorContext));
+        _typingData ??= r;
+        final newOne = r.node.onEdit(EditingData(
+            r.cursor as EditingCursor, EventType.typing, editorContext,
+            extras: _localValue));
         return ModifyNode(newOne);
-      } on TypingToChangeNodeException catch (e) {
-        final index = c.index;
-        return ReplaceNode(
-            Replace(index, index + 1, [e.current.node], e.current.cursor));
-      } on TypingRequiredOptionalMenuException catch (e) {
-        onOptionalMenu.call(e.context);
-        return ModifyNode(e.nodeWithCursor);
       } on NodeUnsupportedException catch (e) {
-        logger.e('error while typing: ${e.message}');
+        logger.e('$runtimeType, ${e.message}');
       }
     } else if (c is SelectingNodesCursor) {
-      return ReplaceSelectingNodes(c, EventType.typing, delta);
+      final leftCursor = c.left;
+      final rightCursor = c.right;
+      final leftNode = controller.getNode(leftCursor.index);
+      final rightNode = controller.getNode(rightCursor.index);
+      final left = leftNode.frontPartNode(leftCursor.position);
+      final right =
+          rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
+      final mergeNode = left.merge(right);
+      List<EditorNode> listNeedRefreshDepth = editorContext
+          .listNeedRefreshDepth(rightCursor.index, mergeNode.depth);
+      final newCursor = EditingCursor(leftCursor.index, left.endPosition);
+      _typingData ??= NodeWithCursor(mergeNode, newCursor);
+      final newOne = mergeNode.onEdit(EditingData(
+          newCursor, EventType.typing, editorContext,
+          extras: _localValue));
+      return ReplaceNode(Replace(
+          leftCursor.index,
+          rightCursor.index + 1 + listNeedRefreshDepth.length,
+          [newOne.node, ...listNeedRefreshDepth],
+          newOne.cursor));
     }
     return null;
   }
 
   void restartInput() {
     logger.i('$tag, restartInput');
+    _typingData = null;
     stopInput();
     startInput();
   }

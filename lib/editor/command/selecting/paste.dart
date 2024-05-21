@@ -32,7 +32,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
             extras: nodes));
         return nodeContext.replace(Replace(
             leftCursor.index, rightCursor.index + 1, [r.node], r.cursor));
-      } on UnablePasteException catch (e) {
+      } on PasteToCreateMoreNodesException catch (e) {
         return nodeContext.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,

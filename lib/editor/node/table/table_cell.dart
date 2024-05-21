@@ -154,7 +154,7 @@ class TableCellNodeContext extends NodeContext {
   final ValueChanged<Replace> onReplace;
   final ValueChanged<Update> onUpdate;
   final ValueChanged<BasicCursor> onBasicCursor;
-  final ValueChanged<CursorOffset> cursorOffset;
+  final ValueChanged<EditingOffset> editingOffset;
   final ValueChanged<EditingCursor> onPan;
   final ValueChanged<NodeWithIndex> onNodeUpdate;
   @override
@@ -167,7 +167,7 @@ class TableCellNodeContext extends NodeContext {
     required this.onReplace,
     required this.onUpdate,
     required this.onBasicCursor,
-    required this.cursorOffset,
+    required this.editingOffset,
     required this.onPan,
     required this.onNodeUpdate,
   });
@@ -219,7 +219,7 @@ class TableCellNodeContext extends NodeContext {
   void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
 
   @override
-  void onCursorOffset(CursorOffset o) => cursorOffset.call(o);
+  void onEditingOffset(EditingOffset o) => editingOffset.call(o);
 
   @override
   void onPanUpdate(EditingCursor cursor) => onPan(cursor);

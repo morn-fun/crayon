@@ -14,7 +14,6 @@ class ListenerCollection {
   final Set<ValueChanged<BasicCursor>> _cursorListeners = {};
   final Set<VoidCallback> _nodesListeners = {};
   final Map<String, Set<ValueChanged<GestureState>>> _gestureListeners = {};
-  final Set<ValueChanged<ControllerStatus>> _statusListeners = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
@@ -24,7 +23,6 @@ class ListenerCollection {
     Set<ValueChanged<BasicCursor>>? cursorListeners,
     Set<VoidCallback>? nodesListeners,
     Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
-    Set<ValueChanged<ControllerStatus>>? statusListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
     Set<ValueChanged<OptionalSelectedType>>? optionalMenuListeners,
@@ -32,7 +30,6 @@ class ListenerCollection {
     _cursorListeners.addAll(cursorListeners ?? {});
     _nodesListeners.addAll(nodesListeners ?? {});
     _gestureListeners.addAll(gestureListeners ?? {});
-    _statusListeners.addAll(statusListeners ?? {});
     _nodeListeners.addAll(nodeListeners ?? {});
     _arrowDelegates.addAll(arrowDelegates ?? {});
     _optionalMenuListeners.addAll(optionalMenuListeners ?? {});
@@ -42,7 +39,6 @@ class ListenerCollection {
     Set<ValueChanged<BasicCursor>>? cursorListeners,
     Set<VoidCallback>? nodesListeners,
     Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
-    Set<ValueChanged<ControllerStatus>>? statusListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
     Set<ValueChanged<OptionalSelectedType>>? optionalMenuListeners,
@@ -51,7 +47,6 @@ class ListenerCollection {
         cursorListeners: cursorListeners ?? _cursorListeners,
         nodesListeners: nodesListeners ?? _nodesListeners,
         gestureListeners: gestureListeners ?? _gestureListeners,
-        statusListeners: statusListeners ?? _statusListeners,
         nodeListeners: nodeListeners ?? _nodeListeners,
         arrowDelegates: arrowDelegates ?? _arrowDelegates,
         optionalMenuListeners: optionalMenuListeners ?? _optionalMenuListeners,
@@ -62,7 +57,6 @@ class ListenerCollection {
     _cursorListeners.clear();
     _nodesListeners.clear();
     _gestureListeners.clear();
-    _statusListeners.clear();
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _optionalMenuListeners.clear();
@@ -91,12 +85,6 @@ class ListenerCollection {
     set.remove(listener);
     _gestureListeners[id] = set;
   }
-
-  void addStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
-      _statusListeners.add(listener);
-
-  void removeStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
-      _statusListeners.remove(listener);
 
   void addOptionalMenuListener(ValueChanged<OptionalSelectedType> listener) =>
       _optionalMenuListeners.add(listener);
@@ -191,12 +179,6 @@ class ListenerCollection {
       c.call();
     }
     // logger.i('$tag, notifyNodes length:${_nodesChangedCallbacks.length}');
-  }
-
-  void notifyStatus(ControllerStatus status) {
-    for (var c in Set.of(_statusListeners)) {
-      c.call(status);
-    }
   }
 
   void notifyOptionalMenu(OptionalSelectedType type) {

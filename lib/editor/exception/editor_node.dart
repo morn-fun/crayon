@@ -157,12 +157,12 @@ class ArrowDownBottomException implements EditorNodeException {
       'the position $position with $offset is in bottom, cannot move down any more!';
 }
 
-class UnablePasteException implements EditorNodeException {
+class PasteToCreateMoreNodesException implements EditorNodeException {
   final List<EditorNode> nodes;
   final Type source;
   final NodePosition position;
 
-  UnablePasteException(this.nodes, this.source, this.position);
+  PasteToCreateMoreNodesException(this.nodes, this.source, this.position);
 
   String get message => 'the $source cannot paste nodes!';
 }

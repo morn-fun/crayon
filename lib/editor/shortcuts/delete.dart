@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../command/modification.dart';
-import '../command/replace.dart';
+import '../command/replacement.dart';
 import '../command/selecting/deletion.dart';
 import '../command/selecting/depth.dart';
 import '../core/context.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../command/modification.dart';
-import '../command/replace.dart';
+import '../command/replacement.dart';
 import '../command/selecting/paste.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
@@ -122,7 +122,7 @@ class PasteAction extends ContextAction<PasteIntent> {
         final r = node.onEdit(
             EditingData(cursor, EventType.paste, nodeContext, extras: nodes));
         nodeContext.execute(ModifyNode(r));
-      } on UnablePasteException catch (e) {
+      } on PasteToCreateMoreNodesException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       } on NodeUnsupportedException catch (e) {
@@ -135,7 +135,7 @@ class PasteAction extends ContextAction<PasteIntent> {
         final r = node.onSelect(
             SelectingData(cursor, EventType.paste, nodeContext, extras: nodes));
         nodeContext.execute(ModifyNode(r));
-      } on UnablePasteException catch (e) {
+      } on PasteToCreateMoreNodesException catch (e) {
         nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       } on NodeUnsupportedException catch (e) {

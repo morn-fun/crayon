@@ -1,4 +1,5 @@
 import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/node/basic.dart';
@@ -6,7 +7,7 @@ import 'package:crayon/editor/node/basic.dart';
 class TestEditorNode extends EditorNode {
   @override
   // TODO: implement beginPosition
-  NodePosition get beginPosition => throw UnimplementedError();
+  NodePosition get beginPosition => TestNodePosition();
 
   @override
   Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
@@ -15,8 +16,7 @@ class TestEditorNode extends EditorNode {
   }
 
   @override
-  // TODO: implement endPosition
-  NodePosition get endPosition => throw UnimplementedError();
+  NodePosition get endPosition => TestNodePosition();
 
   @override
   EditorNode frontPartNode(NodePosition end, {String? newId}) {
@@ -33,8 +33,8 @@ class TestEditorNode extends EditorNode {
 
   @override
   EditorNode merge(EditorNode other, {String? newId}) {
-    // TODO: implement merge
-    throw UnimplementedError();
+    if (other is TestEditorNode) return this;
+    throw UnableToMergeException('$runtimeType', '${other.runtimeType}');
   }
 
   @override
@@ -77,4 +77,9 @@ class TestEditorNode extends EditorNode {
     // TODO: implement getInlineNodesFromPosition
     throw UnimplementedError();
   }
+}
+
+class TestNodePosition extends NodePosition {
+  @override
+  bool isLowerThan(NodePosition other) => false;
 }

@@ -8,6 +8,7 @@ import '../node/basic.dart';
 import '../shortcuts/arrows/arrows.dart';
 import 'listener_collection.dart';
 import 'command_invoker.dart';
+import 'logger.dart';
 
 class RichEditorController {
   RichEditorController.fromNodes(List<EditorNode> nodes) {
@@ -19,6 +20,10 @@ class RichEditorController {
   BasicCursor _cursor = NoneCursor();
   CursorOffset _lastCursorOffset = CursorOffset.zero();
   EditingCursor _panStartCursor = EditingCursor(0, RichTextNodePosition.zero());
+  final Set<ValueChanged<ControllerStatus>> _statusListeners = {};
+  final Set<ValueChanged<CursorOffset>> _cursorOffsetListeners = {};
+
+  final tag = 'RichEditorController';
 
   final ListenerCollection listeners = ListenerCollection();
 
@@ -49,6 +54,7 @@ class RichEditorController {
 
   void updateCursor(BasicCursor cursor, {bool notify = true}) {
     if (_cursor == cursor) return;
+    logger.i('$tag, updateCursor: $cursor');
     _cursor = cursor;
     if (cursor is EditingCursor) _updatePanStartCursor(cursor);
     if (notify) notifyCursor(cursor);
@@ -56,8 +62,24 @@ class RichEditorController {
 
   void updateStatus(ControllerStatus status) {
     if (_status == status) return;
+    logger.i('$tag, updateStatus: $status');
     _status = status;
+    for (var c in Set.of(_statusListeners)) {
+      c.call(status);
+    }
   }
+
+  void addStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
+      _statusListeners.add(listener);
+
+  void removeStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
+      _statusListeners.remove(listener);
+
+  void addCursorOffsetListeners(ValueChanged<CursorOffset> listener) =>
+      _cursorOffsetListeners.add(listener);
+
+  void removeCursorOffsetListeners(ValueChanged<CursorOffset> listener) =>
+      _cursorOffsetListeners.remove(listener);
 
   void _updatePanStartCursor(EditingCursor c) => _panStartCursor = c;
 
@@ -73,12 +95,17 @@ class RichEditorController {
 
   void setCursorOffset(CursorOffset o) {
     _lastCursorOffset = o;
+    for (var c in Set.of(_cursorOffsetListeners)) {
+      c.call(o);
+    }
   }
 
   List<Map<String, dynamic>> toJson() => _nodes.map((e) => e.toJson()).toList();
 
   void dispose() {
     _nodes.clear();
+    _statusListeners.clear();
+    _cursorOffsetListeners.clear();
     listeners.dispose();
   }
 

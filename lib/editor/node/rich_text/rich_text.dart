@@ -361,8 +361,8 @@ final _editingGenerator = <String, _NodeGeneratorWhileEditing>{
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileEditing(d, n),
   EventType.decreaseDepth.name: (d, n) =>
       throw DepthNeedDecreaseMoreException(n.runtimeType, n.depth),
-  ...Map.fromEntries(RichTextTag.values.map((e) =>
-      MapEntry(e.name, (d, n) => styleRichTextNodeWhileEditing(d, n, e.name)))),
+  // ...Map.fromEntries(RichTextTag.values.map((e) =>
+  //     MapEntry(e.name, (d, n) => styleRichTextNodeWhileEditing(d, n, e.name)))),
 };
 
 final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{

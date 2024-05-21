@@ -53,12 +53,14 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       listOffsetY += event;
       // logger.i('y:$listOffsetY, max:$maxExtent, min:$minExtent, event:$event');
     });
+    controller.addCursorOffsetListeners(onCursorOffsetChanged);
     listeners.addCursorChangedListener(onCursorChanged);
   }
 
   @override
   void dispose() {
     listeners.removeCursorChangedListener(onCursorChanged);
+    controller.removeCursorOffsetListeners(onCursorOffsetChanged);
     scrollOffsetSubscription.cancel();
     super.dispose();
   }
@@ -137,6 +139,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
         // logger.i('onTapDown:$d');
+        editorContext.restartInput();
         controller.notifyGesture(TapGestureState(d.globalPosition));
       },
       onPanStart: (d) {
@@ -218,8 +221,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                         editorContext,
                         NodeBuildParam(
                           index: index,
-                          cursor:
-                              cursor.getSingleNodeCursor(index, current),
+                          cursor: cursor.getSingleNodeCursor(index, current),
                         ),
                         context),
                   ),

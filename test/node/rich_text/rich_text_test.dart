@@ -3,19 +3,25 @@ import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
+import 'package:crayon/editor/shortcuts/styles.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
 
 import '../../config/const_texts.dart';
+import '../../config/necessary.dart';
 import '../../config/test_editor_node.dart';
-import '../../config/test_node_context.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 
 void main() {
-  RichTextNode basicNode({List<String>? texts, SpanGenerator? generator}) {
+  RichTextNode basicNode({
+    List<String>? texts,
+    SpanGenerator? generator,
+    bool mergeSpan = false,
+  }) {
     final spans = <RichTextSpan>[];
     for (var text in (texts ?? constTexts)) {
       final isFirst = spans.isEmpty;
@@ -24,7 +30,7 @@ void main() {
           RichTextSpan(text: text, offset: offset));
     }
 
-    return RichTextNode.from(spans);
+    return RichTextNode.from(mergeSpan ? RichTextSpan.mergeList(spans) : spans);
   }
 
   test('frontPartNode', () {
@@ -524,6 +530,14 @@ void main() {
     assert(p3 == RichTextNodePosition(1, 2));
   });
 
+  test('getInlineNodesFromPosition', () {
+    final node = basicNode();
+    var n1 =
+        node.getInlineNodesFromPosition(node.beginPosition, node.endPosition);
+    assert(n1.length == 1);
+    assert(n1.first.text == node.text);
+  });
+
   test('newIdNode', () {
     final newNode = basicNode();
     final node1 = newNode.newNode(id: 'aaa') as RichTextNode;
@@ -533,32 +547,353 @@ void main() {
     assert(newNode.spans.length == node1.spans.length);
   });
 
+  test('onSelect-deletion', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+        EventType.delete,
+        ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.text.isEmpty);
+    assert(c1.index == 0);
+    assert(c1.position == RichTextNodePosition.zero());
+  });
+
   test('onEdit', () {
-    ///TODO:complete the test logic in other places
-    final newNode = basicNode();
-    for (var t in EventType.values) {
-      try {
-        newNode.onEdit(EditingData(
-            RichTextNodePosition.zero().toCursor(0), t, TestNodeContext()));
-      } catch (e) {
-        print('e:$e');
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.italic, ctx,
+            extras: 0)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
+
+  test('onEdit-increaseDepth', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    var r1 = node.onEdit(EditingData(
+        EditingCursor(0, node.beginPosition), EventType.increaseDepth, ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(c1.position == node.beginPosition);
+    assert(n1.depth == node.depth + 1);
+    var newNode = node.newNode(depth: 10);
+    expect(
+        () => newNode.onEdit(EditingData(
+            EditingCursor(0, newNode.beginPosition),
+            EventType.increaseDepth,
+            ctx,
+            extras: 0)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
+
+  test('onSelect-increaseDepth', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+        EventType.increaseDepth,
+        ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as SelectingNodeCursor;
+    assert(c1.begin == node.beginPosition);
+    assert(c1.end == node.endPosition);
+    assert(n1.depth == node.depth + 1);
+    var newNode = node.newNode(depth: 10);
+    expect(
+        () => newNode.onSelect(SelectingData(
+            SelectingNodeCursor(0, newNode.beginPosition, newNode.endPosition),
+            EventType.increaseDepth,
+            ctx,
+            extras: 0)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
+
+  test('onEdit-decreaseDepth', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.decreaseDepth, ctx,
+            extras: 0)),
+        throwsA(const TypeMatcher<DepthNeedDecreaseMoreException>()));
+  });
+
+  test('onSelect-decreaseDepth', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+            EventType.decreaseDepth,
+            ctx,
+            extras: 0)),
+        throwsA(const TypeMatcher<DepthNeedDecreaseMoreException>()));
+  });
+
+  test('onEdit-selectAll', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    var r1 = node.onEdit(EditingData(
+        EditingCursor(0, node.beginPosition), EventType.selectAll, ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as SelectingNodeCursor;
+    assert(c1.begin == n1.beginPosition);
+    assert(c1.end == n1.endPosition);
+
+    var newNode = basicNode(texts: ['']);
+    expect(
+        () => newNode.onEdit(EditingData(
+            EditingCursor(0, newNode.beginPosition), EventType.selectAll, ctx)),
+        throwsA(const TypeMatcher<EmptyNodeToSelectAllException>()));
+  });
+
+  test('onSelect-selectAll', () {
+    final node = basicNode();
+    final ctx = buildTextContext([node]);
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(
+            0, RichTextNodePosition(5, 0), RichTextNodePosition(7, 0)),
+        EventType.selectAll,
+        ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as SelectingNodeCursor;
+    assert(c1.begin == n1.beginPosition);
+    assert(c1.end == n1.endPosition);
+  });
+
+  test('onSelect-styles', () {
+    final node = basicNode(texts: ['x' * 100], mergeSpan: true);
+    final ctx = buildTextContext([node]);
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(
+            0, RichTextNodePosition(0, 10), RichTextNodePosition(0, 20)),
+        EventType.italic,
+        ctx));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as SelectingNodeCursor;
+    assert(n1.spans.length == 3);
+    assert(!n1.spans.first.tags.contains(EventType.italic.name));
+    assert(!n1.spans.last.tags.contains(EventType.italic.name));
+    assert(n1.spans[1].tags.contains(EventType.italic.name));
+    assert(n1.getOffset(c1.left as RichTextNodePosition) == 10);
+    assert(n1.getOffset(c1.right as RichTextNodePosition) == 20);
+
+    var r2 = n1.onSelect(SelectingData(
+        SelectingNodeCursor(0, n1.beginPosition, n1.endPosition),
+        EventType.italic,
+        ctx,
+        extras: StyleExtra(true, null)));
+    var n2 = r2.node as RichTextNode;
+    var c2 = r2.cursor as SelectingNodeCursor;
+    assert(n2.spans.length == 1);
+    assert(n2.spans.first.tags.contains(EventType.italic.name));
+    assert(c2.left == n2.beginPosition);
+    assert(c2.right == n2.endPosition);
+
+    var r3 = n2.onSelect(SelectingData(
+        SelectingNodeCursor(0, n2.beginPosition, n2.endPosition),
+        EventType.italic,
+        ctx));
+    var n3 = r3.node as RichTextNode;
+    var c3 = r3.cursor as SelectingNodeCursor;
+    assert(n3.spans.length == 1);
+    assert(n3.spans.first.tags.isEmpty);
+    assert(c3.left == n3.beginPosition);
+    assert(c3.right == n3.endPosition);
+  });
+
+  test('onEdit-paste', () {
+    final node = basicNode(mergeSpan: true);
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.paste, ctx,
+            extras: <EditorNode>[])),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+    var r1 = node.onEdit(EditingData(
+        EditingCursor(0, node.endPosition), EventType.paste, ctx,
+        extras: [node]));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.spans.length == 1);
+    assert(c1.position == n1.endPosition);
+
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.paste, ctx,
+            extras: <EditorNode>[TestEditorNode()])),
+        throwsA(const TypeMatcher<PasteToCreateMoreNodesException>()));
+
+    try {
+      basicNode(texts: ['1' * 5]).onEdit(EditingData(
+          EditingCursor(0, RichTextNodePosition(0, 3)), EventType.paste, ctx,
+          extras: [
+            basicNode(texts: ['0' * 5]),
+            basicNode(texts: ['2' * 5])
+          ]));
+    } on PasteToCreateMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      final p = e.position;
+      assert(nodes.length == 2);
+      assert(p is RichTextNodePosition);
+      assert(p == RichTextNodePosition(0, 5));
+      assert(nodes.first.text == '1' * 3 + '0' * 5);
+      assert(nodes.last.text == '2' * 5 + '1' * 2);
+    }
+
+    try {
+      basicNode(texts: ['1' * 5]).onEdit(EditingData(
+          EditingCursor(0, RichTextNodePosition(0, 3)), EventType.paste, ctx,
+          extras: [
+            TestEditorNode(),
+            TestEditorNode(),
+            TestEditorNode(),
+          ]));
+    } on PasteToCreateMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      assert(nodes.length == 5);
+      for (var i = 1; i < 4; ++i) {
+        var o = nodes[i];
+        assert(o is TestEditorNode);
+      }
+      assert(nodes.first is RichTextNode);
+      assert(nodes.last is RichTextNode);
+      assert(nodes.first.text == '1' * 3);
+      assert(nodes.last.text == '1' * 2);
+    }
+  });
+
+  test('onEdit-paste', () {
+    final node = basicNode(mergeSpan: true);
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+            EventType.paste,
+            ctx,
+            extras: <EditorNode>[])),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+        EventType.paste,
+        ctx,
+        extras: [node]));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.spans.length == 1);
+    assert(c1.position == node.endPosition);
+
+    try {
+      basicNode(texts: ['1' * 5]).onSelect(SelectingData(
+          SelectingNodeCursor(
+              0, RichTextNodePosition(0, 1), RichTextNodePosition(0, 4)),
+          EventType.paste,
+          ctx,
+          extras: [
+            basicNode(texts: ['0' * 5]),
+            basicNode(texts: ['2' * 5])
+          ]));
+    } on PasteToCreateMoreNodesException catch (e) {
+      assert(e.nodes.length == 2);
+      assert(e.nodes.first.text == '1${'0' * 5}');
+      assert(e.nodes.last.text == '${'2' * 5}1');
+    }
+
+    try {
+      basicNode(texts: ['1' * 5]).onSelect(SelectingData(
+          SelectingNodeCursor(
+              0, RichTextNodePosition(0, 1), RichTextNodePosition(0, 4)),
+          EventType.paste,
+          ctx,
+          extras: [TestEditorNode()]));
+    } on PasteToCreateMoreNodesException catch (e) {
+      assert(e.nodes.length == 3);
+      assert(e.nodes.first.text == '1');
+      assert(e.nodes.last.text == '1');
+      assert(e.nodes[1] is TestEditorNode);
+    }
+
+    try {
+      basicNode(texts: ['1' * 5]).onSelect(SelectingData(
+          SelectingNodeCursor(
+              0, RichTextNodePosition(0, 1), RichTextNodePosition(0, 4)),
+          EventType.paste,
+          ctx,
+          extras: [
+            TestEditorNode(),
+            TestEditorNode(),
+            TestEditorNode(),
+          ]));
+    } on PasteToCreateMoreNodesException catch (e) {
+      assert(e.nodes.length == 5);
+      assert(e.nodes.first.text == '1');
+      assert(e.nodes.last.text == '1');
+      for (var i = 1; i < 4; ++i) {
+        assert(e.nodes[i] is TestEditorNode);
       }
     }
   });
 
-  test('onSelect', () {
-    ///TODO:complete the test logic in other places
-    final newNode = basicNode();
-    for (var t in EventType.values) {
-      try {
-        newNode.onSelect(SelectingData(
-            SelectingNodeCursor(
-                0, RichTextNodePosition.zero(), RichTextNodePosition(1, 1)),
-            t,
-            TestNodeContext()));
-      } catch (e) {
-        print('e:$e');
-      }
-    }
+  TextEditingDeltaInsertion buildInsertion(String text) =>
+      TextEditingDeltaInsertion(
+          oldText: '',
+          textInserted: text,
+          insertionOffset: 0,
+          selection: TextSelection.collapsed(offset: 0),
+          composing: TextRange.empty);
+
+  TextEditingDeltaReplacement buildReplacement(String text, TextRange range) =>
+      TextEditingDeltaReplacement(
+          oldText: '',
+          replacementText: text,
+          replacedRange: range,
+          selection: TextSelection.collapsed(offset: 0),
+          composing: TextRange.empty);
+
+  test('onEdit-typing', () {
+    final node = basicNode(texts: ['aaaaaa']);
+    final ctx = buildTextContext([node]);
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.typing, ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+
+    var r1 = node.onEdit(EditingData(
+        EditingCursor(0, node.endPosition), EventType.typing, ctx,
+        extras: buildInsertion('bbb')));
+    var n1 = r1.node as RichTextNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.text == '${node.text}bbb');
+    assert(c1.position == RichTextNodePosition(0, 9));
+
+    var r2 = node.onEdit(EditingData(
+        EditingCursor(0, RichTextNodePosition(0, 3)), EventType.typing, ctx,
+        extras: buildInsertion('bbb')));
+    var n2 = r2.node as RichTextNode;
+    var c2 = r2.cursor as EditingCursor;
+    assert(n2.text == 'aaabbbaaa');
+    assert(c2.position == RichTextNodePosition(0, 6));
+
+    var r3 = node.onEdit(EditingData(
+        EditingCursor(0, RichTextNodePosition(0, 3)), EventType.typing, ctx,
+        extras: buildReplacement('bbb', TextRange(start: 0, end: 1))));
+    var n3 = r3.node as RichTextNode;
+    var c3 = r3.cursor as EditingCursor;
+    assert(n3.text == 'aabbbaaa');
+    assert(c3.position == RichTextNodePosition(0, 5));
+
+    var r4 = node.onEdit(EditingData(
+        EditingCursor(0, node.beginPosition), EventType.typing, ctx,
+        extras: buildReplacement('bbb', TextRange(start: 0, end: 5))));
+    var n4 = r4.node as RichTextNode;
+    var c5 = r4.cursor as EditingCursor;
+    assert(n4.text == 'bbbaaaaaa');
+    assert(c5.position == RichTextNodePosition(0, 3));
+
+
   });
 }

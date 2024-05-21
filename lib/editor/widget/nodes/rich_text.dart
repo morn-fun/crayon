@@ -275,8 +275,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       final offset = painter.getOffsetFromTextOffset(position.offset);
       final newOffset =
           Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
-      nodeContext.onCursorOffset(CursorOffset(nodeIndex,
-          EditingOffset(newOffset, getCurrentCursorHeight(position), node.id)));
+      nodeContext.onEditingOffset(
+          EditingOffset(newOffset, getCurrentCursorHeight(position), node.id));
     }
   }
 
@@ -405,9 +405,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     nodeContext.onCursor(EditingCursor(nodeIndex, richPosition));
-    nodeContext.onCursorOffset(CursorOffset(
-        nodeIndex,
-        EditingOffset(
-            globalOffset, getCurrentCursorHeight(richPosition), node.id)));
+    nodeContext.onEditingOffset(EditingOffset(
+        globalOffset, getCurrentCursorHeight(richPosition), node.id));
   }
 }

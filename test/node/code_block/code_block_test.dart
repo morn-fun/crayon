@@ -239,7 +239,7 @@ void main() {
         .isEmpty);
   });
 
-  test('onEdit-delete', () {
+  test('onEdit-deletion', () {
     var node = basicNode();
     final ctx = buildTextContext([node]);
     expect(

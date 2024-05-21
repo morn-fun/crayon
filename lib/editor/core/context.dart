@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../command/modification.dart';
 import '../cursor/cursor_generator.dart';
@@ -92,16 +93,28 @@ class EditorContext extends NodeContext {
   }
 
   @override
-  void onCursorOffset(CursorOffset o) {
-    controller.setCursorOffset(o);
-    final editingOff = o.offset;
+  void onEditingOffset(EditingOffset o) {
+    final c = cursor;
+    if(c is EditingCursor){
+      controller.setCursorOffset(CursorOffset(c.index, o));
+    }
+    final editingOff = o;
     final offset = editingOff.offset;
-    inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
-        Rect.fromPoints(offset, offset.translate(0, editingOff.height)),
-        Matrix4.translationValues(offset.dx, offset.dy, 0.0)
-          ..translate(-offset.dx, -offset.dy),
-        Size(400, editingOff.height)));
+    if (kIsWeb) {
+      inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
+          Rect.fromPoints(offset, offset.translate(0, editingOff.height)),
+          Matrix4.translationValues(offset.dx, offset.dy, 0.0),
+          Size(400, editingOff.height)));
+    } else {
+      inputManager.updateInputConnectionAttribute(InputConnectionAttribute(
+          Rect.fromPoints(offset, offset.translate(0, editingOff.height)),
+          Matrix4.translationValues(offset.dx, offset.dy, 0.0)
+            ..translate(-offset.dx, -offset.dy),
+          Size(400, editingOff.height)));
+    }
   }
+
+  void restartInput() => inputManager.restartInput();
 
   @override
   void onNode(EditorNode node, int index) {
@@ -126,7 +139,7 @@ abstract class NodeContext {
 
   void onNode(EditorNode node, int index);
 
-  void onCursorOffset(CursorOffset o);
+  void onEditingOffset(EditingOffset o);
 
   UpdateControllerOperation? update(Update data, {bool record = true});
 

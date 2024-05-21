@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:crayon/editor/widget/editor/shared_node_context_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:highlight/languages/all.dart';
 import '../../../../editor/extension/render_box.dart';
@@ -178,6 +179,7 @@ class _CodeBlockState extends State<CodeBlock> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     bool allSelected = isAllSelected();
+    final editorContext = ShareEditorContextWidget.of(context)?.context;
     return Stack(
       key: key,
       children: [
@@ -234,7 +236,7 @@ class _CodeBlockState extends State<CodeBlock> {
                               onEditingOffsetChanged: (o) {
                                 lastEditOffset = o.offset;
                                 nodeContext
-                                    .onCursorOffset(CursorOffset(index, o));
+                                    .onEditingOffset(o);
                               },
                               onPanUpdatePosition: (o) =>
                                   nodeContext.onPanUpdate(EditingCursor(
@@ -272,13 +274,15 @@ class _CodeBlockState extends State<CodeBlock> {
                       },
                       onHide: () {
                         languageController.hide();
-                        listeners.notifyStatus(ControllerStatus.idle);
+                        editorContext?.controller
+                            .updateStatus(ControllerStatus.idle);
                       },
                     );
                   },
                   child: InkWell(
                     onTap: () {
-                      listeners.notifyStatus(ControllerStatus.typing);
+                      editorContext?.controller
+                          .updateStatus(ControllerStatus.typing);
                       languageController.show();
                     },
                     onHover: (e) => toHover(),

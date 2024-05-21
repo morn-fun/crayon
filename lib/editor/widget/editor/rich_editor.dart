@@ -61,15 +61,12 @@ class _RichEditorPageState extends State<RichEditor> {
               cursorOffset.offset, Overlay.of(context), s);
         });
     inputManager.startInput();
-    editorContext = EditorContext(
-        controller, inputManager, invoker, entryManager);
+    editorContext =
+        EditorContext(controller, inputManager, invoker, entryManager);
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
-    listeners.addNodesChangedListener(refresh);
-    listeners.addStatusChangedListener((value) {
+    controller.addStatusChangedListener((value) {
       entryManager.removeEntry();
-      if (value == controller.status) return;
-      controller.updateStatus(value);
       switch (value) {
         case ControllerStatus.typing:
           shortcutManager.shortcuts = {};
@@ -80,6 +77,7 @@ class _RichEditorPageState extends State<RichEditor> {
           break;
       }
     });
+    listeners.addNodesChangedListener(refresh);
   }
 
   void refresh() {
