@@ -1,3 +1,4 @@
+import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/code_block.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
@@ -8,6 +9,7 @@ import 'package:crayon/editor/node/code_block/generator/depth.dart';
 import 'package:crayon/editor/node/code_block/generator/newline.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -138,6 +140,11 @@ void main() {
     assert(n6.codes[2] == node.codes[2].substring(0, 5) + text);
     assert(n6.codes[3] == text2 + node.codes[5].substring(2));
     assert(n6.codes[4] == node.codes[6]);
+
+    var n7 = node.replace(
+        CodeBlockPosition(2, 2), CodeBlockPosition(2, 5), [text, text2]);
+    assert(n7.codes[2] == node.codes[2].substring(0, 2) + text);
+    assert(n7.codes[3] == text2 + node.codes[2].substring(5));
   });
 
   test('merge', () {
@@ -230,6 +237,20 @@ void main() {
     final json = node.toJson();
     assert(json['type'] == '${node.runtimeType}');
     assert(json['codes'] == node.codes);
+  });
+
+  testWidgets('build', (tester) async{
+    var node = basicNode();
+    final ctx = buildTextContext([node]);
+
+    var widget = Builder(
+        builder: (c) => node
+            .build(ctx, NodeBuildParam.empty(), c));
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: widget,
+    ));
+
   });
 
   test('getInlineNodesFromPosition', () {
@@ -486,5 +507,152 @@ void main() {
     assert(c1.end == CodeBlockPosition(2, 1));
   });
 
-  test('onSelect', () {});
+  test('onEdit-paste', () {
+    var node = basicNode(texts: ['111', '222']);
+    final ctx = buildTextContext([node]);
+
+    expect(
+        () => node.onEdit(EditingData(
+            CodeBlockPosition.zero().toCursor(0), EventType.paste, ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+
+    var r1 = node.onEdit(EditingData(
+        node.beginPosition.toCursor(0), EventType.paste, ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'aaa')]),
+          RichTextNode.from([RichTextSpan(text: 'bbb')]),
+        ]));
+    var n1 = r1.node as CodeBlockNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.codes.first == 'aaa');
+    assert(n1.codes[1] == 'bbb111');
+    assert(c1.position == CodeBlockPosition(1, 3));
+
+    var r2 = node.onEdit(EditingData(
+        CodeBlockPosition(1, 0).toCursor(0), EventType.paste, ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'aaa')]),
+          RichTextNode.from([RichTextSpan(text: 'bbb')]),
+        ]));
+
+    var n2 = r2.node as CodeBlockNode;
+    var c2 = r2.cursor as EditingCursor;
+    assert(n2.codes[1] == 'aaa');
+    assert(n2.codes[2] == 'bbb222');
+    assert(c2.position == CodeBlockPosition(2, 3));
+
+    var r3 = node.onEdit(EditingData(
+        node.endPosition.toCursor(0), EventType.paste, ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'aaa')]),
+          RichTextNode.from([RichTextSpan(text: 'bbb')]),
+        ]));
+
+    var n3 = r3.node as CodeBlockNode;
+    var c3 = r3.cursor as EditingCursor;
+    assert(n3.codes[0] == '111');
+    assert(n3.codes[1] == '222aaa');
+    assert(n3.codes[2] == 'bbb');
+    assert(c3.position == CodeBlockPosition(2, 3));
+  });
+
+  test('onEdit-paste', () {
+    var node = basicNode(texts: ['111', '222']);
+    final ctx = buildTextContext([node]);
+
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+            EventType.paste,
+            ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+
+    expect(
+        () => node.onSelect(SelectingData(
+                SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+                EventType.paste,
+                ctx,
+                extras: [
+                  RichTextNode.from([RichTextSpan(text: 'aaa')]),
+                ])),
+        throwsA(const TypeMatcher<PasteToCreateMoreNodesException>()));
+
+    var r1 = node.onSelect(SelectingData(
+        SelectingNodeCursor(0, node.beginPosition.copy(atEdge: false),
+            node.endPosition.copy(atEdge: false)),
+        EventType.paste,
+        ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'aaa')]),
+          RichTextNode.from([RichTextSpan(text: 'bbb')]),
+        ]));
+    var n1 = r1.node as CodeBlockNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.codes.length == 2);
+    assert(n1.codes[0] == 'aaa');
+    assert(n1.codes[1] == 'bbb');
+    assert(c1.position == CodeBlockPosition(1, 3));
+
+    var r2 = node.onSelect(SelectingData(
+        SelectingNodeCursor(
+            0, CodeBlockPosition(0, 2), CodeBlockPosition(1, 1)),
+        EventType.paste,
+        ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'aaa')]),
+          RichTextNode.from([RichTextSpan(text: 'bbb')]),
+        ]));
+
+    var n2 = r2.node as CodeBlockNode;
+    var c2 = r2.cursor as EditingCursor;
+    assert(n2.codes.length == 2);
+    assert(n2.codes[0] == '11aaa');
+    assert(n2.codes[1] == 'bbb22');
+    assert(c2.position == CodeBlockPosition(1, 3));
+
+    var r3 = node.onSelect(SelectingData(
+        SelectingNodeCursor(
+            0, CodeBlockPosition(0, 2), CodeBlockPosition(1, 1)),
+        EventType.paste,
+        ctx,
+        extras: [
+          RichTextNode.from([RichTextSpan(text: 'xxx')])
+        ]));
+
+    var n3 = r3.node as CodeBlockNode;
+    var c3 = r3.cursor as EditingCursor;
+    assert(n3.codes.length == 1);
+    assert(n3.codes.first == '11xxx22');
+    assert(c3.position == CodeBlockPosition(0, 5));
+  });
+
+  test('onEdit-typing', () {
+    var node = basicNode(texts: ['111', '222']);
+    final ctx = buildTextContext([node]);
+
+    expect(
+        () => node.onEdit(
+            EditingData(node.beginPosition.toCursor(0), EventType.typing, ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+
+    var r1 = node.onEdit(EditingData(
+        node.beginPosition.toCursor(0), EventType.typing, ctx,
+        extras: TextEditingValue(
+            text: 'xxx', selection: TextSelection.collapsed(offset: 3))));
+    var n1 = r1.node as CodeBlockNode;
+    var c1 = r1.cursor as EditingCursor;
+    assert(n1.codes.first == 'xxx111');
+    assert(c1.position == CodeBlockPosition(0, 3));
+  });
+  test('onSelect-typing', () {
+    var node = basicNode(texts: ['111', '222']);
+    final ctx = buildTextContext([node]);
+
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+            EventType.typing,
+            ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
 }

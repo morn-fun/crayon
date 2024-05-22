@@ -227,7 +227,6 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   EventType.delete.name: (d, n) => deleteWhileSelecting(d, n),
   EventType.newline.name: (d, n) => newlineWhileSelecting(d, n),
   EventType.selectAll.name: (d, n) => selectAllWhileSelecting(d, n),
-  EventType.typing.name: (d, n) => typingWhileSelecting(d, n),
   EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileSelecting(d, n),

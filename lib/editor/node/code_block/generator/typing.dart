@@ -25,13 +25,3 @@ NodeWithCursor typingWhileEditing(
   }
   throw NodeUnsupportedException(node.runtimeType, 'typingWhileEditing', p);
 }
-
-NodeWithCursor typingWhileSelecting(
-    SelectingData<CodeBlockPosition> data, CodeBlockNode node) {
-  final p = data.cursor;
-  final newNode = node.replace(p.left, p.right, []);
-  return typingWhileEditing(
-      EditingData(p.leftCursor, EventType.typing, data.context,
-          extras: data.extras),
-      newNode);
-}

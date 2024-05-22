@@ -1,4 +1,3 @@
-
 import '../../../../editor/extension/unmodifiable.dart';
 
 import '../../../cursor/basic.dart';
@@ -11,7 +10,8 @@ NodeWithCursor pasteWhileEditing(
     EditingData<CodeBlockPosition> data, CodeBlockNode node) {
   final nodes = data.extras;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
-    throw NodeUnsupportedException(node.runtimeType, 'pasteWhileEditing', nodes);
+    throw NodeUnsupportedException(
+        node.runtimeType, 'pasteWhileEditing', nodes);
   }
   final newCodes = nodes.map((e) => e.text).toList();
   final p = data.position;
@@ -34,8 +34,12 @@ NodeWithCursor pasteWhileSelecting(
   final nodes = data.extras;
   final p = data.cursor;
   if (nodes is! List<EditorNode> || nodes.isEmpty) {
-    final newNode = node.replace(p.left, p.right, []);
-    return NodeWithCursor(newNode, EditingCursor(data.index, p.left));
+    throw NodeUnsupportedException(
+        node.runtimeType, 'pasteWhileSelecting', nodes);
+  }
+  if (p.begin == node.beginPosition && p.end == node.endPosition) {
+    throw PasteToCreateMoreNodesException(
+        nodes, node.runtimeType, nodes.last.endPosition);
   }
   final newCodes = nodes.map((e) => e.text).toList();
   bool oneLine = newCodes.length == 1;
