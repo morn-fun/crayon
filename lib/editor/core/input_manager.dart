@@ -129,6 +129,9 @@ class InputManager with TextInputClient, DeltaTextInputClient {
             r.cursor as EditingCursor, EventType.typing, editorContext,
             extras: _localValue));
         return ModifyNode(newOne);
+      } on TypingRequiredOptionalMenuException catch (e) {
+        onOptionalMenu.call(e.context);
+        return ModifyNode(e.nodeWithCursor);
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
@@ -145,14 +148,26 @@ class InputManager with TextInputClient, DeltaTextInputClient {
           .listNeedRefreshDepth(rightCursor.index, mergeNode.depth);
       final newCursor = EditingCursor(leftCursor.index, left.endPosition);
       _typingData ??= NodeWithCursor(mergeNode, newCursor);
-      final newOne = mergeNode.onEdit(EditingData(
-          newCursor, EventType.typing, editorContext,
-          extras: _localValue));
-      return ReplaceNode(Replace(
-          leftCursor.index,
-          rightCursor.index + 1 + listNeedRefreshDepth.length,
-          [newOne.node, ...listNeedRefreshDepth],
-          newOne.cursor));
+      try {
+        final newOne = mergeNode.onEdit(EditingData(
+            newCursor, EventType.typing, editorContext,
+            extras: _localValue));
+        return ReplaceNode(Replace(
+            leftCursor.index,
+            rightCursor.index + 1 + listNeedRefreshDepth.length,
+            [newOne.node, ...listNeedRefreshDepth],
+            newOne.cursor));
+      } on TypingRequiredOptionalMenuException catch (e) {
+        onOptionalMenu.call(e.context);
+        final newOne = e.nodeWithCursor;
+        return ReplaceNode(Replace(
+            leftCursor.index,
+            rightCursor.index + 1 + listNeedRefreshDepth.length,
+            [newOne.node, ...listNeedRefreshDepth],
+            newOne.cursor));
+      } on NodeUnsupportedException catch (e) {
+        logger.e('$runtimeType, ${e.message}');
+      }
     }
     return null;
   }

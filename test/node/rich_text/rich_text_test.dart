@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'package:crayon/editor/core/context.dart';
 import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
+import 'package:crayon/editor/exception/menu.dart';
+import 'package:crayon/editor/node/rich_text/generator/typing.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/shortcuts/styles.dart';
@@ -356,6 +359,17 @@ void main() {
       assert(n.keys.contains('text'));
       assert(!n.keys.contains('tags'));
     }
+  });
+
+  testWidgets('build', (tester) async {
+    final node = basicNode(texts: ['aaa', 'bbb']);
+    final ctx = buildTextContext([node]);
+    var widget =
+        Builder(builder: (c) => node.build(ctx, NodeBuildParam.empty(), c));
+    await tester.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: widget,
+    ));
   });
 
   test('insertByPosition', () {
@@ -838,22 +852,6 @@ void main() {
     }
   });
 
-  TextEditingDeltaInsertion buildInsertion(String text) =>
-      TextEditingDeltaInsertion(
-          oldText: '',
-          textInserted: text,
-          insertionOffset: 0,
-          selection: TextSelection.collapsed(offset: 0),
-          composing: TextRange.empty);
-
-  TextEditingDeltaReplacement buildReplacement(String text, TextRange range) =>
-      TextEditingDeltaReplacement(
-          oldText: '',
-          replacementText: text,
-          replacedRange: range,
-          selection: TextSelection.collapsed(offset: 0),
-          composing: TextRange.empty);
-
   test('onEdit-typing', () {
     final node = basicNode(texts: ['aaaaaa']);
     final ctx = buildTextContext([node]);
@@ -864,7 +862,8 @@ void main() {
 
     var r1 = node.onEdit(EditingData(
         EditingCursor(0, node.endPosition), EventType.typing, ctx,
-        extras: buildInsertion('bbb')));
+        extras: TextEditingValue(
+            text: 'bbb', selection: TextSelection.collapsed(offset: 3))));
     var n1 = r1.node as RichTextNode;
     var c1 = r1.cursor as EditingCursor;
     assert(n1.text == '${node.text}bbb');
@@ -872,28 +871,56 @@ void main() {
 
     var r2 = node.onEdit(EditingData(
         EditingCursor(0, RichTextNodePosition(0, 3)), EventType.typing, ctx,
-        extras: buildInsertion('bbb')));
+        extras: TextEditingValue(
+            text: 'bbb', selection: TextSelection.collapsed(offset: 3))));
     var n2 = r2.node as RichTextNode;
     var c2 = r2.cursor as EditingCursor;
     assert(n2.text == 'aaabbbaaa');
     assert(c2.position == RichTextNodePosition(0, 6));
 
-    var r3 = node.onEdit(EditingData(
-        EditingCursor(0, RichTextNodePosition(0, 3)), EventType.typing, ctx,
-        extras: buildReplacement('bbb', TextRange(start: 0, end: 1))));
-    var n3 = r3.node as RichTextNode;
-    var c3 = r3.cursor as EditingCursor;
-    assert(n3.text == 'aabbbaaa');
-    assert(c3.position == RichTextNodePosition(0, 5));
+    for (var key in string2generator.keys) {
+      expect(
+          () => basicNode(texts: [key]).onEdit(EditingData(
+              EditingCursor(0, RichTextNodePosition(0, key.length)),
+              EventType.typing,
+              ctx,
+              extras: TextEditingValue(
+                  text: ' ', selection: TextSelection.collapsed(offset: 1)))),
+          throwsA(const TypeMatcher<TypingToChangeNodeException>()));
+    }
 
-    var r4 = node.onEdit(EditingData(
-        EditingCursor(0, node.beginPosition), EventType.typing, ctx,
-        extras: buildReplacement('bbb', TextRange(start: 0, end: 5))));
-    var n4 = r4.node as RichTextNode;
-    var c5 = r4.cursor as EditingCursor;
-    assert(n4.text == 'bbbaaaaaa');
-    assert(c5.position == RichTextNodePosition(0, 3));
+    for (var i = 0; i < 20; ++i) {
+      final index = '$i.';
+      expect(
+          () => basicNode(texts: [index]).onEdit(EditingData(
+              EditingCursor(0, RichTextNodePosition(0, index.length)),
+              EventType.typing,
+              ctx,
+              extras: TextEditingValue(
+                  text: ' ', selection: TextSelection.collapsed(offset: 1)))),
+          throwsA(const TypeMatcher<TypingToChangeNodeException>()));
+    }
 
+    expect(
+        () => basicNode(texts: ['']).onEdit(EditingData(
+            EditingCursor(0, RichTextNodePosition(0, 0)), EventType.typing, ctx,
+            extras: TextEditingValue(
+                text: '/', selection: TextSelection.collapsed(offset: 1)))),
+        throwsA(const TypeMatcher<TypingRequiredOptionalMenuException>()));
+  });
 
+  test('onSelect-typing', () {
+    final node = basicNode(texts: ['123456789']);
+    final ctx = buildTextContext([node]);
+
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(
+                0, RichTextNodePosition(0, 4), RichTextNodePosition(0, 7)),
+            EventType.typing,
+            ctx,
+            extras: TextEditingValue(
+                text: 'abcde', selection: TextSelection.collapsed(offset: 5)))),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
   });
 }

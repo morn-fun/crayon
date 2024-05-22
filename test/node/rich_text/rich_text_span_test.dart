@@ -116,12 +116,16 @@ void main() {
   });
 
   test('other', () {
-    final span = RichTextSpan(text: '123456', offset: 0, tags: {'x'});
+    var span = RichTextSpan(text: '123456', offset: 0, tags: {'x'});
     final textSpan = span.buildSpan() as TextSpan;
     assert(textSpan.text == span.text);
     final json = span.toJson();
     assert((json['tags'] as Set).equalsTo(span.tags));
     assert((json['attributes'] as Map).isEmpty);
     assert(json['text'] == span.text);
+    assert(!span.isLinkTag);
+    span = RichTextSpan(text: '123456', offset: 0, tags: {RichTextTag.link.name});
+    assert(span.isLinkTag);
+
   });
 }

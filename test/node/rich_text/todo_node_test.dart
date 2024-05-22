@@ -44,6 +44,7 @@ void main() {
         child: widget,
       ),
     ));
+    await tester.tap(find.byType(Checkbox));
 
     widget = Builder(
         builder: (c) => node

@@ -1,12 +1,13 @@
 import 'package:crayon/editor/core/context.dart';
+import 'package:crayon/editor/node/basic.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/node/rich_text/ordered.dart';
 
 import '../../config/const_texts.dart';
+import '../../config/necessary.dart';
 import '../../config/test_node_context.dart';
-
 
 void main() {
   test('test pre text RegExp', () {
@@ -116,32 +117,23 @@ void main() {
   });
 
   testWidgets('build', (tester) async {
-    OrderedNode node =
+    var node =
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
+    final ctx = buildTextContext([
+      node,
+      ...List.generate(
+          10, (index) => node.newNode(id: randomNodeId, depth: index)),
+      ...List.generate(10, (index) => node.newNode(id: randomNodeId, depth: 0)),
+    ]);
 
-    var widget = Builder(
-        builder: (c) =>
-            node.build(TestNodeContext(), NodeBuildParam.empty(), c));
-    await tester.pumpWidget(Directionality(
-      textDirection: TextDirection.ltr,
-      child: widget,
-    ));
-
-    widget = Builder(
-        builder: (c) =>
-            node.build(TestNodeContext(), NodeBuildParam(index: 1), c));
-    await tester.pumpWidget(Directionality(
-      textDirection: TextDirection.ltr,
-      child: widget,
-    ));
-
-    widget = Builder(
-        builder: (c) => node
-            .newNode(depth: 2)
-            .build(TestNodeContext(), NodeBuildParam(index: 3), c));
-    await tester.pumpWidget(Directionality(
-      textDirection: TextDirection.ltr,
-      child: widget,
-    ));
+    for (var i = 0; i < ctx.nodeLength; ++i) {
+      var node = ctx.nodes[i];
+      var widget =
+          Builder(builder: (c) => node.build(ctx, NodeBuildParam(index: i), c));
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: widget,
+      ));
+    }
   });
 }

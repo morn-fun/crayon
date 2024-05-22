@@ -28,28 +28,11 @@ NodeWithCursor typingRichTextNodeWhileEditing(
     final newNode =
         node.update(index, span.copy(text: (v) => v.insert(oldOffset, text)));
     final newPosition = RichTextNodePosition(index, oldOffset + valueOffset);
-    checkNeedShowSelectingMenu(
-        text, newNode, newPosition, data.context, data.index);
+    checkNeedShowSelectingMenu(newNode, newPosition, data.context, data.index);
     return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'typingRichTextNodeWhileEditing', data);
-}
-
-NodeWithCursor typingRichTextNodeWhileSelecting(
-    SelectingData<RichTextNodePosition> data, RichTextNode node) {
-  final newLeft = node.frontPartNode(data.left);
-  final newRight = node.rearPartNode(data.right);
-  final nodeAfterMerge = newLeft.merge(newRight);
-  try {
-    return typingRichTextNodeWhileEditing(
-        EditingData(EditingCursor(data.index, newLeft.endPosition),
-            EventType.typing, data.context,
-            extras: data.extras),
-        nodeAfterMerge);
-  } on TypingRequiredOptionalMenuException catch (e) {
-    return e.nodeWithCursor;
-  }
 }
 
 void checkNeedChangeNodeTyp(
@@ -64,7 +47,7 @@ void checkNeedChangeNodeTyp(
     throw TypingToChangeNodeException(newNode,
         NodeWithCursor(newNode, newNode.beginPosition.toCursor(index)));
   }
-  final generator = _string2generator[frontText];
+  final generator = string2generator[frontText];
   if (generator != null) {
     final newNode = generator.call(node.rearPartNode(position));
     if (node.runtimeType.toString() == newNode.runtimeType.toString()) return;
@@ -73,7 +56,7 @@ void checkNeedChangeNodeTyp(
   }
 }
 
-void checkNeedShowSelectingMenu(String text, RichTextNode node,
+void checkNeedShowSelectingMenu(RichTextNode node,
     RichTextNodePosition position, NodeContext context, int index) {
   final frontText = node.frontPartNode(position).text;
   if (frontText == '/') {
@@ -84,7 +67,7 @@ void checkNeedShowSelectingMenu(String text, RichTextNode node,
 
 typedef RichTextNodeGenerator = RichTextNode Function(RichTextNode node);
 
-final Map<String, RichTextNodeGenerator> _string2generator = {
+final Map<String, RichTextNodeGenerator> string2generator = {
   '-': (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth),
   '#': (n) => H1Node.from(n.spans, id: n.id, depth: n.depth),
   '##': (n) => H2Node.from(n.spans, id: n.id, depth: n.depth),

@@ -327,7 +327,8 @@ class RichTextNode extends EditorNode {
   NodeWithCursor onSelect(SelectingData data) {
     final generator = _selectingGenerator[data.type.name];
     if (generator == null) {
-      return NodeWithCursor(this, data.cursor);
+      throw NodeUnsupportedException(
+          runtimeType, 'onSelect without generator', data);
     }
     return generator.call(data.as<RichTextNodePosition>(), this);
   }
@@ -369,7 +370,6 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   EventType.delete.name: (d, n) => deleteRichTextNodeWhileSelecting(d, n),
   EventType.newline.name: (d, n) => throw NewlineRequiresNewNode(n.runtimeType),
   EventType.selectAll.name: (d, n) => selectAllRichTextNodeWhileSelecting(d, n),
-  EventType.typing.name: (d, n) => typingRichTextNodeWhileSelecting(d, n),
   EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
   EventType.decreaseDepth.name: (d, n) =>
