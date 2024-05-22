@@ -11,7 +11,6 @@ import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
-import '../../cursor/table.dart';
 import '../basic.dart';
 
 class TableCell {
@@ -67,8 +66,7 @@ class TableCell {
   bool wholeSelected(BasicCursor? cursor) {
     if (cursor is EditingCursor) return false;
     if (cursor is SelectingNodeCursor) {
-      return isBegin(EditingCursor(cursor.index, cursor.begin)) &&
-          isEnd(EditingCursor(cursor.index, cursor.end));
+      return isBegin(cursor.leftCursor) && isEnd(cursor.rightCursor);
     }
     if (cursor is SelectingNodesCursor) {
       final begin = cursor.begin;
@@ -80,44 +78,8 @@ class TableCell {
     return false;
   }
 
-  BasicCursor? getCursor(SingleNodeCursor? cursor, CellPosition cellIndex) {
-    final row = cellIndex.row;
-    final column = cellIndex.column;
-    final c = cursor;
-    if (c == null) return null;
-    if (c is EditingCursor) {
-      final editingCursor = c.as<TablePosition>();
-      if (editingCursor.position.column == column &&
-          editingCursor.position.row == row) {
-        return editingCursor.position.cursor;
-      }
-      return null;
-    }
-    if (c is SelectingNodeCursor) {
-      final selectingCursor = c.as<TablePosition>();
-      final left = selectingCursor.left;
-      final right = selectingCursor.right;
-      bool containsSelf =
-          cellIndex.containSelf(left.cellPosition, right.cellPosition);
-      if (!containsSelf) return null;
-      if (left.sameCell(right)) {
-        final sameIndex = left.index == right.index;
-        if (sameIndex) {
-          return SelectingNodeCursor(left.index, left.position, right.position);
-        }
-        return SelectingNodesCursor(left.cursor, right.cursor);
-      }
-      return selectAllCursor;
-    }
-    return null;
-  }
-
   TableCell update(int index, ValueCopier<EditorNode> copier) =>
       copy(nodes: nodes.update(index, copier));
-
-  TableCell updateMore(
-          int begin, int end, ValueCopier<List<EditorNode>> copier) =>
-      copy(nodes: nodes.updateMore(begin, end, copier));
 
   TableCell replaceMore(int begin, int end, Iterable<EditorNode> newNodes) =>
       copy(nodes: nodes.replaceMore(begin, end, newNodes));
@@ -128,7 +90,10 @@ class TableCell {
     final leftNode = getNode(left.index);
     final rightNode = getNode(right.index);
     if (left.index == right.index) {
-      return [leftNode.getFromPosition(left.position, right.position)];
+      return [
+        leftNode.getFromPosition(left.position, right.position,
+            newId: randomNodeId)
+      ];
     } else {
       final newLeftNode =
           leftNode.rearPartNode(left.position, newId: randomNodeId);
@@ -136,14 +101,15 @@ class TableCell {
           rightNode.frontPartNode(right.position, newId: randomNodeId);
       return [
         newLeftNode,
-        if (left.index < right.index)
+        if (left.index < right.index + 1)
           ...nodes.getRange(left.index + 1, right.index),
         newRightNode
       ];
     }
   }
 
-  List<Map<String, dynamic>> toJson() => nodes.map((e) => e.toJson()).toList();
+  Map<String, dynamic> toJson() =>
+      {'type': '$runtimeType', 'nodes': nodes.map((e) => e.toJson()).toList()};
 
   String get text => nodes.map((e) => e.text).join('\n');
 }
@@ -225,10 +191,11 @@ class TableCellNodeContext extends NodeContext {
   void onPanUpdate(EditingCursor cursor) => onPan(cursor);
 
   @override
-  void onNode(EditorNode node, int index) => onNodeUpdate.call(NodeWithIndex(node, index));
+  void onNode(EditorNode node, int index) =>
+      onNodeUpdate.call(NodeWithIndex(node, index));
 }
 
-class NodeWithIndex{
+class NodeWithIndex {
   final EditorNode node;
   final int index;
 

@@ -8,7 +8,6 @@ import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/shortcuts/styles.dart';
 import 'package:flutter/cupertino.dart' hide RichText;
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crayon/editor/exception/editor_node.dart';
 import 'package:crayon/editor/node/basic.dart';
@@ -353,8 +352,8 @@ void main() {
   test('toJson', () {
     final newNode = basicNode(texts: ['aaa', 'bbb']);
     final json = newNode.toJson();
-    final nodes = json['nodes'] as List<Map<String, dynamic>>;
-    for (var n in nodes) {
+    final spans = json['spans'] as List<Map<String, dynamic>>;
+    for (var n in spans) {
       assert(n.keys.contains('attributes'));
       assert(n.keys.contains('text'));
       assert(!n.keys.contains('tags'));

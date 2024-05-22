@@ -6,13 +6,13 @@ import 'table_cell.dart';
 class TableCellList {
   final UnmodifiableListView<TableCell> cells;
 
-  TableCellList(List<TableCell> cells) : cells = _initCells(cells);
+  TableCellList(List<TableCell> cells, {int initNum = 3})
+      : cells = _initCells(cells, initNum);
 
-  TableCellList.empty({int initNum = 3})
-      : cells = _initCells([], initNum: initNum);
+  TableCellList.empty({int initNum = 3}) : cells = _initCells([], initNum);
 
-  static UnmodifiableListView<TableCell> _initCells(List<TableCell> cells,
-      {int initNum = 3}) {
+  static UnmodifiableListView<TableCell> _initCells(
+      List<TableCell> cells, int initNum) {
     if (cells.isEmpty) {
       return UnmodifiableListView(
           List.generate(initNum, (i) => TableCell.empty()));
@@ -28,8 +28,8 @@ class TableCellList {
 
   TableCell getCell(int index) => cells[index];
 
-  List<List<Map<String, dynamic>>> toJson() =>
-      cells.map((e) => e.toJson()).toList();
+  Map<String, dynamic> toJson() =>
+      {'type': '$runtimeType', 'cells': cells.map((e) => e.toJson()).toList()};
 
   String get text => cells.map((e) => e.text).join(' | ');
 
@@ -43,6 +43,6 @@ class TableCellList {
       TableCellList(cells.update(index, copier));
 
   TableCellList updateMore(
-      int begin, int end, ValueCopier<List<TableCell>> copier) =>
+          int begin, int end, ValueCopier<List<TableCell>> copier) =>
       TableCellList(cells.updateMore(begin, end, copier));
 }

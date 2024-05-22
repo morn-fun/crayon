@@ -23,7 +23,7 @@ NodeWithCursor styleRichTextNodeWhileSelecting(
     for (var j = 0; j < cellList.length; ++j) {
       var cell = cellList.getCell(j);
       final cellIndex = CellPosition(i, j);
-      final cursor = cell.getCursor(data.cursor, cellIndex);
+      final cursor = node.getCursor(data.cursor, cellIndex);
       if (cursor == null) {
         cells.add(cell);
       } else {

@@ -206,6 +206,35 @@ class TableNode extends EditorNode {
     }
   }
 
+  BasicCursor? getCursor(SingleNodeCursor? cursor, CellPosition cellPosition) {
+    final c = cursor;
+    if (c == null) return null;
+    if (c is EditingCursor) {
+      final editingCursor = c.as<TablePosition>();
+      if (editingCursor.position.cellPosition == cellPosition) {
+        return editingCursor.position.cursor;
+      }
+      return null;
+    }
+    if (c is SelectingNodeCursor) {
+      final selectingCursor = c.as<TablePosition>();
+      final left = selectingCursor.left;
+      final right = selectingCursor.right;
+      bool containsSelf =
+          cellPosition.containSelf(left.cellPosition, right.cellPosition);
+      if (!containsSelf) return null;
+      if (left.sameCell(right)) {
+        final sameIndex = left.index == right.index;
+        if (sameIndex) {
+          return SelectingNodeCursor(left.index, left.position, right.position);
+        }
+        return SelectingNodesCursor(left.cursor, right.cursor);
+      }
+      return getCell(cellPosition).selectAllCursor;
+    }
+    return null;
+  }
+
   TableCellNodeContext buildContext({
     required CellPosition position,
     required BasicCursor cursor,

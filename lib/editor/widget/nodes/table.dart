@@ -138,7 +138,7 @@ class _RichTableState extends State<RichTable> {
     if (left is! TablePosition || right is! TablePosition) return;
     if (left.sameCell(right)) {
       final cell = node.getCell(left.cellPosition);
-      final cursor = cell.getCursor(p.as<TablePosition>(), left.cellPosition);
+      final cursor = node.getCursor(p.as<TablePosition>(), left.cellPosition);
       if (!cell.wholeSelected(cursor)) {
         localListeners.notifyGestures(s);
         return;
@@ -190,8 +190,7 @@ class _RichTableState extends State<RichTable> {
     if (p is! TablePosition) return;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final type = d.type;
-    final cell = node.getCell(p.cellPosition);
-    final cursor = cell.getCursor(nodeCursor, p.cellPosition);
+    final cursor = node.getCursor(nodeCursor, p.cellPosition);
     switch (type) {
       case ArrowType.current:
         final extra = d.extras;
@@ -316,7 +315,7 @@ class _RichTableState extends State<RichTable> {
                             tc.TableCell cell = node.getCell(cp);
                             BasicCursor? cursor = wholeContain
                                 ? null
-                                : cell.getCursor(nodeCursor, cp);
+                                : node.getCursor(nodeCursor, cp);
                             return Stack(
                               key: ValueKey(cell.id),
                               children: [

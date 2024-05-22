@@ -7,7 +7,6 @@ import 'package:crayon/editor/node/rich_text/ordered.dart';
 
 import '../../config/const_texts.dart';
 import '../../config/necessary.dart';
-import '../../config/test_node_context.dart';
 
 void main() {
   test('test pre text RegExp', () {
