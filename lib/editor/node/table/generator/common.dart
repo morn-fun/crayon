@@ -23,21 +23,21 @@ NodeWithCursor operateWhileEditing<T extends Intent>(
 }
 
 SingleNodeCursor<TablePosition> _cursorToCursor(
-    BasicCursor cursor, CellPosition cellIndex, int index) {
+    BasicCursor cursor, CellPosition cellPosition, int index) {
   if (cursor is EditingCursor) {
-    return EditingCursor(index, TablePosition(cellIndex, cursor));
+    return EditingCursor(index, TablePosition(cellPosition, cursor));
   } else if (cursor is SelectingNodeCursor) {
     final i = cursor.index;
     return SelectingNodeCursor(
         index,
-        TablePosition(cellIndex, EditingCursor(i, cursor.left)),
-        TablePosition(cellIndex, EditingCursor(i, cursor.right)));
+        TablePosition(cellPosition, EditingCursor(i, cursor.left)),
+        TablePosition(cellPosition, EditingCursor(i, cursor.right)));
   } else if (cursor is SelectingNodesCursor) {
-    return SelectingNodeCursor(index, TablePosition(cellIndex, cursor.left),
-        TablePosition(cellIndex, cursor.right));
+    return SelectingNodeCursor(index, TablePosition(cellPosition, cursor.left),
+        TablePosition(cellPosition, cursor.right));
   }
   throw NodeUnsupportedException(cursor.runtimeType,
-      'from cursor:$cursor to table cursor', '$cellIndex,  index:$index');
+      'from cursor:$cursor to table cursor', '$cellPosition,  index:$index');
 }
 
 TableCellNodeContext buildTableCellNodeContext(NodeContext ctx, CellPosition p,

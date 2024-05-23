@@ -70,7 +70,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     if (lastEditingCursorOffset == v) return;
     final cursor = controller.cursor;
     if (cursor is! EditingCursor) return;
-    logger.i('last:$lastEditingCursorOffset,  current:$v');
+    logger.i('onCursorOffsetChanged last:$lastEditingCursorOffset,  current:$v');
     lastEditingCursorOffset = v;
     final box = renderBox;
     if (box == null) return;

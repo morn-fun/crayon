@@ -48,11 +48,11 @@ NodeWithCursor deleteWhileSelecting(
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);
   }
-  final newNode = node.updateMore(left, right, (t) {
+  final newNode = node.updateMore(left.cellPosition, right.cellPosition, (t) {
     return t
         .map((e) => e.updateMore(0, e.length, (m) {
               return m.map((n) => n.copy(nodes: [])).toList();
-            }))
+            }, initNum: 0))
         .toList();
   });
   return NodeWithCursor(

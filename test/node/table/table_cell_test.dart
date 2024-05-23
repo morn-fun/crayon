@@ -31,6 +31,17 @@ void main() {
     assert(c2.right.index == 2);
   });
 
+  test('clear', (){
+    final cell = basicCell(nodes: [
+      RichTextNode.from([]),
+      RichTextNode.from([]),
+      RichTextNode.from([]),
+    ]);
+    assert(cell.length == 3);
+    final cell2 = cell.clear();
+    assert(cell2.length == 1);
+  });
+
   test('isBegin', () {
     final cell = basicCell(nodes: [
       RichTextNode.from([]),

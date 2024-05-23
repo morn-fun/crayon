@@ -85,7 +85,7 @@ class SelectingNodesCursor<T extends NodePosition> extends BasicCursor<T> {
   final EditingCursor begin;
   final EditingCursor end;
 
-  SelectingNodesCursor(this.begin, this.end);
+  SelectingNodesCursor(this.begin, this.end) : assert(begin.index != end.index);
 
   int get beginIndex => begin.index;
 

@@ -47,7 +47,7 @@ class _RichTableCellState extends State<RichTableCell> {
 
   TableNode get node => widget.node;
 
-  CellPosition get cellIndex => widget.cellPosition;
+  CellPosition get cellPosition => widget.cellPosition;
 
   int get index => widget.param.index;
 
@@ -77,8 +77,8 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void didUpdateWidget(covariant RichTableCell oldWidget) {
-    logger.i(
-        'onTableUpdateWidget , old:${oldWidget.cellId} ${oldWidget.cellPosition},  new:$cellId, $cellIndex');
+    // logger.i(
+    //     'onTableUpdateWidget , old:${oldWidget.cellId} ${oldWidget.cellPosition},  new:$cellId, $cellPosition');
     final oldListeners = oldWidget.listeners;
     if (oldListeners.hashCode != listeners.hashCode) {
       oldListeners.removeGestureListener(node.id, onGesture);
@@ -123,7 +123,7 @@ class _RichTableCellState extends State<RichTableCell> {
           return Container(
             padding: EdgeInsets.only(left: innerNode.depth * 12, right: 4),
             child: innerNode.build(
-                buildTableCellNodeContext(nodeContext, cellIndex, node,
+                buildTableCellNodeContext(nodeContext, cellPosition, node,
                     cursor ?? NoneCursor(), index),
                 NodeBuildParam(
                   index: i,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:crayon/editor/extension/node_context.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -85,12 +87,14 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     }
     _localValue = newValue;
     if (cursor is NoneCursor) return;
-    logger.i(
-        'updateEditingValueWithDeltas, localValue：$_localValue,   detail: $textEditingDeltas');
+    logger.i('updateEditingValueWithDeltas, localValue：$_localValue');
     BasicCommand? command = _buildCommand();
     final composing = _localValue.composing;
-    if (composing == TextRange.empty ||
-        composing == TextRange(start: 0, end: 0)) {
+
+    ///FIXME:in MacOS, there is an inconsistent result here
+    final specialJudgement =
+        Platform.isMacOS && composing == TextRange(start: 0, end: 0);
+    if (composing == TextRange.empty || specialJudgement) {
       controller.updateStatus(ControllerStatus.idle);
       restartInput();
     } else {
@@ -124,6 +128,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
         final r = controller
             .getNode(c.index)
             .onSelect(SelectingData(c, EventType.delete, editorContext));
+        if (r.cursor is! EditingCursor) return null;
         _typingData ??= r;
         final newOne = r.node.onEdit(EditingData(
             r.cursor as EditingCursor, EventType.typing, editorContext,

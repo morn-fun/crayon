@@ -69,8 +69,8 @@ class TableNode extends EditorNode {
 
   TableCellList row(int row) => table[row];
 
-  List<TableCell> column(int column) =>
-      List.generate(columnCount, (i) => table[i].getCell(column));
+  TableCellList column(int column) =>
+      TableCellList(List.generate(rowCount, (i) => table[i].getCell(column)));
 
   TableCell getCell(CellPosition p) => table[p.row].getCell(p.column);
 
@@ -81,12 +81,10 @@ class TableNode extends EditorNode {
     return from(table.insertMore(index, rows), widths);
   }
 
-  TableNode insertColumns(
-      int index, List<TableCellList> columns, List<double> widths) {
-    final rows = List.generate(rowCount, (index) => <TableCell>[]);
-    assert(columns.length == widths.length);
+  TableNode insertColumns(int index, List<ColumnInfo> columns) {
+    final rows = List.generate(rowCount, (i) => <TableCell>[]);
     for (var i = 0; i < columns.length; ++i) {
-      var column = columns[i];
+      var column = columns[i].column;
       assert(column.length == rowCount);
       for (var j = 0; j < column.cells.length; ++j) {
         var cell = column.cells[j];
@@ -97,7 +95,8 @@ class TableNode extends EditorNode {
     for (var l in table) {
       list.add(l.insert(index, rows[list.length]));
     }
-    return from(list, this.widths.insertMore(index, widths));
+    return from(
+        list, widths.insertMore(index, columns.map((e) => e.width).toList()));
   }
 
   TableNode removeRows(int begin, int end) {
@@ -110,11 +109,10 @@ class TableNode extends EditorNode {
     final newWidths = widths.replaceMore(begin, end, []);
     List<TableCellList> newTable = [];
     for (var cellList in table) {
-      final list = cellList.replace(begin, end, []);
+      final list = cellList.replace(begin, end, [], initNum: 0);
       if (list.length == 0) throw TableIsEmptyException();
       newTable.add(list);
     }
-    if (newTable.isEmpty) throw TableIsEmptyException();
     return from(newTable, newWidths);
   }
 
@@ -123,43 +121,28 @@ class TableNode extends EditorNode {
     return from(newTable, widths);
   }
 
-  TableNode updateRow(int row, ValueCopier<TableCellList> copier) =>
-      from(table.update(row, copier), widths);
-
-  TableNode updateColumn(int column, ValueCopier<TableCellList> copier) {
-    List<TableCell> oldColumnCells = [];
-    for (var cellList in table) {
-      oldColumnCells.add(cellList.getCell(column));
-    }
-    final newColumnCells = copier.call(TableCellList(oldColumnCells));
-    List<TableCellList> newTable = [];
-    for (var cellList in table) {
-      newTable.add(cellList.update(
-          column, (n) => newColumnCells.getCell(newTable.length)));
-    }
-    return from(table, widths);
-  }
-
-  TableNode updateMore(TablePosition begin, TablePosition end,
+  TableNode updateMore(CellPosition begin, CellPosition end,
       ValueCopier<List<TableCellList>> copier) {
     assert(!begin.sameCell(end));
-    final left = begin.isLowerThan(end) ? begin : end;
-    final right = begin.isLowerThan(end) ? end : begin;
-    final leftColumn = min(left.column, right.column);
-    final rightColumn = max(left.column, right.column);
+    final bottomRight = begin.bottomRight(end);
+    final topLeft = begin.topLeft(end);
     List<TableCellList> oldCellLists = [];
-    for (var i = left.row; i <= right.row; ++i) {
-      var cellList = table[i];
-      oldCellLists.add(
-          TableCellList(cellList.cells.sublist(leftColumn, rightColumn + 1)));
+    for (var i = topLeft.row; i <= bottomRight.row; ++i) {
+      var l = table[i];
+      oldCellLists.add(TableCellList(
+          l.cells.sublist(topLeft.column, bottomRight.column + 1)));
     }
     final newCellLists = copier.call(oldCellLists);
-    final newTable = table.updateMore(left.row, right.row + 1, (t) {
+    assert(newCellLists.length == oldCellLists.length);
+    final newTable = table.updateMore(topLeft.row, bottomRight.row + 1, (t) {
       List<TableCellList> list = [];
       for (var i = 0; i < t.length; ++i) {
-        var cellList = t[i];
-        list.add(TableCellList(cellList.cells
-            .replaceMore(leftColumn, rightColumn + 1, newCellLists[i].cells)));
+        var cells = t[i].cells;
+        var oldCells = oldCellLists[i].cells;
+        var newCells = newCellLists[i].cells;
+        assert(oldCells.length == newCells.length);
+        list.add(TableCellList(cells.replaceMore(
+            topLeft.column, bottomRight.column + 1, newCells)));
       }
       return list;
     });
@@ -168,97 +151,75 @@ class TableNode extends EditorNode {
 
   bool wholeContain(SingleNodeCursor? cursor) {
     if (cursor is! SelectingNodeCursor) return false;
-    try {
-      var left = cursor.left;
-      var right = cursor.right;
-      return left == beginPosition && right == endPosition;
-    } on TypeError {
-      return false;
-    }
+    var left = cursor.left;
+    var right = cursor.right;
+    return left == beginPosition && right == endPosition;
   }
 
-  int? wholeContainsRow(SingleNodeCursor? cursor) {
-    if (cursor is! SelectingNodeCursor) return null;
+  Set<int> selectedRows(SingleNodeCursor? cursor) {
+    if (cursor is! SelectingNodeCursor) return {};
     try {
       final p = cursor.as<TablePosition>();
       final lp = p.left.cellPosition;
       final rp = p.right.cellPosition;
-      final sameRow = lp.row == rp.row;
-      final wholeColumn =
-          lp.column == 0 && rp.column == table[rp.row].length - 1;
-      return (sameRow && wholeColumn) ? lp.row : null;
+      final topLeftP = lp.topLeft(rp);
+      final bottomRightP = lp.bottomRight(rp);
+      if (bottomRightP.column - topLeftP.column < columnCount - 1) return {};
+      return List.generate(
+          bottomRightP.row - topLeftP.row + 1, (i) => i + topLeftP.row).toSet();
     } on TypeError {
-      return null;
+      return {};
     }
   }
 
-  int? wholeContainsColumn(SingleNodeCursor? cursor) {
-    if (cursor is! SelectingNodeCursor) return null;
+  Set<int> selectedColumns(SingleNodeCursor? cursor) {
+    if (cursor is! SelectingNodeCursor) return {};
     try {
       final p = cursor.as<TablePosition>();
       final lp = p.left.cellPosition;
       final rp = p.right.cellPosition;
-      final sameColumn = lp.column == rp.column;
-      final wholeRow = lp.row == 0 && rp.row == table.length - 1;
-      return (sameColumn && wholeRow) ? lp.column : null;
+      final topLeftP = lp.topLeft(rp);
+      final bottomRightP = lp.bottomRight(rp);
+      if (bottomRightP.row - topLeftP.row < rowCount - 1) return {};
+      return List.generate(bottomRightP.column - topLeftP.column + 1,
+          (i) => i + topLeftP.column).toSet();
     } on TypeError {
-      return null;
+      return {};
     }
   }
 
-  BasicCursor? getCursor(SingleNodeCursor? cursor, CellPosition cellPosition) {
+  BasicCursor? getCursorInCell(
+      SingleNodeCursor? cursor, CellPosition cellPosition) {
     final c = cursor;
-    if (c == null) return null;
-    if (c is EditingCursor) {
-      final editingCursor = c.as<TablePosition>();
-      if (editingCursor.position.cellPosition == cellPosition) {
-        return editingCursor.position.cursor;
-      }
-      return null;
-    }
-    if (c is SelectingNodeCursor) {
-      final selectingCursor = c.as<TablePosition>();
-      final left = selectingCursor.left;
-      final right = selectingCursor.right;
-      bool containsSelf =
-          cellPosition.containSelf(left.cellPosition, right.cellPosition);
-      if (!containsSelf) return null;
-      if (left.sameCell(right)) {
-        final sameIndex = left.index == right.index;
-        if (sameIndex) {
-          return SelectingNodeCursor(left.index, left.position, right.position);
+    try {
+      if (c is EditingCursor) {
+        final editingCursor = c.as<TablePosition>();
+        if (editingCursor.position.cellPosition == cellPosition) {
+          return editingCursor.position.cursor;
         }
-        return SelectingNodesCursor(left.cursor, right.cursor);
+        return null;
       }
-      return getCell(cellPosition).selectAllCursor;
+      if (c is SelectingNodeCursor) {
+        final selectingCursor = c.as<TablePosition>();
+        final left = selectingCursor.left;
+        final right = selectingCursor.right;
+        bool containsSelf =
+            cellPosition.containSelf(left.cellPosition, right.cellPosition);
+        if (!containsSelf) return null;
+        if (left.sameCell(right)) {
+          final sameIndex = left.index == right.index;
+          if (sameIndex) {
+            return SelectingNodeCursor(
+                left.index, left.position, right.position);
+          }
+          return SelectingNodesCursor(left.cursor, right.cursor);
+        }
+        return getCell(cellPosition).selectAllCursor;
+      }
+    } on TypeError {
+      return null;
     }
     return null;
-  }
-
-  TableCellNodeContext buildContext({
-    required CellPosition position,
-    required BasicCursor cursor,
-    required ListenerCollection listeners,
-    required ValueChanged<Replace> onReplace,
-    required ValueChanged<Update> onUpdate,
-    required ValueChanged<BasicCursor> onBasicCursor,
-    required ValueChanged<EditingOffset> editingOffset,
-    required ValueChanged<EditingCursor> onPan,
-    required ValueChanged<NodeWithIndex> onNodeUpdate,
-  }) {
-    final cell = getCell(position);
-    final childListener =
-        listeners.getListener(cell.id) ?? ListenerCollection();
-    return TableCellNodeContext(
-        cellGetter: () => cell,
-        cursorGetter: () => cursor,
-        onReplace: onReplace,
-        onUpdate: onUpdate,
-        onBasicCursor: onBasicCursor,
-        editingOffset: editingOffset,
-        onPan: onPan,
-        onNodeUpdate: onNodeUpdate,
-        listeners: childListener);
   }
 
   @override
@@ -352,20 +313,22 @@ class TableNode extends EditorNode {
         final newNode = insertColumns(
             columnCount - 1,
             List.generate(rowCount, (i) {
-              return TableCellList(
-                  List.generate(diffCount, (index) => TableCell.empty()));
-            }),
-            widths.insertMore(widths.length - 1, other.widths));
+              return ColumnInfo(
+                  TableCellList(
+                      List.generate(diffCount, (index) => TableCell.empty())),
+                  initWidth);
+            }));
         mergedTable.addAll(newNode.table);
         mergedTable.addAll(newTable);
       } else if (columnCount > other.columnCount) {
         final newNode = other.insertColumns(
             other.columnCount - 1,
             List.generate(other.rowCount, (i) {
-              return TableCellList(
-                  List.generate(diffCount, (index) => TableCell.empty()));
-            }),
-            other.widths.insertMore(other.widths.length - 1, widths));
+              return ColumnInfo(
+                  TableCellList(
+                      List.generate(diffCount, (index) => TableCell.empty())),
+                  initWidth);
+            }));
         mergedTable.addAll(oldTable);
         mergedTable.addAll(newNode.table);
       } else {
@@ -402,6 +365,32 @@ class TableNode extends EditorNode {
           runtimeType, 'onSelect without generator', data);
     }
     return generator.call(data.as<TablePosition>(), this);
+  }
+
+  TableCellNodeContext buildContext({
+    required CellPosition position,
+    required BasicCursor cursor,
+    required ListenerCollection listeners,
+    required ValueChanged<Replace> onReplace,
+    required ValueChanged<Update> onUpdate,
+    required ValueChanged<BasicCursor> onBasicCursor,
+    required ValueChanged<EditingOffset> editingOffset,
+    required ValueChanged<EditingCursor> onPan,
+    required ValueChanged<NodeWithIndex> onNodeUpdate,
+  }) {
+    final cell = getCell(position);
+    final childListener =
+        listeners.getListener(cell.id) ?? ListenerCollection();
+    return TableCellNodeContext(
+        cellGetter: () => cell,
+        cursorGetter: () => cursor,
+        onReplace: onReplace,
+        onUpdate: onUpdate,
+        onBasicCursor: onBasicCursor,
+        editingOffset: editingOffset,
+        onPan: onPan,
+        onNodeUpdate: onNodeUpdate,
+        listeners: childListener);
   }
 
   @override
@@ -445,4 +434,13 @@ class TableAndWidths {
   final UnmodifiableListView<double> widths;
 
   TableAndWidths(this.table, this.widths);
+}
+
+class ColumnInfo {
+  final TableCellList column;
+  final double width;
+
+  ColumnInfo(this.column, this.width);
+
+  int get length => column.length;
 }

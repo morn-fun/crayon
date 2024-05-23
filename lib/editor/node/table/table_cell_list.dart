@@ -36,13 +36,15 @@ class TableCellList {
   TableCellList insert(int index, List<TableCell> cellList) =>
       TableCellList(cells.insertMore(index, cellList));
 
-  TableCellList replace(int start, int end, Iterable<TableCell> iterable) =>
-      TableCellList(cells.replaceMore(start, end, iterable));
+  TableCellList replace(int begin, int end, Iterable<TableCell> iterable,
+          {int initNum = 3}) =>
+      TableCellList(cells.replaceMore(begin, end, iterable), initNum: initNum);
 
   TableCellList update(int index, ValueCopier<TableCell> copier) =>
       TableCellList(cells.update(index, copier));
 
   TableCellList updateMore(
-          int begin, int end, ValueCopier<List<TableCell>> copier) =>
-      TableCellList(cells.updateMore(begin, end, copier));
+          int begin, int end, ValueCopier<List<TableCell>> copier,
+          {int initNum = 3}) =>
+      TableCellList(cells.updateMore(begin, end, copier), initNum: initNum);
 }

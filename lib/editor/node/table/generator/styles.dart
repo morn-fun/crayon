@@ -22,13 +22,13 @@ NodeWithCursor styleRichTextNodeWhileSelecting(
     List<TableCell> cells = [];
     for (var j = 0; j < cellList.length; ++j) {
       var cell = cellList.getCell(j);
-      final cellIndex = CellPosition(i, j);
-      final cursor = node.getCursor(data.cursor, cellIndex);
+      final cellPosition = CellPosition(i, j);
+      final cursor = node.getCursorInCell(data.cursor, cellPosition);
       if (cursor == null) {
         cells.add(cell);
       } else {
         final ctx = buildTableCellNodeContext(
-            data.context, cellIndex, node, cursor, data.index);
+            data.context, cellPosition, node, cursor, data.index);
         List<EditorNode> nodes = [];
         for (var k = 0; k < cell.length; ++k) {
           var innerNode = cell.getNode(k);

@@ -26,10 +26,10 @@ class TablePosition extends NodePosition {
   NodePosition get position => cursor.position;
 
   TablePosition copy({
-    ValueCopier<CellPosition>? cellIndex,
+    ValueCopier<CellPosition>? cellPosition,
     ValueCopier<EditingCursor>? cursor,
   }) =>
-      TablePosition(cellIndex?.call(cellPosition) ?? cellPosition,
+      TablePosition(cellPosition?.call(this.cellPosition) ?? this.cellPosition,
           cursor?.call(this.cursor) ?? this.cursor);
 
   @override
@@ -55,7 +55,7 @@ class TablePosition extends NodePosition {
 
   @override
   String toString() {
-    return 'TablePosition{cellIndex: $cellPosition, cursor: $cursor}';
+    return 'TablePosition{cellPosition: $cellPosition, cursor: $cursor}';
   }
 }
 

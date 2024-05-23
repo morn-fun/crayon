@@ -7,10 +7,6 @@ class RichTextNodePosition extends NodePosition {
 
   RichTextNodePosition(this.index, this.offset);
 
-  RichTextNodePosition.empty()
-      : index = -1,
-        offset = -1;
-
   RichTextNodePosition.zero()
       : index = 0,
         offset = 0;

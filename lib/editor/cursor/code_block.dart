@@ -8,10 +8,6 @@ class CodeBlockPosition extends NodePosition {
 
   CodeBlockPosition(this.index, this.offset, {this.atEdge = false});
 
-  CodeBlockPosition.empty({this.atEdge = false})
-      : index = -1,
-        offset = -1;
-
   CodeBlockPosition.zero({this.atEdge = false})
       : index = 0,
         offset = 0;

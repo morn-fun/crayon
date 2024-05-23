@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class TableOperator extends StatelessWidget {
   final List<double> heights;
   final List<double> widths;
-  final int? selectedRow;
-  final int? selectedColumn;
+  final Set<int> selectedRows;
+  final Set<int> selectedColumns;
   final double iconSize;
   final ValueChanged<int>? onRowSelected;
   final ValueChanged<int>? onRowAdd;
@@ -16,14 +16,14 @@ class TableOperator extends StatelessWidget {
   const TableOperator({
     super.key,
     required this.heights,
-    this.selectedRow,
+    this.selectedRows = const {},
     this.onRowSelected,
     this.onColumnSelected,
     this.onRowAdd,
     this.onColumnAdd,
     required this.iconSize,
     required this.widths,
-    this.selectedColumn,
+    this.selectedColumns = const {},
     this.onRowDelete,
     this.onColumnDelete,
   });
@@ -49,7 +49,7 @@ class TableOperator extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(heights.length, (index) {
               final height = heights[index];
-              final selected = selectedRow == index;
+              final selected = selectedRows.contains(index);
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
@@ -100,7 +100,7 @@ class TableOperator extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(widths.length, (index) {
               final w = widths[index];
-              final selected = selectedColumn == index;
+              final selected = selectedColumns.contains(index);
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(

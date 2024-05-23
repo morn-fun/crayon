@@ -49,7 +49,7 @@ class TableCell {
 
   EditorNode getNode(int index) => nodes[index];
 
-  TableCell clear() => copy(nodes: [RichTextNode.from([])]);
+  TableCell clear() => copy(nodes: []);
 
   bool isBegin(EditingCursor p) {
     if (p.index != 0) return false;
@@ -63,20 +63,7 @@ class TableCell {
     return true;
   }
 
-  bool wholeSelected(BasicCursor? cursor) {
-    if (cursor is EditingCursor) return false;
-    if (cursor is SelectingNodeCursor) {
-      return isBegin(cursor.leftCursor) && isEnd(cursor.rightCursor);
-    }
-    if (cursor is SelectingNodesCursor) {
-      final begin = cursor.begin;
-      final end = cursor.end;
-      final left = begin.isLowerThan(end) ? begin : end;
-      final right = begin.isLowerThan(end) ? end : begin;
-      return isBegin(left) && isEnd(right);
-    }
-    return false;
-  }
+  bool wholeSelected(BasicCursor? cursor) => cursor == selectAllCursor;
 
   TableCell update(int index, ValueCopier<EditorNode> copier) =>
       copy(nodes: nodes.update(index, copier));
