@@ -1,15 +1,8 @@
 import 'dart:collection';
-import 'package:flutter/material.dart';
 
 import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
-import '../../../../editor/command/basic.dart';
-import '../../../../editor/core/command_invoker.dart';
-import '../../../../editor/core/editor_controller.dart';
-import '../../../../editor/core/listener_collection.dart';
-import '../../core/context.dart';
 import '../../core/copier.dart';
-import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../basic.dart';
 
@@ -99,92 +92,4 @@ class TableCell {
       {'type': '$runtimeType', 'nodes': nodes.map((e) => e.toJson()).toList()};
 
   String get text => nodes.map((e) => e.text).join('\n');
-}
-
-class TableCellNodeContext extends NodeContext {
-  final ValueGetter<BasicCursor> cursorGetter;
-  final ValueGetter<TableCell> cellGetter;
-  final ValueChanged<Replace> onReplace;
-  final ValueChanged<Update> onUpdate;
-  final ValueChanged<BasicCursor> onBasicCursor;
-  final ValueChanged<EditingOffset> editingOffset;
-  final ValueChanged<EditingCursor> onPan;
-  final ValueChanged<NodeWithIndex> onNodeUpdate;
-  @override
-  final ListenerCollection listeners;
-
-  TableCellNodeContext({
-    required this.cursorGetter,
-    required this.cellGetter,
-    required this.listeners,
-    required this.onReplace,
-    required this.onUpdate,
-    required this.onBasicCursor,
-    required this.editingOffset,
-    required this.onPan,
-    required this.onNodeUpdate,
-  });
-
-  final tag = 'TableCellNodeContext';
-
-  TableCell get cell => cellGetter.call();
-
-  @override
-  void execute(BasicCommand command) {
-    try {
-      command.run(this);
-    } catch (e) {
-      logger.e('execute 【$command】error:$e');
-    }
-  }
-
-  @override
-  EditorNode getNode(int index) => cell.getNode(index);
-
-  @override
-  Iterable<EditorNode> getRange(int begin, int end) =>
-      cell.nodes.getRange(begin, end);
-
-  @override
-  List<EditorNode> get nodes => cell.nodes;
-
-  @override
-  UpdateControllerOperation? replace(Replace data, {bool record = true}) {
-    onReplace.call(data);
-    return null;
-  }
-
-  @override
-  SelectingNodesCursor<NodePosition> get selectAllCursor =>
-      SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
-          EditingCursor(cell.length - 1, cell.last.endPosition));
-
-  @override
-  UpdateControllerOperation? update(Update data, {bool record = true}) {
-    onUpdate.call(data);
-    return null;
-  }
-
-  @override
-  BasicCursor get cursor => cursorGetter.call();
-
-  @override
-  void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
-
-  @override
-  void onEditingOffset(EditingOffset o) => editingOffset.call(o);
-
-  @override
-  void onPanUpdate(EditingCursor cursor) => onPan(cursor);
-
-  @override
-  void onNode(EditorNode node, int index) =>
-      onNodeUpdate.call(NodeWithIndex(node, index));
-}
-
-class NodeWithIndex {
-  final EditorNode node;
-  final int index;
-
-  NodeWithIndex(this.node, this.index);
 }

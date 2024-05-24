@@ -91,7 +91,7 @@ class RichEditorController {
 
   void notifyNode(EditorNode node) => listeners.notifyNode(node);
 
-  void notifyNodes() => listeners.notifyNodes();
+  void notifyNodes() => listeners.notifyNodes(nodes);
 
   void setCursorOffset(CursorOffset o) {
     _lastCursorOffset = o;

@@ -26,7 +26,7 @@ class CodeBlock extends StatefulWidget {
     this.maxLineHeight = 20,
   });
 
-  final NodeContext context;
+  final NodesOperator context;
   final CodeBlockNode node;
   final NodeBuildParam param;
   final double maxLineHeight;
@@ -42,7 +42,7 @@ class _CodeBlockState extends State<CodeBlock> {
 
   CodeBlockNode get node => widget.node;
 
-  NodeContext get nodeContext => widget.context;
+  NodesOperator get nodeContext => widget.context;
 
   ListenerCollection get listeners => nodeContext.listeners;
 

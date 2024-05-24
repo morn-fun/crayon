@@ -36,7 +36,7 @@ class EntryManager {
   }
 
   void showOptionalMenu(
-      EditingOffset offset, OverlayState state, NodeContext context) async {
+      EditingOffset offset, OverlayState state, NodesOperator context) async {
     removeEntry();
     _lastShowingType = MenuType.optional;
     _lastShowingContextType = context.runtimeType;
@@ -46,7 +46,7 @@ class EntryManager {
     _notifyMenuShowing();
   }
 
-  void showTextMenu(OverlayState state, MenuInfo info, NodeContext context) {
+  void showTextMenu(OverlayState state, MenuInfo info, NodesOperator context) {
     removeEntry();
     _lastShowingType = MenuType.text;
     _lastShowingContextType = context.runtimeType;
@@ -61,7 +61,7 @@ class EntryManager {
   }
 
   void showLinkMenu(
-      OverlayState state, LinkMenuInfo linkMenuInfo, NodeContext context) {
+      OverlayState state, LinkMenuInfo linkMenuInfo, NodesOperator context) {
     removeEntry();
     _lastShowingType = MenuType.text;
     _lastShowingContextType = context.runtimeType;

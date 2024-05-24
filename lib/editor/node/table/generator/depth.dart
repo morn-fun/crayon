@@ -35,18 +35,11 @@ NodeWithCursor increaseDepthWhileSelecting(
     return NodeWithCursor(node.newNode(depth: depth + 1), data.cursor);
   }
   if (left.sameCell(right)) {
-    final cell = node.getCell(left.cellPosition);
-    final sameIndex = left.index == right.index;
-    BasicCursor cursor = sameIndex
-        ? SelectingNodeCursor(left.index, left.position, right.position)
-        : SelectingNodesCursor(left.cursor, right.cursor);
-    if (!cell.wholeSelected(cursor)) {
-      final context = buildTableCellNodeContext(
-          data.context, left.cellPosition, node, cursor, data.index);
-      TabAction(ActionContext(context, () => cursor)).invoke(TabIntent());
-      throw NodeUnsupportedException(
-          node.runtimeType, 'operateWhileEditing', null);
-    }
+    BasicCursor cursor = buildTableCellCursor(
+        node.getCell(left.cellPosition), left.cursor, right.cursor);
+    final context = buildTableCellNodeContext(
+        data.context, left.cellPosition, node, cursor, data.index);
+    TabAction(ActionContext(context, () => cursor)).invoke(TabIntent());
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'increaseDepthWhileSelecting', data.cursor);
@@ -60,19 +53,12 @@ NodeWithCursor decreaseDepthWhileSelecting(
     throw DepthNeedDecreaseMoreException(node.runtimeType, node.depth);
   }
   if (left.sameCell(right)) {
-    final cell = node.getCell(left.cellPosition);
-    final sameIndex = left.index == right.index;
-    BasicCursor cursor = sameIndex
-        ? SelectingNodeCursor(left.index, left.position, right.position)
-        : SelectingNodesCursor(left.cursor, right.cursor);
-    if (!cell.wholeSelected(cursor)) {
-      final context = buildTableCellNodeContext(
-          data.context, left.cellPosition, node, cursor, data.index);
-      ShiftTabAction(ActionContext(context, () => cursor))
-          .invoke(ShiftTabIntent());
-      throw NodeUnsupportedException(
-          node.runtimeType, 'operateWhileEditing', null);
-    }
+    BasicCursor cursor = buildTableCellCursor(
+        node.getCell(left.cellPosition), left.cursor, right.cursor);
+    final context = buildTableCellNodeContext(
+        data.context, left.cellPosition, node, cursor, data.index);
+    ShiftTabAction(ActionContext(context, () => cursor))
+        .invoke(ShiftTabIntent());
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'decreaseDepthWhileSelecting', data.cursor);

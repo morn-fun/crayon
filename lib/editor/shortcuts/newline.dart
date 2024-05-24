@@ -17,7 +17,7 @@ class NewlineIntent extends Intent {
 class NewlineAction extends ContextAction<NewlineIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 

@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 extension SetExtension<E> on Set<E> {
   Set<E> addOne(E e) {
@@ -39,4 +40,23 @@ extension MapExtension<K, V> on Map<K, V> {
   }
 
   UnmodifiableMapView<K, V> immutable() => UnmodifiableMapView(this);
+}
+
+extension ListExtension<T extends num> on List<T> {
+  List<T> mergeLists(List<T> list) {
+    List<T> mergedList = [];
+    int maxLength = max(length, list.length);
+    for (int i = 0; i < maxLength; i++) {
+      T maxV;
+      if (i < length && i < list.length) {
+        maxV = max(this[i], list[i]);
+      } else if (i < length) {
+        maxV = this[i];
+      } else {
+        maxV = list[i];
+      }
+      mergedList.add(maxV);
+    }
+    return mergedList;
+  }
 }

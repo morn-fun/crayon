@@ -9,9 +9,9 @@ NodeWithCursor styleRichTextNodeWhileSelecting(
     SelectingData<RichTextNodePosition> data, RichTextNode node, String tag) {
   final left = data.left;
   final right = data.right;
-  final StyleExtra styleExtra =
+  final styleExtra =
       data.extras is StyleExtra ? data.extras : StyleExtra(false, null);
-  bool coverTag = styleExtra.containsTag;
+  bool coverTag = !styleExtra.containsTag;
   final leftOffset = node.getOffset(left);
   final rightOffset = node.getOffset(right);
   final selectingNode = node.getFromPosition(left, right);

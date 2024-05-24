@@ -10,7 +10,7 @@ class ReplaceNode implements BasicCommand {
   ReplaceNode(this.replace, {this.record = true});
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     return nodeContext.replace(replace, record: record);
   }
 

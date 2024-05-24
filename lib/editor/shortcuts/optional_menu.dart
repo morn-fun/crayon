@@ -19,7 +19,7 @@ class OptionalMenuUpArrowAction
     extends ContextAction<OptionalMenuUpArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   OptionalMenuUpArrowAction(this.ac);
 
@@ -34,7 +34,7 @@ class OptionalMenuDownArrowAction
     extends ContextAction<OptionalMenuDownArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   OptionalMenuDownArrowAction(this.ac);
 
@@ -48,7 +48,7 @@ class OptionalMenuDownArrowAction
 class OptionalMenuEnterAction extends ContextAction<OptionalMenuEnterIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   OptionalMenuEnterAction(this.ac);
 

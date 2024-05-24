@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide TableCell;
 import '../command/modification.dart';
 import '../cursor/cursor_generator.dart';
 
@@ -7,6 +7,7 @@ import '../command/basic.dart';
 import '../cursor/basic.dart';
 import '../exception/command.dart';
 import '../node/basic.dart';
+import '../node/table/table_cell.dart';
 import 'command_invoker.dart';
 import 'editor_controller.dart';
 import 'entry_manager.dart';
@@ -14,7 +15,7 @@ import 'input_manager.dart';
 import 'listener_collection.dart';
 import 'logger.dart';
 
-class EditorContext extends NodeContext {
+class EditorContext extends NodesOperator {
   final RichEditorController controller;
   final InputManager inputManager;
   final CommandInvoker invoker;
@@ -95,7 +96,7 @@ class EditorContext extends NodeContext {
   @override
   void onEditingOffset(EditingOffset o) {
     final c = cursor;
-    if(c is EditingCursor){
+    if (c is EditingCursor) {
       controller.setCursorOffset(CursorOffset(c.index, o));
     }
     final editingOff = o;
@@ -120,9 +121,14 @@ class EditorContext extends NodeContext {
   void onNode(EditorNode node, int index) {
     execute(ModifyNodeWithoutChangeCursor(index, node));
   }
+
+  @override
+  NodesOperator newOperator(
+          List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
+      this;
 }
 
-abstract class NodeContext {
+abstract class NodesOperator {
   EditorNode getNode(int index);
 
   BasicCursor get cursor;
@@ -148,6 +154,8 @@ abstract class NodeContext {
   BasicCursor get selectAllCursor;
 
   ListenerCollection get listeners;
+
+  NodesOperator newOperator(List<EditorNode> nodes, BasicCursor cursor);
 }
 
 class NodeBuildParam {
@@ -164,10 +172,108 @@ class NodeBuildParam {
 }
 
 class ActionContext {
-  final NodeContext context;
+  final NodesOperator context;
   final ValueGetter<BasicCursor> cursorGetter;
 
   BasicCursor get cursor => cursorGetter.call();
 
   ActionContext(this.context, this.cursorGetter);
+}
+
+class TableCellNodeContext extends NodesOperator {
+  @override
+  final BasicCursor cursor;
+  final TableCell cell;
+  final ValueChanged<Replace> onReplace;
+  final ValueChanged<Update> onUpdate;
+  final ValueChanged<BasicCursor> onBasicCursor;
+  final ValueChanged<EditingOffset> editingOffset;
+  final ValueChanged<EditingCursor> onPan;
+  final ValueChanged<NodeWithIndex> onNodeUpdate;
+  @override
+  final ListenerCollection listeners;
+
+  TableCellNodeContext({
+    required this.cursor,
+    required this.cell,
+    required this.listeners,
+    required this.onReplace,
+    required this.onUpdate,
+    required this.onBasicCursor,
+    required this.editingOffset,
+    required this.onPan,
+    required this.onNodeUpdate,
+  });
+
+  final tag = 'TableCellNodeContext';
+
+  @override
+  void execute(BasicCommand command) {
+    try {
+      command.run(this);
+    } catch (e) {
+      logger.e('execute 【$command】error:$e');
+    }
+  }
+
+  @override
+  EditorNode getNode(int index) => cell.getNode(index);
+
+  @override
+  Iterable<EditorNode> getRange(int begin, int end) =>
+      cell.nodes.getRange(begin, end);
+
+  @override
+  List<EditorNode> get nodes => cell.nodes;
+
+  @override
+  UpdateControllerOperation? replace(Replace data, {bool record = true}) {
+    onReplace.call(data);
+    return null;
+  }
+
+  @override
+  SelectingNodesCursor<NodePosition> get selectAllCursor =>
+      SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
+          EditingCursor(cell.length - 1, cell.last.endPosition));
+
+  @override
+  UpdateControllerOperation? update(Update data, {bool record = true}) {
+    onUpdate.call(data);
+    return null;
+  }
+
+  @override
+  void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
+
+  @override
+  void onEditingOffset(EditingOffset o) => editingOffset.call(o);
+
+  @override
+  void onPanUpdate(EditingCursor cursor) => onPan(cursor);
+
+  @override
+  void onNode(EditorNode node, int index) =>
+      onNodeUpdate.call(NodeWithIndex(node, index));
+
+  @override
+  NodesOperator newOperator(
+      List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
+      TableCellNodeContext(
+          cursor: cursor,
+          cell: cell.copy(nodes: nodes),
+          listeners: listeners,
+          onReplace: onReplace,
+          onUpdate: onUpdate,
+          onBasicCursor: onBasicCursor,
+          editingOffset: editingOffset,
+          onPan: onPan,
+          onNodeUpdate: onNodeUpdate);
+}
+
+class NodeWithIndex {
+  final EditorNode node;
+  final int index;
+
+  NodeWithIndex(this.node, this.index);
 }

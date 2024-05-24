@@ -10,7 +10,7 @@ class ModifyNode implements BasicCommand {
   ModifyNode(this.nodeWithCursor);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     return nodeContext.update(Update(
         nodeWithCursor.index, nodeWithCursor.node, nodeWithCursor.cursor));
   }
@@ -28,7 +28,7 @@ class ModifyNodeWithoutChangeCursor implements BasicCommand {
   ModifyNodeWithoutChangeCursor(this.index, this.node);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     return nodeContext.update(Update(index, node, nodeContext.cursor));
   }
 

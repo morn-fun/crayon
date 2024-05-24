@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:crayon/editor/node/table/table_cell.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
@@ -22,7 +21,7 @@ import '../../node/table/table.dart';
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final EditingOffset offset;
-  final NodeContext nodeContext;
+  final NodesOperator nodeContext;
   final EntryManager manager;
 
   const OptionalMenu(
@@ -39,7 +38,7 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   EditingOffset get offset => widget.offset;
 
-  NodeContext get nodeContext => widget.nodeContext;
+  NodesOperator get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 

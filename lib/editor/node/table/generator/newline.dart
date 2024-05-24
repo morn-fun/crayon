@@ -19,17 +19,12 @@ NodeWithCursor newlineWhileSelecting(
   final right = data.right;
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);
-    final sameIndex = left.index == right.index;
-    BasicCursor cursor = sameIndex
-        ? SelectingNodeCursor(left.index, left.position, right.position)
-        : SelectingNodesCursor(left.cursor, right.cursor);
+    BasicCursor cursor = buildTableCellCursor(cell, left.cursor, right.cursor);
     if (!cell.wholeSelected(cursor)) {
       final context = buildTableCellNodeContext(
           data.context, left.cellPosition, node, cursor, data.index);
       NewlineAction(ActionContext(context, () => cursor))
           .invoke(NewlineIntent());
-      throw NodeUnsupportedException(
-          node.runtimeType, 'operateWhileEditing', null);
     }
   }
   throw NodeUnsupportedException(

@@ -26,7 +26,7 @@ class InputManager with TextInputClient, DeltaTextInputClient {
   final ValueGetter<EditorContext> contextGetter;
 
   final ValueChanged<BasicCommand> onCommand;
-  final ValueChanged<NodeContext> onOptionalMenu;
+  final ValueChanged<NodesOperator> onOptionalMenu;
   final VoidCallback focusCall;
 
   EditorContext get editorContext => contextGetter.call();

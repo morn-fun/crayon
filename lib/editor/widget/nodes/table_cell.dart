@@ -17,7 +17,7 @@ class RichTableCell extends StatefulWidget {
   final NodeBuildParam param;
   final BasicCursor? cursor;
   final ListenerCollection listeners;
-  final NodeContext context;
+  final NodesOperator context;
   final String cellId;
 
   const RichTableCell({
@@ -37,7 +37,7 @@ class RichTableCell extends StatefulWidget {
 }
 
 class _RichTableCellState extends State<RichTableCell> {
-  NodeContext get nodeContext => widget.context;
+  NodesOperator get nodeContext => widget.context;
 
   ListenerCollection get listeners => widget.listeners;
 
@@ -53,7 +53,7 @@ class _RichTableCellState extends State<RichTableCell> {
 
   String get cellId => widget.cellId;
 
-  late tc.TableCellNodeContext cellContext;
+  late TableCellNodeContext cellContext;
 
   late ListenerCollection localListeners;
 
@@ -89,7 +89,7 @@ class _RichTableCellState extends State<RichTableCell> {
           'TableCell onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
     if (cell.hashCode != oldWidget.cell.hashCode) {
-      localListeners.notifyNodes();
+      localListeners.notifyNodes(cell.nodes);
       for (var n in cell.nodes) {
         localListeners.notifyNode(n);
       }

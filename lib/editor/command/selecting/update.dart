@@ -14,7 +14,7 @@ class UpdateSelectingNodes implements BasicCommand {
   UpdateSelectingNodes(this.cursor, this.type, {this.extra});
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     final left = cursor.left;
     final right = cursor.right;
     List<EditorNode> nodes = [];

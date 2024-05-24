@@ -14,7 +14,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
   PasteWhileSelectingNodes(this.cursor, this.nodes);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     final leftNode = nodeContext.getNode(leftCursor.index);

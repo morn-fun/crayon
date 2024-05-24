@@ -16,7 +16,7 @@ class IncreaseNodesDepth implements BasicCommand {
   IncreaseNodesDepth(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     int lastIndex = leftCursor.index;
@@ -47,7 +47,7 @@ class DecreaseNodesDepth implements BasicCommand {
   DecreaseNodesDepth(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     int l = leftCursor.index;

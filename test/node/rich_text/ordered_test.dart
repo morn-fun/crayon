@@ -118,7 +118,7 @@ void main() {
   testWidgets('build', (tester) async {
     var node =
         OrderedNode.from(constTexts.map((e) => RichTextSpan(text: e)).toList());
-    final ctx = buildTextContext([
+    final ctx = buildEditorContext([
       node,
       ...List.generate(
           10, (index) => node.newNode(id: randomNodeId, depth: index)),

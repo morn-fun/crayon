@@ -26,7 +26,7 @@ import 'table_cell.dart';
 import 'table_operator.dart';
 
 class RichTable extends StatefulWidget {
-  final NodeContext context;
+  final NodesOperator context;
   final TableNode node;
   final NodeBuildParam param;
 
@@ -39,7 +39,7 @@ class RichTable extends StatefulWidget {
 class _RichTableState extends State<RichTable> {
   TableNode get node => widget.node;
 
-  NodeContext get nodeContext => widget.context;
+  NodesOperator get nodeContext => widget.context;
 
   SingleNodeCursor? get nodeCursor => widget.param.cursor;
 
@@ -83,9 +83,6 @@ class _RichTableState extends State<RichTable> {
       listeners.addArrowDelegate(node.id, onArrowAccept);
       logger.i(
           '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
-    }
-    if (node.table.hashCode != oldWidget.node.table.hashCode) {
-      localListeners.notifyNodes();
     }
   }
 

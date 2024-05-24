@@ -19,7 +19,7 @@ class DeleteIntent extends Intent {
 class DeleteAction extends ContextAction<DeleteIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 

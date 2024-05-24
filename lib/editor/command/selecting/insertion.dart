@@ -13,7 +13,7 @@ class InsertNodes implements BasicCommand {
   InsertNodes(this.cursor, this.nodes) : assert(nodes.isNotEmpty);
 
   @override
-  UpdateControllerOperation? run(NodeContext nodeContext) {
+  UpdateControllerOperation? run(NodesOperator nodeContext) {
     int index = cursor.index;
     final current = nodeContext.getNode(index);
     final left = current.frontPartNode(cursor.position);

@@ -2,18 +2,18 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/material.dart' hide RichText, TableCell;
 
+import '../../../../editor/extension/collection.dart';
 import '../../../../editor/extension/unmodifiable.dart';
 import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
-import '../../core/editor_controller.dart';
-import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
 import '../../widget/nodes/table.dart';
 import '../basic.dart';
 import '../rich_text/rich_text_span.dart';
+import 'generator/common.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
 import 'generator/newline.dart';
@@ -223,8 +223,8 @@ class TableNode extends EditorNode {
   }
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
-      RichTable(context, this, param);
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) =>
+      RichTable(operator, this, param);
 
   @override
   TablePosition get beginPosition =>
@@ -259,10 +259,8 @@ class TableNode extends EditorNode {
     if (left.sameCell(right)) {
       final newWidths = [widths[leftColumn]];
       final cell = getCell(left.cellPosition);
-      final sameIndex = left.index == right.index;
-      BasicCursor cursor = sameIndex
-          ? SelectingNodeCursor(left.index, left.position, right.position)
-          : SelectingNodesCursor(left.cursor, right.cursor);
+      BasicCursor cursor =
+          buildTableCellCursor(cell, left.cursor, right.cursor);
       if (cell.wholeSelected(cursor)) {
         return from([
           TableCellList([cell])
@@ -307,26 +305,25 @@ class TableNode extends EditorNode {
       var oldTable = List.of(table);
       var newTable = List.of(other.table);
       var mergedTable = <TableCellList>[];
-      var mergedWidths = <double>[];
       final diffCount = (columnCount - other.columnCount).abs();
       if (columnCount < other.columnCount) {
         final newNode = insertColumns(
-            columnCount - 1,
-            List.generate(rowCount, (i) {
+            columnCount,
+            List.generate(diffCount, (i) {
               return ColumnInfo(
                   TableCellList(
-                      List.generate(diffCount, (index) => TableCell.empty())),
+                      List.generate(rowCount, (index) => TableCell.empty())),
                   initWidth);
             }));
         mergedTable.addAll(newNode.table);
         mergedTable.addAll(newTable);
       } else if (columnCount > other.columnCount) {
         final newNode = other.insertColumns(
-            other.columnCount - 1,
-            List.generate(other.rowCount, (i) {
+            other.columnCount,
+            List.generate(diffCount, (i) {
               return ColumnInfo(
-                  TableCellList(
-                      List.generate(diffCount, (index) => TableCell.empty())),
+                  TableCellList(List.generate(
+                      other.rowCount, (index) => TableCell.empty())),
                   initWidth);
             }));
         mergedTable.addAll(oldTable);
@@ -335,7 +332,7 @@ class TableNode extends EditorNode {
         mergedTable.addAll(oldTable);
         mergedTable.addAll(newTable);
       }
-      return from(mergedTable, mergedWidths, id: newId);
+      return from(mergedTable, widths.mergeLists(other.widths), id: newId);
     } else {
       throw UnableToMergeException('$runtimeType', '${other.runtimeType}');
     }
@@ -367,32 +364,6 @@ class TableNode extends EditorNode {
     return generator.call(data.as<TablePosition>(), this);
   }
 
-  TableCellNodeContext buildContext({
-    required CellPosition position,
-    required BasicCursor cursor,
-    required ListenerCollection listeners,
-    required ValueChanged<Replace> onReplace,
-    required ValueChanged<Update> onUpdate,
-    required ValueChanged<BasicCursor> onBasicCursor,
-    required ValueChanged<EditingOffset> editingOffset,
-    required ValueChanged<EditingCursor> onPan,
-    required ValueChanged<NodeWithIndex> onNodeUpdate,
-  }) {
-    final cell = getCell(position);
-    final childListener =
-        listeners.getListener(cell.id) ?? ListenerCollection();
-    return TableCellNodeContext(
-        cellGetter: () => cell,
-        cursorGetter: () => cursor,
-        onReplace: onReplace,
-        onUpdate: onUpdate,
-        onBasicCursor: onBasicCursor,
-        editingOffset: editingOffset,
-        onPan: onPan,
-        onNodeUpdate: onNodeUpdate,
-        listeners: childListener);
-  }
-
   @override
   String get text => table.map((e) => e.text).join('\n');
 
@@ -415,7 +386,6 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   EventType.delete.name: (d, n) => deleteWhileSelecting(d, n),
   EventType.newline.name: (d, n) => newlineWhileSelecting(d, n),
   EventType.selectAll.name: (d, n) => selectAllWhileSelecting(d, n),
-  EventType.typing.name: (d, n) => typingWhileSelecting(d, n),
   // EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileSelecting(d, n),
@@ -441,6 +411,4 @@ class ColumnInfo {
   final double width;
 
   ColumnInfo(this.column, this.width);
-
-  int get length => column.length;
 }

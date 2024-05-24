@@ -75,8 +75,8 @@ class RichTextNode extends EditorNode {
       RichTextNodePosition(spans.length - 1, spans.last.textLength);
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
-      RichTextWidget(context, this, param);
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) =>
+      RichTextWidget(operator, this, param);
 
   RichTextNode insert(int index, RichTextSpan span) {
     final copySpans = List.of(spans);

@@ -25,7 +25,7 @@ class TodoNode extends RichTextNode with SpecialNewlineMixin {
           depth: depth ?? this.depth);
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     return Builder(builder: (c) {
       return Row(
         children: [
@@ -35,10 +35,10 @@ class TodoNode extends RichTextNode with SpecialNewlineMixin {
             child: Checkbox(
                 value: done,
                 onChanged: (v) {
-                  context.onNode(from(spans, done: !done), param.index);
+                  operator.onNode(from(spans, done: !done), param.index);
                 }),
           ),
-          Expanded(child: RichTextWidget(context, this, param)),
+          Expanded(child: RichTextWidget(operator, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );

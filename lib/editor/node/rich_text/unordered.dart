@@ -14,13 +14,13 @@ class UnorderedNode extends RichTextNode with SpecialNewlineMixin {
       UnorderedNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     return Builder(builder: (c) {
       final theme = Theme.of(c);
       return Row(
         children: [
           buildMarker(26, theme),
-          Expanded(child: RichTextWidget(context, this, param)),
+          Expanded(child: RichTextWidget(operator, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );

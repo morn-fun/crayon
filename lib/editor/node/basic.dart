@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 import '../core/context.dart';
-import '../core/listener_collection.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 
@@ -15,7 +14,7 @@ abstract class EditorNode {
 
   Map<String, dynamic> toJson();
 
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c);
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c);
 
   /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
   EditorNode frontPartNode(NodePosition end, {String? newId});
@@ -68,16 +67,14 @@ class NodeWithCursor<T extends NodePosition> {
 class EditingData<T extends NodePosition> {
   final EditingCursor<T> cursor;
   final EventType type;
-  final NodeContext context;
+  final NodesOperator context;
   final dynamic extras;
 
   EditingData(this.cursor, this.type, this.context, {this.extras});
 
-  EditingData<E> as<E extends NodePosition>({NodeContext? context}) =>
+  EditingData<E> as<E extends NodePosition>({NodesOperator? context}) =>
       EditingData<E>(cursor.as<E>(), type, context ?? this.context,
           extras: extras);
-
-  ListenerCollection get listeners => context.listeners;
 
   T get position => cursor.position;
 
@@ -92,7 +89,7 @@ class EditingData<T extends NodePosition> {
 class SelectingData<T extends NodePosition> {
   final SelectingNodeCursor<T> cursor;
   final EventType type;
-  final NodeContext context;
+  final NodesOperator context;
 
   final dynamic extras;
 
@@ -104,9 +101,7 @@ class SelectingData<T extends NodePosition> {
 
   int get index => cursor.index;
 
-  ListenerCollection get listeners => context.listeners;
-
-  SelectingData<E> as<E extends NodePosition>({NodeContext? context}) =>
+  SelectingData<E> as<E extends NodePosition>({NodesOperator? context}) =>
       SelectingData<E>(cursor.as<E>(), type, context ?? this.context,
           extras: extras);
 

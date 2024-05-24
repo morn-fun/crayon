@@ -53,9 +53,9 @@ abstract class HeadNode extends RichTextNode {
               style: TextStyle(fontSize: fontSize, color: Colors.black))));
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     return RichTextWidget(
-      context,
+      operator,
       this,
       param,
       fontSize: fontSize,

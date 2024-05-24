@@ -13,7 +13,7 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
       OrderedNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     final size = 14.0;
     return Builder(builder: (c) {
       final theme = Theme.of(c);
@@ -22,19 +22,19 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
           Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: Text(
-              '${generateOrderedNumber(getIndex(param.index, context) + 1, depth)}. ',
+              '${generateOrderedNumber(getIndex(param.index, operator) + 1, depth)}. ',
               style: TextStyle(
                   fontSize: size, color: theme.textTheme.displayMedium?.color),
             ),
           ),
-          Expanded(child: RichTextWidget(context, this, param)),
+          Expanded(child: RichTextWidget(operator, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       );
     });
   }
 
-  int getIndex(int i, NodeContext context) {
+  int getIndex(int i, NodesOperator context) {
     if (i <= 0) return 0;
     int lastIndex = i - 1;
     final node = context.getNode(lastIndex);

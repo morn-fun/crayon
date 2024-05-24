@@ -14,7 +14,7 @@ class QuoteNode extends RichTextNode with SpecialNewlineMixin {
       QuoteNode.from(spans, id: id ?? this.id, depth: depth ?? this.depth);
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     return Builder(builder: (c) {
       final theme = Theme.of(c);
       return Container(
@@ -22,7 +22,7 @@ class QuoteNode extends RichTextNode with SpecialNewlineMixin {
             border:
                 Border(left: BorderSide(color: theme.hoverColor, width: 4))),
         padding: EdgeInsets.only(left: 4),
-        child: RichTextWidget(context, this, param),
+        child: RichTextWidget(operator, this, param),
       );
     });
   }

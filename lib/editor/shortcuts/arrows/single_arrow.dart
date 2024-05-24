@@ -10,7 +10,7 @@ import 'arrows.dart';
 class LeftArrowAction extends ContextAction<LeftArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -26,7 +26,7 @@ class LeftArrowAction extends ContextAction<LeftArrowIntent> {
 class RightArrowAction extends ContextAction<RightArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -42,7 +42,7 @@ class RightArrowAction extends ContextAction<RightArrowIntent> {
 class UpArrowAction extends ContextAction<UpArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -58,7 +58,7 @@ class UpArrowAction extends ContextAction<UpArrowIntent> {
 class DownArrowAction extends ContextAction<DownArrowIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -71,7 +71,7 @@ class DownArrowAction extends ContextAction<DownArrowIntent> {
   }
 }
 
-void arrowOnLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
+void arrowOnLeftOrUp(ArrowType type, NodesOperator nodeContext, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   late NodePosition position;
@@ -112,7 +112,7 @@ void arrowOnLeftOrUp(ArrowType type, NodeContext nodeContext, Type actionType,
   }
 }
 
-void arrowOnRightOrDown(ArrowType type, NodeContext nodeContext, Type actionType,
+void arrowOnRightOrDown(ArrowType type, NodesOperator nodeContext, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   ArrowType t = type;

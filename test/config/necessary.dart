@@ -7,7 +7,7 @@ import 'package:crayon/editor/core/logger.dart';
 import 'package:crayon/editor/exception/command.dart';
 import 'package:crayon/editor/node/basic.dart';
 
-EditorContext buildTextContext(List<EditorNode> nodes) {
+EditorContext buildEditorContext(List<EditorNode> nodes) {
   final testInvoker = CommandInvoker();
   late EditorContext context;
   final InputManager testInputManager = InputManager(

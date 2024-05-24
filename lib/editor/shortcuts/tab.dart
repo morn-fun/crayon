@@ -22,7 +22,7 @@ class ShiftTabIntent extends Intent {
 class TabAction extends ContextAction<TabIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -64,7 +64,7 @@ class TabAction extends ContextAction<TabIntent> {
 class ShiftTabAction extends ContextAction<ShiftTabIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 

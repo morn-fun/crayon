@@ -77,7 +77,7 @@ class _RichEditorPageState extends State<RichEditor> {
           break;
       }
     });
-    listeners.addNodesChangedListener(refresh);
+    listeners.addNodesChangedListener((v) => refresh());
   }
 
   void refresh() {

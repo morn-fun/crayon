@@ -12,7 +12,7 @@ class ListenerCollection {
   final tag = 'ListenerCollection';
 
   final Set<ValueChanged<BasicCursor>> _cursorListeners = {};
-  final Set<VoidCallback> _nodesListeners = {};
+  final Set<ValueChanged<List<EditorNode>>> _nodesListeners = {};
   final Map<String, Set<ValueChanged<GestureState>>> _gestureListeners = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
@@ -21,7 +21,7 @@ class ListenerCollection {
 
   ListenerCollection({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
-    Set<VoidCallback>? nodesListeners,
+    Set<ValueChanged<List<EditorNode>>>? nodesListeners,
     Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
@@ -37,7 +37,7 @@ class ListenerCollection {
 
   ListenerCollection copy({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
-    Set<VoidCallback>? nodesListeners,
+    Set<ValueChanged<List<EditorNode>>>? nodesListeners,
     Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
@@ -68,10 +68,10 @@ class ListenerCollection {
   void removeCursorChangedListener(ValueChanged<BasicCursor> listener) =>
       _cursorListeners.remove(listener);
 
-  void addNodesChangedListener(VoidCallback listener) =>
+  void addNodesChangedListener(ValueChanged<List<EditorNode>> listener) =>
       _nodesListeners.add(listener);
 
-  void removeNodesChangedListener(VoidCallback listener) =>
+  void removeNodesChangedListener(ValueChanged<List<EditorNode>> listener) =>
       _nodesListeners.remove(listener);
 
   void addGestureListener(String id, ValueChanged<GestureState> listener) {
@@ -174,9 +174,9 @@ class ListenerCollection {
     //     .i('$tag, notifyNode length:${_nodeChangedCallbacks[node.id]?.length}');
   }
 
-  void notifyNodes() {
+  void notifyNodes(List<EditorNode> nodes) {
     for (var c in Set.of(_nodesListeners)) {
-      c.call();
+      c.call(nodes);
     }
     // logger.i('$tag, notifyNodes length:${_nodesChangedCallbacks.length}');
   }

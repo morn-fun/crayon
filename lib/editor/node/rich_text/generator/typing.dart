@@ -57,7 +57,7 @@ void checkNeedChangeNodeTyp(
 }
 
 void checkNeedShowSelectingMenu(RichTextNode node,
-    RichTextNodePosition position, NodeContext context, int index) {
+    RichTextNodePosition position, NodesOperator context, int index) {
   final frontText = node.frontPartNode(position).text;
   if (frontText == '/') {
     throw TypingRequiredOptionalMenuException(

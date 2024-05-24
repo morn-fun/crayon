@@ -241,7 +241,7 @@ void main() {
 
   testWidgets('build', (tester) async{
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     var widget = Builder(
         builder: (c) => node
@@ -262,7 +262,7 @@ void main() {
 
   test('onEdit-deletion', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     expect(
         () => node.onEdit(
             EditingData(node.beginPosition.toCursor(0), EventType.italic, ctx)),
@@ -295,7 +295,7 @@ void main() {
 
   test('onEdit-delete', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition),
         EventType.delete,
@@ -321,7 +321,7 @@ void main() {
 
   test('onEdit-newline', () {
     var node = basicNode(texts: ['   1', '  2', ' 3']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(EditingData(
         CodeBlockPosition(1, 0).toCursor(0), EventType.newline, ctx));
     var n1 = r1.node as CodeBlockNode;
@@ -346,7 +346,7 @@ void main() {
 
   test('onSelect-newline', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition),
         EventType.newline,
@@ -359,7 +359,7 @@ void main() {
 
   test('onEdit-selectAll', () {
     var node = basicNode(texts: ['', '1', '2']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(
         EditingData(node.beginPosition.toCursor(0), EventType.selectAll, ctx));
     var c1 = r1.cursor as SelectingNodeCursor;
@@ -375,7 +375,7 @@ void main() {
 
   test('onSelect-selectAll', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(
             0, CodeBlockPosition(0, 0), CodeBlockPosition(0, 1)),
@@ -395,7 +395,7 @@ void main() {
 
   test('onEdit-increaseDepth', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(EditingData(
         CodeBlockPosition.zero().toCursor(0), EventType.increaseDepth, ctx));
     var n1 = r1.node as CodeBlockNode;
@@ -406,7 +406,7 @@ void main() {
 
   test('onEdit-decreaseDepth', () {
     var node = basicNode(texts: ['', '  ', '   ']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.onEdit(EditingData(CodeBlockPosition.zero().toCursor(0),
@@ -423,7 +423,7 @@ void main() {
 
   test('onSelect-increaseDepth', () {
     var node = basicNode();
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.newNode(depth: 100).onSelect(SelectingData(
@@ -475,7 +475,7 @@ void main() {
 
   test('onSelect-decreaseDepth', () {
     var node = basicNode();
-    var ctx = buildTextContext([node]);
+    var ctx = buildEditorContext([node]);
 
     expect(
         () => node.onSelect(SelectingData(
@@ -493,7 +493,7 @@ void main() {
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
 
     node = basicNode(texts: ['', '  11', '   222', '    3333']);
-    ctx = buildTextContext([node]);
+    ctx = buildEditorContext([node]);
 
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(
@@ -509,7 +509,7 @@ void main() {
 
   test('onEdit-paste', () {
     var node = basicNode(texts: ['111', '222']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.onEdit(EditingData(
@@ -558,7 +558,7 @@ void main() {
 
   test('onEdit-paste', () {
     var node = basicNode(texts: ['111', '222']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.onSelect(SelectingData(
@@ -628,7 +628,7 @@ void main() {
 
   test('onEdit-typing', () {
     var node = basicNode(texts: ['111', '222']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.onEdit(
@@ -646,7 +646,7 @@ void main() {
   });
   test('onSelect-typing', () {
     var node = basicNode(texts: ['111', '222']);
-    final ctx = buildTextContext([node]);
+    final ctx = buildEditorContext([node]);
 
     expect(
         () => node.onSelect(SelectingData(

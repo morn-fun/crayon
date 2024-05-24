@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../../editor/extension/node_context.dart';
 import '../../../editor/extension/collection.dart';
 import '../../../editor/cursor/rich_text.dart';
+import '../../../editor/extension/cursor.dart';
 
 import '../../core/context.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
+import '../../core/logger.dart';
 import '../../cursor/basic.dart';
+import '../../node/basic.dart';
 import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class TextMenu extends StatefulWidget {
-  final NodeContext nodeContext;
+  final NodesOperator nodeContext;
   final MenuInfo info;
   final EntryManager manager;
 
@@ -22,7 +24,6 @@ class TextMenu extends StatefulWidget {
 }
 
 class _TextMenuState extends State<TextMenu> {
-  NodeContext get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 
@@ -30,44 +31,61 @@ class _TextMenuState extends State<TextMenu> {
 
   EntryManager get manager => widget.manager;
 
-  BasicCursor get cursor => nodeContext.cursor;
-
   Set<String> tagSets = {};
+
+  late NodesOperator nodeContext = widget.nodeContext;
+
+  late BasicCursor cursor = nodeContext.cursor;
+
+  late List<EditorNode> nodes = List.of(nodeContext.nodes);
 
   @override
   void initState() {
     listeners.addCursorChangedListener(onCursorChanged);
     listeners.addNodesChangedListener(onNodesChanged);
-    tagSets = nodeContext.tagIntersection(cursor);
+    tagSets = cursor.tagIntersection(nodes);
     super.initState();
   }
 
   @override
   void dispose() {
+    nodes.clear();
     listeners.removeCursorChangedListener(onCursorChanged);
     listeners.removeNodesChangedListener(onNodesChanged);
     super.dispose();
   }
 
   void onCursorChanged(BasicCursor cursor) {
+    this.cursor = cursor;
     if (cursor is EditingCursor) {
       hideMenu();
       return;
     }
+    nodeContext = nodeContext.newOperator(nodes, cursor);
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
-      final newTags = nodeContext.tagIntersection(cursor);
-      if (!newTags.equalsTo(tagSets)) refresh();
-      tagSets = newTags;
+      try {
+        final newTags = cursor.tagIntersection(nodes);
+        if (!newTags.equalsTo(tagSets)) refresh();
+        tagSets = newTags;
+      } catch (e) {
+        logger.e('onCursorChanged error:$e');
+      }
     });
   }
 
-  void onNodesChanged() {
+  void onNodesChanged(List<EditorNode> nodes) {
+    this.nodes = List.of(nodes);
+    nodeContext = nodeContext.newOperator(nodes, cursor);
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
-      final newTags = nodeContext.tagIntersection(cursor);
-      if (!newTags.equalsTo(tagSets)) refresh();
-      tagSets = newTags;
+      try {
+        final newTags = cursor.tagIntersection(nodes);
+        if (!newTags.equalsTo(tagSets)) refresh();
+        tagSets = newTags;
+      } catch (e) {
+        logger.e('onNodesChanged error:$e');
+      }
     });
   }
 
@@ -109,25 +127,25 @@ class _TextMenuState extends State<TextMenu> {
                   TextMenuItem(
                     iconData: Icons.format_bold,
                     onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.bold, nodeContext.cursor),
+                        nodeContext, RichTextTag.bold, cursor),
                     contains: tagSets.contains(RichTextTag.bold.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_strikethrough_rounded,
                     onTap: () => onStyleEvent(nodeContext,
-                        RichTextTag.lineThrough, nodeContext.cursor),
+                        RichTextTag.lineThrough, cursor),
                     contains: tagSets.contains(RichTextTag.lineThrough.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_italic_rounded,
                     onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.italic, nodeContext.cursor),
+                        nodeContext, RichTextTag.italic, cursor),
                     contains: tagSets.contains(RichTextTag.italic.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_underline_rounded,
                     onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.underline, nodeContext.cursor),
+                        nodeContext, RichTextTag.underline, cursor),
                     contains: tagSets.contains(RichTextTag.underline.name),
                   ),
                   if (c is SelectingNodeCursor &&
@@ -139,7 +157,7 @@ class _TextMenuState extends State<TextMenu> {
                         hideMenu();
                         if (tagSets.contains(RichTextTag.link.name)) {
                           onStyleEvent(
-                              nodeContext, RichTextTag.link, nodeContext.cursor,
+                              nodeContext, RichTextTag.link, cursor,
                               attributes: {});
                         } else {
                           manager.showLinkMenu(
@@ -156,7 +174,7 @@ class _TextMenuState extends State<TextMenu> {
                   TextMenuItem(
                     iconData: Icons.code,
                     onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.code, nodeContext.cursor),
+                        nodeContext, RichTextTag.code, cursor),
                     contains: tagSets.contains(RichTextTag.code.name),
                   ),
                 ],

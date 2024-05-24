@@ -11,7 +11,7 @@ import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class LinkMenu extends StatefulWidget {
-  final NodeContext nodeContext;
+  final NodesOperator nodeContext;
   final MenuInfo info;
   final EntryManager manager;
   final UrlWithPosition? urlWithPosition;
@@ -24,7 +24,7 @@ class LinkMenu extends StatefulWidget {
 }
 
 class _LinkMenuState extends State<LinkMenu> {
-  NodeContext get nodeContext => widget.nodeContext;
+  NodesOperator get nodeContext => widget.nodeContext;
 
   ListenerCollection get listeners => nodeContext.listeners;
 

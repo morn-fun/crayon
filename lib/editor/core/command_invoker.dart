@@ -11,7 +11,7 @@ class CommandInvoker {
 
   final tag = 'RichEditorController';
 
-  void execute(BasicCommand command, NodeContext context,
+  void execute(BasicCommand command, NodesOperator context,
       {bool noThrottle = false}) {
     try {
       logger.i('$tag, execute 【$command】');

@@ -27,7 +27,7 @@ class RichTextWidget extends StatefulWidget {
     this.fontSize = 16,
   });
 
-  final NodeContext context;
+  final NodesOperator context;
   final RichTextNode richTextNode;
   final NodeBuildParam param;
   final double fontSize;
@@ -55,7 +55,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   TextSpan get textSpan => node.buildTextSpan();
 
-  NodeContext get nodeContext => widget.context;
+  NodesOperator get nodeContext => widget.context;
 
   SingleNodeCursor? get nodeCursor => widget.param.cursor;
 

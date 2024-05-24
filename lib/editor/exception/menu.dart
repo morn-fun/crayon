@@ -4,7 +4,7 @@ import 'basic.dart';
 
 class TypingRequiredOptionalMenuException implements MenuException {
   final NodeWithCursor nodeWithCursor;
-  final NodeContext context;
+  final NodesOperator context;
 
   TypingRequiredOptionalMenuException(this.nodeWithCursor, this.context);
 

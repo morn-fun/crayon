@@ -45,8 +45,8 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  Widget build(NodeContext context, NodeBuildParam param, BuildContext c) =>
-      CodeBlock(context, this, param);
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) =>
+      CodeBlock(operator, this, param);
 
   @override
   EditorNode frontPartNode(covariant CodeBlockPosition end, {String? newId}) =>

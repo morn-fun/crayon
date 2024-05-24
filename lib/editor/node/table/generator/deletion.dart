@@ -29,11 +29,7 @@ NodeWithCursor deleteWhileSelecting(
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);
     final ctx = data.context;
-    final sameIndex = left.index == right.index;
-    BasicCursor cursor = sameIndex
-        ? SelectingNodeCursor(left.index, left.position, right.position)
-        : SelectingNodesCursor(EditingCursor(left.index, left.position),
-            EditingCursor(right.index, right.position));
+    BasicCursor cursor = buildTableCellCursor(cell, left.cursor, right.cursor);
     if (cell.wholeSelected(cursor)) {
       final newNode = node.updateCell(left.row, left.column, (t) => t.clear());
       return NodeWithCursor(
@@ -51,7 +47,7 @@ NodeWithCursor deleteWhileSelecting(
   final newNode = node.updateMore(left.cellPosition, right.cellPosition, (t) {
     return t
         .map((e) => e.updateMore(0, e.length, (m) {
-              return m.map((n) => n.copy(nodes: [])).toList();
+              return m.map((n) => n.clear()).toList();
             }, initNum: 0))
         .toList();
   });

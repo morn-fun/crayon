@@ -7,7 +7,7 @@ import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/node/basic.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 
-class TestNodeContext extends NodeContext {
+class TestNodeContext extends NodesOperator {
   @override
   // TODO: implement cursor
   BasicCursor<NodePosition> get cursor => throw UnimplementedError();
@@ -69,4 +69,9 @@ class TestNodeContext extends NodeContext {
   void onNode(EditorNode node, int index) {
     // TODO: implement onNode
   }
+
+  @override
+  NodesOperator newOperator(
+          List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
+      this;
 }

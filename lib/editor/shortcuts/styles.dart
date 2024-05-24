@@ -30,7 +30,7 @@ class LineThroughIntent extends Intent {
 class UnderlineAction extends ContextAction<UnderlineIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -46,7 +46,7 @@ class UnderlineAction extends ContextAction<UnderlineIntent> {
 class BoldAction extends ContextAction<BoldIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -62,7 +62,7 @@ class BoldAction extends ContextAction<BoldIntent> {
 class ItalicAction extends ContextAction<ItalicIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -78,7 +78,7 @@ class ItalicAction extends ContextAction<ItalicIntent> {
 class LineThroughAction extends ContextAction<LineThroughIntent> {
   final ActionContext ac;
 
-  NodeContext get nodeContext => ac.context;
+  NodesOperator get nodeContext => ac.context;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -91,7 +91,7 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
   }
 }
 
-void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
+void onStyleEvent(NodesOperator context, RichTextTag tag, BasicCursor cursor,
     {Map<String, String>? attributes}) {
   try {
     final type = EventType.values.byName(tag.name);
@@ -102,17 +102,34 @@ void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
             extras: StyleExtra(false, attributes)));
         context.execute(ModifyNode(r));
       } else if (cursor is SelectingNodeCursor) {
+        final node = context.getNode(cursor.index);
+        final innerNodes =
+            node.getInlineNodesFromPosition(cursor.begin, cursor.end);
+        bool containsTag = true;
+        int i = 0;
+        while (i < innerNodes.length && containsTag) {
+          final innerNode = innerNodes[i];
+          if (innerNode is RichTextNode) {
+            for (var s in innerNode.spans) {
+              if (!s.tags.contains(type.name)) {
+                containsTag = false;
+                break;
+              }
+            }
+          }
+          i++;
+        }
         final r = context.getNode(cursor.index).onSelect(SelectingData(
             cursor, type, context,
-            extras: StyleExtra(false, attributes)));
+            extras: StyleExtra(containsTag, attributes)));
         context.execute(ModifyNode(r));
       }
     } else if (cursor is SelectingNodesCursor) {
       final left = cursor.left;
       final right = cursor.right;
       int i = left.index;
-      bool coverTag = false;
-      while (i <= right.index) {
+      bool containsTag = true;
+      while (i <= right.index && containsTag) {
         final node = context.getNode(i);
         if (node is RichTextNode) {
           late RichTextNode newNode;
@@ -126,8 +143,7 @@ void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
           }
           for (var s in newNode.spans) {
             if (!s.tags.contains(type.name)) {
-              coverTag = true;
-              i = right.index + 1;
+              containsTag = false;
               break;
             }
           }
@@ -135,7 +151,7 @@ void onStyleEvent(NodeContext context, RichTextTag tag, BasicCursor cursor,
         i++;
       }
       context.execute(UpdateSelectingNodes(cursor, type,
-          extra: StyleExtra(coverTag, attributes)));
+          extra: StyleExtra(containsTag, attributes)));
     }
   } on ArgumentError catch (e) {
     logger.e('onStyleEvent error: $e');
