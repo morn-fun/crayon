@@ -17,7 +17,7 @@ class RichTableCell extends StatefulWidget {
   final NodeBuildParam param;
   final BasicCursor? cursor;
   final ListenerCollection listeners;
-  final NodesOperator context;
+  final NodesOperator operator;
   final String cellId;
 
   const RichTableCell({
@@ -26,7 +26,7 @@ class RichTableCell extends StatefulWidget {
     required this.cellId,
     required this.node,
     required this.cellPosition,
-    required this.context,
+    required this.operator,
     required this.param,
     required this.cursor,
     required this.listeners,
@@ -37,7 +37,7 @@ class RichTableCell extends StatefulWidget {
 }
 
 class _RichTableCellState extends State<RichTableCell> {
-  NodesOperator get nodeContext => widget.context;
+  NodesOperator get operator => widget.operator;
 
   ListenerCollection get listeners => widget.listeners;
 
@@ -67,11 +67,11 @@ class _RichTableCellState extends State<RichTableCell> {
         arrowDelegates: {});
     listeners.addGestureListener(cellId, onGesture);
     listeners.addArrowDelegate(cellId, onArrowAccept);
-    nodeContext.listeners.addListener(cellId, localListeners);
+    operator.listeners.addListener(cellId, localListeners);
     super.initState();
   }
 
-  void onGesture(GestureState s) => localListeners.notifyGestures(s);
+  bool onGesture(GestureState s) => localListeners.notifyGestures(s) != null;
 
   void onArrowAccept(AcceptArrowData d) {}
 
@@ -102,7 +102,7 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void dispose() {
-    nodeContext.listeners.removeListener(cellId, localListeners);
+    operator.listeners.removeListener(cellId, localListeners);
     localListeners.dispose();
     logger.i('$cellId  dispose');
     listeners.removeGestureListener(cellId, onGesture);
@@ -123,7 +123,7 @@ class _RichTableCellState extends State<RichTableCell> {
           return Container(
             padding: EdgeInsets.only(left: innerNode.depth * 12, right: 4),
             child: innerNode.build(
-                buildTableCellNodeContext(nodeContext, cellPosition, node,
+                buildTableCellNodeContext(operator, cellPosition, node,
                     cursor ?? NoneCursor(), index),
                 NodeBuildParam(
                   index: i,

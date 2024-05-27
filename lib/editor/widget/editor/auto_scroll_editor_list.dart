@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../editor/extension/cursor.dart';
+import '../../command/replacement.dart';
 import '../../core/command_invoker.dart';
 import '../../core/context.dart';
 import '../../core/editor_controller.dart';
@@ -70,7 +72,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     if (lastEditingCursorOffset == v) return;
     final cursor = controller.cursor;
     if (cursor is! EditingCursor) return;
-    logger.i('onCursorOffsetChanged last:$lastEditingCursorOffset,  current:$v');
+    logger
+        .i('onCursorOffsetChanged last:$lastEditingCursorOffset,  current:$v');
     lastEditingCursorOffset = v;
     final box = renderBox;
     if (box == null) return;
@@ -138,9 +141,13 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       key: key,
       behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
-        // logger.i('onTapDown:$d');
+        logger.i('onTapDown:$d');
         editorContext.restartInput();
-        controller.notifyGesture(TapGestureState(d.globalPosition));
+        final id = controller.notifyGesture(TapGestureState(d.globalPosition));
+        if (id == null) {
+          editorContext.execute(AddRichTextNode(RichTextNode.from([])));
+        }
+        editorContext.removeEntry();
       },
       onPanStart: (d) {
         isInPanGesture = true;
@@ -171,6 +178,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
             controller
                 .notifyGesture(PanGestureState(panOffset, panStartOffset));
             scrollList(d.globalPosition, d.delta);
+            editorContext.removeEntry();
           },
           tag: tag,
           duration: const Duration(milliseconds: 50),

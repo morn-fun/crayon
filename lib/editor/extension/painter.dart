@@ -2,12 +2,9 @@ import 'dart:math';
 
 import 'package:crayon/editor/cursor/basic.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../cursor/rich_text.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
-import '../widget/menu/link.dart';
 
 extension PainterExtension on TextPainter {
   Offset getOffsetFromTextOffset(int offset, {Rect rect = Rect.zero}) {
@@ -48,64 +45,6 @@ extension PainterExtension on TextPainter {
       }
     }
     return baseline2MaxHeight;
-  }
-
-  List<Widget> buildLinkGestures(
-    int nodeIndex,
-    RichTextNode node, {
-    OnLinkWidgetEnter? onEnter,
-    PointerExitEventListener? onExit,
-    ValueChanged<RichTextSpan>? onTap,
-  }) {
-    List<Widget> widgets = [];
-    for (var i = 0; i < node.spans.length; ++i) {
-      final span = node.spans[i];
-      if (!span.tags.contains(RichTextTag.link.name)) continue;
-      final boxList = getBoxesForSelection(
-          TextSelection(baseOffset: span.offset, extentOffset: span.endOffset));
-      Map<int, double> baseline2MaxHeight = baseline2MaxHeightMap(boxList);
-      final selectingPosition = SelectingNodeCursor(nodeIndex,
-          RichTextNodePosition(i, 0), RichTextNodePosition(i, span.textLength));
-      widgets.add(Theme(
-        data: ThemeData(
-          splashFactory: NoSplash.splashFactory,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-        ),
-        child: LinkHover(
-          builder: (hovered) {
-            return Stack(
-              children: List.generate(boxList.length, (index) {
-                final box = boxList[index];
-                final baseline = ((box.bottom + box.top) / 2).round();
-                final height =
-                    baseline2MaxHeight[baseline] ?? (box.bottom - box.top);
-                return Positioned(
-                    left: box.left,
-                    top: baseline - height / 2,
-                    child: Container(
-                      width: box.right - box.left,
-                      height: height,
-                      decoration: hovered
-                          ? BoxDecoration(
-                              border: Border(
-                                  bottom: BorderSide(color: Colors.blueAccent)))
-                          : null,
-                    ));
-              }),
-            );
-          },
-          onEnter: (e) {
-            onEnter?.call(e.position, span, selectingPosition);
-          },
-          onExit: (e) {
-            onExit?.call(e);
-          },
-          onTap: () => onTap?.call(span),
-        ),
-      ));
-    }
-    return widgets;
   }
 
   List<Widget> buildInlineCodes(RichTextNode node) {

@@ -11,9 +11,9 @@ class SelectAllIntent extends Intent {
 }
 
 class SelectAllAction extends ContextAction<SelectAllIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -25,33 +25,33 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) {
       try {
-        final r = nodeContext
+        final r = operator
             .getNode(cursor.index)
-            .onEdit(EditingData(cursor, EventType.selectAll, nodeContext));
-        nodeContext.onCursor(r.cursor);
+            .onEdit(EditingData(cursor, EventType.selectAll, operator));
+        operator.onCursor(r.cursor);
       } on EmptyNodeToSelectAllException {
-        nodeContext.onCursor(nodeContext.selectAllCursor);
+        operator.onCursor(operator.selectAllCursor);
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
-      final node = nodeContext.getNode(cursor.index);
+      final node = operator.getNode(cursor.index);
       if (node.beginPosition == cursor.begin &&
           node.endPosition == cursor.end) {
-        nodeContext.onCursor(nodeContext.selectAllCursor);
+        operator.onCursor(operator.selectAllCursor);
       } else {
         try {
           final r = node.onSelect(
-              SelectingData(cursor, EventType.selectAll, nodeContext));
-          nodeContext.onCursor(r.cursor);
+              SelectingData(cursor, EventType.selectAll, operator));
+          operator.onCursor(r.cursor);
         } on NodeUnsupportedException catch (e) {
           logger.e('$runtimeType, ${e.message}');
         }
       }
     } else if (cursor is SelectingNodesCursor) {
-      final allNodesCursor = nodeContext.selectAllCursor;
+      final allNodesCursor = operator.selectAllCursor;
       if (cursor == allNodesCursor) return;
-      nodeContext.onCursor(allNodesCursor);
+      operator.onCursor(allNodesCursor);
     }
   }
 }

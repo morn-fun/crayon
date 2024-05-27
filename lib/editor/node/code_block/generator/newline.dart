@@ -23,7 +23,7 @@ NodeWithCursor newlineWhileSelecting(
   final p = data.cursor;
   final newNode = node.replace(p.left, p.right, []);
   return newlineWhileEditing(
-      EditingData(p.leftCursor, EventType.newline, data.context), newNode);
+      EditingData(p.leftCursor, EventType.newline, data.operator), newNode);
 }
 
 final tabRegex = RegExp(r'^[\t\s]+');

@@ -17,9 +17,9 @@ class DeleteIntent extends Intent {
 }
 
 class DeleteAction extends ContextAction<DeleteIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -31,51 +31,50 @@ class DeleteAction extends ContextAction<DeleteIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) {
       final index = cursor.index;
-      final node = nodeContext.getNode(index);
+      final node = operator.getNode(index);
       try {
-        final r =
-            node.onEdit(EditingData(cursor, EventType.delete, nodeContext));
-        nodeContext.execute(ModifyNode(r));
+        final r = node.onEdit(EditingData(cursor, EventType.delete, operator));
+        operator.execute(ModifyNode(r));
       } on DeleteRequiresNewLineException catch (e) {
         logger.e('$runtimeType, ${e.message}');
         if (index == 0) return;
-        final lastNode = nodeContext.getNode(index - 1);
+        final lastNode = operator.getNode(index - 1);
         try {
           final newNode = lastNode.merge(node);
           final newNodes = [newNode];
-          correctDepth(nodeContext.nodeLength, (i) => nodeContext.getNode(i),
+          correctDepth(operator.nodeLength, (i) => operator.getNode(i),
               index + 1, newNode.depth, newNodes,
               limitChildren: false);
-          nodeContext.execute(ReplaceNode(Replace(
+          operator.execute(ReplaceNode(Replace(
               index - 1,
               index + newNodes.length,
               newNodes,
               EditingCursor(index - 1, lastNode.endPosition))));
         } on UnableToMergeException catch (e) {
           logger.e('$runtimeType, ${e.message}');
-          nodeContext.execute(ModifyNode(NodeWithCursor(
+          operator.execute(ModifyNode(NodeWithCursor(
               node,
               SelectingNodeCursor(
                   index - 1, lastNode.beginPosition, lastNode.endPosition))));
         }
       } on DeleteToChangeNodeException catch (e) {
         logger.e('$runtimeType, ${e.message}');
-        nodeContext.execute(ReplaceNode(Replace(
+        operator.execute(ReplaceNode(Replace(
             index, index + 1, [e.node], EditingCursor(index, e.position))));
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
       try {
-        final r = nodeContext
+        final r = operator
             .getNode(cursor.index)
-            .onSelect(SelectingData(cursor, EventType.delete, nodeContext));
-        nodeContext.execute(ModifyNode(r));
+            .onSelect(SelectingData(cursor, EventType.delete, operator));
+        operator.execute(ModifyNode(r));
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodesCursor) {
-      nodeContext.execute(DeletionWhileSelectingNodes(cursor));
+      operator.execute(DeletionWhileSelectingNodes(cursor));
     }
   }
 }

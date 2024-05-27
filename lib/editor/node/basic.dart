@@ -67,13 +67,13 @@ class NodeWithCursor<T extends NodePosition> {
 class EditingData<T extends NodePosition> {
   final EditingCursor<T> cursor;
   final EventType type;
-  final NodesOperator context;
+  final NodesOperator operator;
   final dynamic extras;
 
-  EditingData(this.cursor, this.type, this.context, {this.extras});
+  EditingData(this.cursor, this.type, this.operator, {this.extras});
 
-  EditingData<E> as<E extends NodePosition>({NodesOperator? context}) =>
-      EditingData<E>(cursor.as<E>(), type, context ?? this.context,
+  EditingData<E> as<E extends NodePosition>({NodesOperator? operator}) =>
+      EditingData<E>(cursor.as<E>(), type, operator ?? this.operator,
           extras: extras);
 
   T get position => cursor.position;
@@ -89,11 +89,11 @@ class EditingData<T extends NodePosition> {
 class SelectingData<T extends NodePosition> {
   final SelectingNodeCursor<T> cursor;
   final EventType type;
-  final NodesOperator context;
+  final NodesOperator operator;
 
   final dynamic extras;
 
-  SelectingData(this.cursor, this.type, this.context, {this.extras});
+  SelectingData(this.cursor, this.type, this.operator, {this.extras});
 
   T get left => cursor.left;
 
@@ -101,8 +101,8 @@ class SelectingData<T extends NodePosition> {
 
   int get index => cursor.index;
 
-  SelectingData<E> as<E extends NodePosition>({NodesOperator? context}) =>
-      SelectingData<E>(cursor.as<E>(), type, context ?? this.context,
+  SelectingData<E> as<E extends NodePosition>({NodesOperator? operator}) =>
+      SelectingData<E>(cursor.as<E>(), type, operator ?? this.operator,
           extras: extras);
 
   @override

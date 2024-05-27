@@ -13,16 +13,16 @@ class ListenerCollection {
 
   final Set<ValueChanged<BasicCursor>> _cursorListeners = {};
   final Set<ValueChanged<List<EditorNode>>> _nodesListeners = {};
-  final Map<String, Set<ValueChanged<GestureState>>> _gestureListeners = {};
+  final Map<String, Set<GestureStateListener>> _gestureListeners = {};
   final Map<String, Set<ValueChanged<EditorNode>>> _nodeListeners = {};
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
-  final Set<ValueChanged<OptionalSelectedType>> _optionalMenuListeners = {};
+  final Set<ValueChanged<OptionalSelectedType>> _menuListeners = {};
   final Map<String, Set<ListenerCollection>> _id2Listeners = {};
 
   ListenerCollection({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
     Set<ValueChanged<List<EditorNode>>>? nodesListeners,
-    Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
+    Map<String, Set<GestureStateListener>>? gestureListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
     Set<ValueChanged<OptionalSelectedType>>? optionalMenuListeners,
@@ -32,13 +32,13 @@ class ListenerCollection {
     _gestureListeners.addAll(gestureListeners ?? {});
     _nodeListeners.addAll(nodeListeners ?? {});
     _arrowDelegates.addAll(arrowDelegates ?? {});
-    _optionalMenuListeners.addAll(optionalMenuListeners ?? {});
+    _menuListeners.addAll(optionalMenuListeners ?? {});
   }
 
   ListenerCollection copy({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
     Set<ValueChanged<List<EditorNode>>>? nodesListeners,
-    Map<String, Set<ValueChanged<GestureState>>>? gestureListeners,
+    Map<String, Set<GestureStateListener>>? gestureListeners,
     Map<String, Set<ValueChanged<EditorNode>>>? nodeListeners,
     Map<String, Set<ArrowDelegate>>? arrowDelegates,
     Set<ValueChanged<OptionalSelectedType>>? optionalMenuListeners,
@@ -49,7 +49,7 @@ class ListenerCollection {
         gestureListeners: gestureListeners ?? _gestureListeners,
         nodeListeners: nodeListeners ?? _nodeListeners,
         arrowDelegates: arrowDelegates ?? _arrowDelegates,
-        optionalMenuListeners: optionalMenuListeners ?? _optionalMenuListeners,
+        optionalMenuListeners: optionalMenuListeners ?? _menuListeners,
       );
 
   void dispose() {
@@ -59,7 +59,7 @@ class ListenerCollection {
     _gestureListeners.clear();
     _nodeListeners.clear();
     _arrowDelegates.clear();
-    _optionalMenuListeners.clear();
+    _menuListeners.clear();
   }
 
   void addCursorChangedListener(ValueChanged<BasicCursor> listener) =>
@@ -74,24 +74,24 @@ class ListenerCollection {
   void removeNodesChangedListener(ValueChanged<List<EditorNode>> listener) =>
       _nodesListeners.remove(listener);
 
-  void addGestureListener(String id, ValueChanged<GestureState> listener) {
+  void addGestureListener(String id, GestureStateListener listener) {
     final set = _gestureListeners[id] ?? {};
     set.add(listener);
     _gestureListeners[id] = set;
   }
 
-  void removeGestureListener(String id, ValueChanged<GestureState> listener) {
+  void removeGestureListener(String id, GestureStateListener listener) {
     final set = _gestureListeners[id] ?? {};
     set.remove(listener);
     _gestureListeners[id] = set;
   }
 
   void addOptionalMenuListener(ValueChanged<OptionalSelectedType> listener) =>
-      _optionalMenuListeners.add(listener);
+      _menuListeners.add(listener);
 
   void removeOptionalMenuListener(
           ValueChanged<OptionalSelectedType> listener) =>
-      _optionalMenuListeners.remove(listener);
+      _menuListeners.remove(listener);
 
   void addNodeChangedListener(String id, ValueChanged<EditorNode> listener) {
     // logger.i(
@@ -149,21 +149,27 @@ class ListenerCollection {
     // logger.i('$tag, notifyCursor length:${_cursorChangedCallbacks.length}');
   }
 
-  void notifyGestures(GestureState state) {
-    for (var o in _gestureListeners.values) {
-      for (var c in Set.of(o)) {
-        c.call(state);
+  ///return the accepted node id
+  String? notifyGestures(GestureState state) {
+    for (var k in _gestureListeners.keys) {
+      final v = _gestureListeners[k];
+      for (var c in Set.of(v ?? {})) {
+        final accepted = c.call(state);
+        if(accepted) return k;
       }
     }
+    return null;
     // logger.i(
     //     '$tag, notifyDragUpdateDetails length:${_onPanUpdateCallbacks.length}');
   }
 
-  void notifyGesture(String id, GestureState state) {
+  bool notifyGesture(String id, GestureState state) {
     final set = Set.of(_gestureListeners[id] ?? {});
     for (var c in set) {
-      c.call(state);
+      final v = c.call(state);
+      if(v) return v;
     }
+    return false;
   }
 
   void notifyNode(EditorNode node) {
@@ -182,7 +188,7 @@ class ListenerCollection {
   }
 
   void notifyOptionalMenu(OptionalSelectedType type) {
-    for (var c in Set.of(_optionalMenuListeners)) {
+    for (var c in Set.of(_menuListeners)) {
       c.call(type);
     }
   }
@@ -209,6 +215,8 @@ class ListenerCollection {
     }
   }
 }
+
+typedef GestureStateListener = bool Function(GestureState s);
 
 abstract class GestureState {
   Offset get globalOffset;

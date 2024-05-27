@@ -205,31 +205,34 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     return spans;
   }
 
-  void onGesture(GestureState s) {
+  bool onGesture(GestureState s) {
     if (s is TapGestureState) {
-      onTapped(s.globalOffset);
+      return onTapped(s.globalOffset);
     } else if (s is PanGestureState) {
-      onPanUpdate(s.globalOffset);
+      return onPanUpdate(s.globalOffset);
     }
+    return false;
   }
 
-  void onTapped(Offset globalOffset) {
-    if (!containsY(globalOffset)) return;
+  bool onTapped(Offset globalOffset) {
+    if (!containsY(globalOffset)) return false;
     final off = buildTextPosition(globalOffset).offset;
     controller.onEditingPosition.call(off);
     controller.onEditingOffsetChanged
         .call(EditingOffset(globalOffset, painter.height, widget.nodeId));
+    return true;
   }
 
-  void onPanUpdate(Offset global) {
-    if (!containsY(global)) return;
+  bool onPanUpdate(Offset global) {
+    if (!containsY(global)) return false;
     final box = renderBox;
-    if (box == null) return;
+    if (box == null) return false;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final localPosition =
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     final textPosition = painter.getPositionForOffset(localPosition);
     controller.onPanUpdatePosition.call(textPosition.offset);
+    return true;
   }
 
   bool containsY(Offset global) => renderBox?.containsY(global.dy) ?? false;

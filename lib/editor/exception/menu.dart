@@ -4,10 +4,10 @@ import 'basic.dart';
 
 class TypingRequiredOptionalMenuException implements MenuException {
   final NodeWithCursor nodeWithCursor;
-  final NodesOperator context;
+  final NodesOperator operator;
 
-  TypingRequiredOptionalMenuException(this.nodeWithCursor, this.context);
+  TypingRequiredOptionalMenuException(this.nodeWithCursor, this.operator);
 
   String get message =>
-      '${nodeWithCursor.node.runtimeType}, context:${context.runtimeType} required optional menu';
+      '${nodeWithCursor.node.runtimeType}, operator:${operator.runtimeType} required optional menu';
 }

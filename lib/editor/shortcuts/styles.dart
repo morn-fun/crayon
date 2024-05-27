@@ -28,9 +28,9 @@ class LineThroughIntent extends Intent {
 }
 
 class UnderlineAction extends ContextAction<UnderlineIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -39,14 +39,14 @@ class UnderlineAction extends ContextAction<UnderlineIntent> {
   @override
   void invoke(UnderlineIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.underline, cursor);
+    onStyleEvent(operator, RichTextTag.underline, cursor);
   }
 }
 
 class BoldAction extends ContextAction<BoldIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -55,14 +55,14 @@ class BoldAction extends ContextAction<BoldIntent> {
   @override
   void invoke(BoldIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.bold, cursor);
+    onStyleEvent(operator, RichTextTag.bold, cursor);
   }
 }
 
 class ItalicAction extends ContextAction<ItalicIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -71,14 +71,14 @@ class ItalicAction extends ContextAction<ItalicIntent> {
   @override
   void invoke(ItalicIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.italic, cursor);
+    onStyleEvent(operator, RichTextTag.italic, cursor);
   }
 }
 
 class LineThroughAction extends ContextAction<LineThroughIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -87,22 +87,22 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
   @override
   void invoke(LineThroughIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    onStyleEvent(nodeContext, RichTextTag.lineThrough, cursor);
+    onStyleEvent(operator, RichTextTag.lineThrough, cursor);
   }
 }
 
-void onStyleEvent(NodesOperator context, RichTextTag tag, BasicCursor cursor,
+void onStyleEvent(NodesOperator operator, RichTextTag tag, BasicCursor cursor,
     {Map<String, String>? attributes}) {
   try {
     final type = EventType.values.byName(tag.name);
     if (cursor is SingleNodeCursor) {
       if (cursor is EditingCursor) {
-        final r = context.getNode(cursor.index).onEdit(EditingData(
-            cursor, type, context,
+        final r = operator.getNode(cursor.index).onEdit(EditingData(
+            cursor, type, operator,
             extras: StyleExtra(false, attributes)));
-        context.execute(ModifyNode(r));
+        operator.execute(ModifyNode(r));
       } else if (cursor is SelectingNodeCursor) {
-        final node = context.getNode(cursor.index);
+        final node = operator.getNode(cursor.index);
         final innerNodes =
             node.getInlineNodesFromPosition(cursor.begin, cursor.end);
         bool containsTag = true;
@@ -119,10 +119,10 @@ void onStyleEvent(NodesOperator context, RichTextTag tag, BasicCursor cursor,
           }
           i++;
         }
-        final r = context.getNode(cursor.index).onSelect(SelectingData(
-            cursor, type, context,
+        final r = operator.getNode(cursor.index).onSelect(SelectingData(
+            cursor, type, operator,
             extras: StyleExtra(containsTag, attributes)));
-        context.execute(ModifyNode(r));
+        operator.execute(ModifyNode(r));
       }
     } else if (cursor is SelectingNodesCursor) {
       final left = cursor.left;
@@ -130,7 +130,7 @@ void onStyleEvent(NodesOperator context, RichTextTag tag, BasicCursor cursor,
       int i = left.index;
       bool containsTag = true;
       while (i <= right.index && containsTag) {
-        final node = context.getNode(i);
+        final node = operator.getNode(i);
         if (node is RichTextNode) {
           late RichTextNode newNode;
           if (i == left.index) {
@@ -150,7 +150,7 @@ void onStyleEvent(NodesOperator context, RichTextTag tag, BasicCursor cursor,
         }
         i++;
       }
-      context.execute(UpdateSelectingNodes(cursor, type,
+      operator.execute(UpdateSelectingNodes(cursor, type,
           extra: StyleExtra(containsTag, attributes)));
     }
   } on ArgumentError catch (e) {

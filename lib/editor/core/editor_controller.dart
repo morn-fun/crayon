@@ -87,7 +87,7 @@ class RichEditorController {
 
   void notifyCursor(BasicCursor cursor) => listeners.notifyCursor(cursor);
 
-  void notifyGesture(GestureState s) => listeners.notifyGestures(s);
+  String? notifyGesture(GestureState s) => listeners.notifyGestures(s);
 
   void notifyNode(EditorNode node) => listeners.notifyNode(node);
 

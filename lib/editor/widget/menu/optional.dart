@@ -21,12 +21,12 @@ import '../../node/table/table.dart';
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
   final EditingOffset offset;
-  final NodesOperator nodeContext;
+  final NodesOperator operator;
   final EntryManager manager;
 
   const OptionalMenu(
     this.offset,
-    this.nodeContext,
+    this.operator,
     this.manager, {
     super.key,
   });
@@ -38,9 +38,9 @@ class OptionalMenu extends StatefulWidget {
 class _OptionalMenuState extends State<OptionalMenu> {
   EditingOffset get offset => widget.offset;
 
-  NodesOperator get nodeContext => widget.nodeContext;
+  NodesOperator get operator => widget.operator;
 
-  ListenerCollection get listeners => nodeContext.listeners;
+  ListenerCollection get listeners => operator.listeners;
 
   EntryManager get manager => widget.manager;
 
@@ -56,10 +56,10 @@ class _OptionalMenuState extends State<OptionalMenu> {
 
   @override
   void initState() {
-    cursor = nodeContext.cursor as EditingCursor;
-    node = nodeContext.getNode(cursor.index) as RichTextNode;
+    cursor = operator.cursor as EditingCursor;
+    node = operator.getNode(cursor.index) as RichTextNode;
     nodeId = node.id;
-    if(nodeContext is TableCellNodeContext) list.removeWhere((e) => e.text == '表格');
+    if(operator is TableCellNodeContext) list.removeWhere((e) => e.text == '表格');
     listeners.addCursorChangedListener(_onCursorChanged);
     listeners.addNodeChangedListener(nodeId, _onNodeChanged);
     listeners.addOptionalMenuListener(_onOptionalMenuSelected);
@@ -149,15 +149,15 @@ class _OptionalMenuState extends State<OptionalMenu> {
 
   void _onItemSelected(MenuItemInfo current) {
     hideMenu();
-    final c = nodeContext.cursor;
+    final c = operator.cursor;
     if (c is! EditingCursor) return;
-    final node = nodeContext.getNode(c.index);
+    final node = operator.getNode(c.index);
     if (node.id != nodeId) return;
     if (node is! RichTextNode) return;
     if (current.generator == null) return;
     final newNode = current.generator!
         .call(node.rearPartNode(c.position as RichTextNodePosition));
-    nodeContext.update(Update(
+    operator.update(Update(
         c.index, newNode, EditingCursor(c.index, newNode.beginPosition)));
   }
 

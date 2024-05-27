@@ -13,9 +13,9 @@ class InsertNodes implements BasicCommand {
   InsertNodes(this.cursor, this.nodes) : assert(nodes.isNotEmpty);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     int index = cursor.index;
-    final current = nodeContext.getNode(index);
+    final current = operator.getNode(index);
     final left = current.frontPartNode(cursor.position);
     final right = current.rearPartNode(cursor.position, newId: randomNodeId);
     final copyNodes = List.of(nodes);
@@ -35,6 +35,6 @@ class InsertNodes implements BasicCommand {
       newCursor = EditingCursor(
           index + copyNodes.length - 1, copyNodes.last.endPosition);
     }
-    return nodeContext.replace(Replace(index, index + 1, copyNodes, newCursor));
+    return operator.replace(Replace(index, index + 1, copyNodes, newCursor));
   }
 }

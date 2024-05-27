@@ -1,6 +1,7 @@
 import '../../core/command_invoker.dart';
 import '../../core/context.dart';
 import '../../core/editor_controller.dart';
+import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
 import '../../node/basic.dart';
@@ -14,7 +15,7 @@ class UpdateSelectingNodes implements BasicCommand {
   UpdateSelectingNodes(this.cursor, this.type, {this.extra});
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final left = cursor.left;
     final right = cursor.right;
     List<EditorNode> nodes = [];
@@ -22,38 +23,42 @@ class UpdateSelectingNodes implements BasicCommand {
     late SingleNodeCursor leftPosition;
     late SingleNodeCursor rightPosition;
     while (i <= right.index) {
-      final node = nodeContext.getNode(i);
-      NodeWithCursor nc;
-      if (i == left.index) {
-        nc = node.onSelect(SelectingData(
-            SelectingNodeCursor(i, left.position, node.endPosition),
-            type,
-            nodeContext,
-            extras: extra));
-        leftPosition = nc.cursor;
-      } else if (i == right.index) {
-        nc = node.onSelect(SelectingData(
-            SelectingNodeCursor(i, node.beginPosition, right.position),
-            type,
-            nodeContext,
-            extras: extra));
-        rightPosition = nc.cursor;
-      } else {
-        nc = node.onSelect(SelectingData(
-            SelectingNodeCursor(i, node.beginPosition, node.endPosition),
-            type,
-            nodeContext,
-            extras: extra));
+      final node = operator.getNode(i);
+      try {
+        NodeWithCursor nc;
+        if (i == left.index) {
+          nc = node.onSelect(SelectingData(
+              SelectingNodeCursor(i, left.position, node.endPosition),
+              type,
+              operator,
+              extras: extra));
+          leftPosition = nc.cursor;
+        } else if (i == right.index) {
+          nc = node.onSelect(SelectingData(
+              SelectingNodeCursor(i, node.beginPosition, right.position),
+              type,
+              operator,
+              extras: extra));
+          rightPosition = nc.cursor;
+        } else {
+          nc = node.onSelect(SelectingData(
+              SelectingNodeCursor(i, node.beginPosition, node.endPosition),
+              type,
+              operator,
+              extras: extra));
+        }
+        nodes.add(nc.node);
+      } on NodeUnsupportedException catch(e){
+        nodes.add(node);
+        logger.e('UpdateSelectingNodes error:${e.message}');
       }
-      nodes.add(nc.node);
       i++;
     }
     final newCursor = SelectingNodesCursor(
-        EditingCursor(
-            left.index, _getBySingleNodePosition(leftPosition, true)),
+        EditingCursor(left.index, _getBySingleNodePosition(leftPosition, true)),
         EditingCursor(
             right.index, _getBySingleNodePosition(rightPosition, false)));
-    return nodeContext
+    return operator
         .replace(Replace(left.index, right.index + 1, nodes, newCursor));
   }
 

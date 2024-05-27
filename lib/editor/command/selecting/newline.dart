@@ -13,11 +13,11 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
   InsertNewLineWhileSelectingNodes(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
-    final leftNode = nodeContext.getNode(leftCursor.index);
-    final rightNode = nodeContext.getNode(rightCursor.index);
+    final leftNode = operator.getNode(leftCursor.index);
+    final rightNode = operator.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
     var right =
         rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
@@ -25,8 +25,8 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
       right = right.newNode(depth: left.depth + 1);
     }
     List<EditorNode> listNeedRefreshDepth =
-        nodeContext.listNeedRefreshDepth(rightCursor.index, right.depth);
-    return nodeContext.replace(Replace(
+        operator.listNeedRefreshDepth(rightCursor.index, right.depth);
+    return operator.replace(Replace(
         leftCursor.index,
         rightCursor.index + 1 + listNeedRefreshDepth.length,
         [left, right, ...listNeedRefreshDepth],

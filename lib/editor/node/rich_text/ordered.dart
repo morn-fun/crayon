@@ -34,18 +34,18 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
     });
   }
 
-  int getIndex(int i, NodesOperator context) {
+  int getIndex(int i, NodesOperator operator) {
     if (i <= 0) return 0;
     int lastIndex = i - 1;
-    final node = context.getNode(lastIndex);
+    final node = operator.getNode(lastIndex);
     int nodeDepth = node.depth;
     if (nodeDepth > depth) {
-      return getIndex(lastIndex, context);
+      return getIndex(lastIndex, operator);
     } else if (nodeDepth < depth) {
       return 0;
     } else {
       if (node is! OrderedNode) return 0;
-      return getIndex(lastIndex, context) + 1;
+      return getIndex(lastIndex, operator) + 1;
     }
   }
 }

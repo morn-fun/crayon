@@ -1,3 +1,4 @@
+import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';
@@ -6,6 +7,7 @@ import '../widget/menu/optional.dart';
 import '../widget/menu/text.dart';
 import 'context.dart';
 import 'editor_controller.dart';
+import 'shortcuts.dart';
 
 class EntryManager {
   OverlayEntry? _showingEntry;
@@ -18,9 +20,7 @@ class EntryManager {
   EntryManager(this._onMenuShowing, this._onMenuHide);
 
   void removeEntry() {
-    if (_showingEntry != null) {
-      _showingEntry?.remove();
-    }
+    _showingEntry?.remove();
     if (_lastShowingType != null) {
       _onMenuHide?.call(_lastShowingType!);
     }
@@ -35,44 +35,44 @@ class EntryManager {
     }
   }
 
-  void showOptionalMenu(
-      EditingOffset offset, OverlayState state, NodesOperator context) async {
-    removeEntry();
-    _lastShowingType = MenuType.optional;
-    _lastShowingContextType = context.runtimeType;
-    _showingEntry =
-        OverlayEntry(builder: (_) => OptionalMenu(offset, context, this));
-    state.insert(_showingEntry!);
-    _notifyMenuShowing();
-  }
+  void showOptionalMenu(EditingOffset offset, OverlayState state,
+          NodesOperator operator) async =>
+      _showMenu(state, MenuType.optional, operator.runtimeType,
+          OverlayEntry(builder: (_) => OptionalMenu(offset, operator, this)));
 
-  void showTextMenu(OverlayState state, MenuInfo info, NodesOperator context) {
-    removeEntry();
-    _lastShowingType = MenuType.text;
-    _lastShowingContextType = context.runtimeType;
-    _showingEntry = OverlayEntry(
-        builder: (_) => CompositedTransformFollower(
-              child: TextMenu(context, info, this),
-              showWhenUnlinked: false,
-              link: info.layerLink,
-            ));
-    state.insert(_showingEntry!);
-    _notifyMenuShowing();
-  }
+  void showTextMenu(
+          OverlayState state, MenuInfo info, NodesOperator operator) =>
+      _showMenu(
+          state,
+          MenuType.text,
+          operator.runtimeType,
+          OverlayEntry(
+              builder: (_) => CompositedTransformFollower(
+                    child: TextMenu(operator, info, this),
+                    showWhenUnlinked: false,
+                    link: info.layerLink,
+                  )));
 
-  void showLinkMenu(
-      OverlayState state, LinkMenuInfo linkMenuInfo, NodesOperator context) {
+  void showLinkMenu(OverlayState state, LinkMenuInfo linkMenuInfo,
+          NodesOperator operator) =>
+      _showMenu(
+          state,
+          MenuType.link,
+          operator.runtimeType,
+          OverlayEntry(
+              builder: (_) => CompositedTransformFollower(
+                    child: LinkMenu(operator, linkMenuInfo, this),
+                    showWhenUnlinked: false,
+                    link: linkMenuInfo.link,
+                  )));
+
+  void _showMenu(OverlayState state, MenuType type, Type operatorType,
+      OverlayEntry entry) {
     removeEntry();
-    _lastShowingType = MenuType.text;
-    _lastShowingContextType = context.runtimeType;
-    _showingEntry = OverlayEntry(
-        builder: (_) => CompositedTransformFollower(
-              child: LinkMenu(context, linkMenuInfo.menuInfo, this,
-                  urlWithPosition: linkMenuInfo.urlWithPosition),
-              showWhenUnlinked: false,
-              link: linkMenuInfo.link,
-            ));
-    state.insert(_showingEntry!);
+    _lastShowingType = type;
+    _lastShowingContextType = operatorType;
+    _showingEntry = entry;
+    state.insert(entry);
     _notifyMenuShowing();
   }
 
@@ -105,30 +105,43 @@ class MenuInfo {
   }
 }
 
-enum MenuType { optional, link, text }
+enum MenuType { optional, codeLanguage, link, text }
 
 class LinkMenuInfo {
   final MenuInfo menuInfo;
-  final UrlWithPosition? urlWithPosition;
+  final UrlInfo? urlInfo;
+  final SelectingNodeCursor<RichTextNodePosition> cursor;
+  final Set<String> hoveredNodeIds;
 
   LayerLink get link => menuInfo.layerLink;
 
-  LinkMenuInfo(this.menuInfo, this.urlWithPosition);
+  bool get hovered => hoveredNodeIds.contains(menuInfo.nodeId);
+
+  LinkMenuInfo(this.menuInfo, this.cursor, this.urlInfo, this.hoveredNodeIds);
 
   @override
   String toString() {
-    return 'LinkMenuInfo{menuInfo: $menuInfo, urlWithPosition: $urlWithPosition}';
+    return 'LinkMenuInfo{menuInfo: $menuInfo, urlInfo: $urlInfo, cursor: $cursor, hoveredNodeIds: $hoveredNodeIds}';
   }
 }
 
-class UrlWithPosition {
+class UrlInfo {
   final String url;
-  final SelectingNodeCursor cursor;
+  final String alias;
 
-  UrlWithPosition(this.url, this.cursor);
+  UrlInfo(
+    this.url,
+    this.alias,
+  );
 
   @override
   String toString() {
-    return 'UrlWithPosition{url: $url, cursor: $cursor}';
+    return 'UrlInfo{url: $url, alias: $alias}';
   }
 }
+
+final menuType2Shortcuts = {
+  MenuType.optional: optionalMenuShortcuts,
+  MenuType.codeLanguage: arrowShortcuts,
+  MenuType.link: linkMenuShortcuts,
+};

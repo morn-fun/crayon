@@ -15,12 +15,12 @@ import '../table_cell.dart';
 NodeWithCursor operateWhileEditing<T extends Intent>(
     EditingData<TablePosition> data,
     TableNode node,
-    ValueChanged<ActionContext> onAction) {
+    ValueChanged<ActionOperator> onAction) {
   final p = data.position;
-  final ctx = data.context;
+  final opt = data.operator;
   final context = buildTableCellNodeContext(
-      ctx, p.cellPosition, node, p.cursor, data.index);
-  onAction.call(ActionContext(context, () => p.cursor));
+      opt, p.cellPosition, node, p.cursor, data.index);
+  onAction.call(ActionOperator(context, () => p.cursor));
   throw NodeUnsupportedException(node.runtimeType, 'operateWhileEditing', null);
 }
 

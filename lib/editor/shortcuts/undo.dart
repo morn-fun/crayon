@@ -9,9 +9,9 @@ class UndoIntent extends Intent {
 }
 
 class UndoAction extends ContextAction<UndoIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  EditorContext get editorContext => ac.context as EditorContext;
+  EditorContext get editorContext => ac.operator as EditorContext;
 
   UndoAction(this.ac);
 

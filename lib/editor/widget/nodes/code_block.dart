@@ -19,14 +19,14 @@ import 'code_block_line.dart';
 
 class CodeBlock extends StatefulWidget {
   const CodeBlock(
-    this.context,
+    this.operator,
     this.node,
     this.param, {
     super.key,
     this.maxLineHeight = 20,
   });
 
-  final NodesOperator context;
+  final NodesOperator operator;
   final CodeBlockNode node;
   final NodeBuildParam param;
   final double maxLineHeight;
@@ -42,9 +42,9 @@ class _CodeBlockState extends State<CodeBlock> {
 
   CodeBlockNode get node => widget.node;
 
-  NodesOperator get nodeContext => widget.context;
+  NodesOperator get operator => widget.operator;
 
-  ListenerCollection get listeners => nodeContext.listeners;
+  ListenerCollection get listeners => operator.listeners;
 
   ListenerCollection localListeners = ListenerCollection();
 
@@ -76,7 +76,7 @@ class _CodeBlockState extends State<CodeBlock> {
 
   @override
   void didUpdateWidget(covariant CodeBlock oldWidget) {
-    final oldListeners = oldWidget.context.listeners;
+    final oldListeners = oldWidget.operator.listeners;
     if (oldListeners.hashCode != listeners.hashCode) {
       oldListeners.removeGestureListener(node.id, onGesture);
       oldListeners.removeArrowDelegate(node.id, onArrowAccept);
@@ -97,24 +97,29 @@ class _CodeBlockState extends State<CodeBlock> {
     super.dispose();
   }
 
-  void onGesture(GestureState s) {
+  bool onGesture(GestureState s) {
     final box = renderBox;
-    if (box == null) return;
+    if (box == null) return false;
     if (s is TapGestureState) {
       bool contains = box.containsOffset(s.globalOffset);
-      if (contains) localListeners.notifyGestures(s);
+      if (contains) {
+        localListeners.notifyGestures(s);
+        return true;
+      }
     } else if (s is PanGestureState) {
       final currentOffsetContains = box.containsOffset(s.globalOffset);
-      if (!currentOffsetContains) return;
+      if (!currentOffsetContains) return false;
       final beginOffsetContains = box.containsOffset(s.beginOffset);
       if (beginOffsetContains) {
         localListeners.notifyGestures(s);
+        return true;
       } else {
         final beginHigherThanCurrent = s.beginOffset.dy < s.globalOffset.dy;
-        nodeContext.onPanUpdate(EditingCursor(widgetIndex,
+        operator.onPanUpdate(EditingCursor(widgetIndex,
             beginHigherThanCurrent ? node.endPosition : node.beginPosition));
       }
     }
+    return false;
   }
 
   void onArrowAccept(AcceptArrowData data) {
@@ -171,7 +176,7 @@ class _CodeBlockState extends State<CodeBlock> {
         break;
     }
     if (newPosition != null) {
-      nodeContext.onCursor(EditingCursor(widgetIndex, newPosition));
+      operator.onCursor(EditingCursor(widgetIndex, newPosition));
     }
   }
 
@@ -235,15 +240,15 @@ class _CodeBlockState extends State<CodeBlock> {
                             controller: CodeNodeController(
                               onEditingOffsetChanged: (o) {
                                 lastEditOffset = o.offset;
-                                nodeContext
+                                operator
                                     .onEditingOffset(o);
                               },
                               onPanUpdatePosition: (o) =>
-                                  nodeContext.onPanUpdate(EditingCursor(
+                                  operator.onPanUpdate(EditingCursor(
                                       widgetIndex,
                                       CodeBlockPosition(index, o))),
                               listeners: localListeners,
-                              onEditingPosition: (o) => nodeContext.onCursor(
+                              onEditingPosition: (o) => operator.onCursor(
                                   EditingCursor(widgetIndex,
                                       CodeBlockPosition(index, o))),
                             ),
@@ -270,7 +275,7 @@ class _CodeBlockState extends State<CodeBlock> {
                       languages: constLanguages,
                       onSelect: (s) {
                         if (s == node.language) return;
-                        nodeContext.onNode(node.newLanguage(s), widgetIndex);
+                        operator.onNode(node.newLanguage(s), widgetIndex);
                       },
                       onHide: () {
                         languageController.hide();

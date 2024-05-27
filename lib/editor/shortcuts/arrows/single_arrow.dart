@@ -8,9 +8,9 @@ import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
 class LeftArrowAction extends ContextAction<LeftArrowIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -19,14 +19,14 @@ class LeftArrowAction extends ContextAction<LeftArrowIntent> {
   @override
   void invoke(LeftArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    arrowOnLeftOrUp(ArrowType.left, nodeContext, runtimeType, cursor);
+    arrowOnLeftOrUp(ArrowType.left, operator, runtimeType, cursor);
   }
 }
 
 class RightArrowAction extends ContextAction<RightArrowIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -35,14 +35,14 @@ class RightArrowAction extends ContextAction<RightArrowIntent> {
   @override
   void invoke(RightArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    arrowOnRightOrDown(ArrowType.right, nodeContext, runtimeType, cursor);
+    arrowOnRightOrDown(ArrowType.right, operator, runtimeType, cursor);
   }
 }
 
 class UpArrowAction extends ContextAction<UpArrowIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -51,14 +51,14 @@ class UpArrowAction extends ContextAction<UpArrowIntent> {
   @override
   void invoke(UpArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    arrowOnLeftOrUp(ArrowType.up, nodeContext, runtimeType, cursor);
+    arrowOnLeftOrUp(ArrowType.up, operator, runtimeType, cursor);
   }
 }
 
 class DownArrowAction extends ContextAction<DownArrowIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -67,11 +67,11 @@ class DownArrowAction extends ContextAction<DownArrowIntent> {
   @override
   void invoke(DownArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
-    arrowOnRightOrDown(ArrowType.down, nodeContext, runtimeType, cursor);
+    arrowOnRightOrDown(ArrowType.down, operator, runtimeType, cursor);
   }
 }
 
-void arrowOnLeftOrUp(ArrowType type, NodesOperator nodeContext, Type actionType,
+void arrowOnLeftOrUp(ArrowType type, NodesOperator operator, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   late NodePosition position;
@@ -90,29 +90,29 @@ void arrowOnLeftOrUp(ArrowType type, NodesOperator nodeContext, Type actionType,
   }
   if (index == -1) return;
   try {
-    nodeContext.onArrowAccept(
-        AcceptArrowData(nodeContext.getNode(index).id, t, position));
+    operator.onArrowAccept(
+        AcceptArrowData(operator.getNode(index).id, t, position));
   } on ArrowLeftBeginException catch (e) {
     logger.e('$actionType error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) return;
-    nodeContext.onArrowAccept(AcceptArrowData(nodeContext.getNode(lastIndex).id,
-        ArrowType.current, nodeContext.getNode(lastIndex).endPosition));
+    operator.onArrowAccept(AcceptArrowData(operator.getNode(lastIndex).id,
+        ArrowType.current, operator.getNode(lastIndex).endPosition));
   } on ArrowUpTopException catch (e) {
     logger.e('$actionType error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) return;
-    final node = nodeContext.getNode(lastIndex);
-    nodeContext.onArrowAccept(AcceptArrowData(
+    final node = operator.getNode(lastIndex);
+    operator.onArrowAccept(AcceptArrowData(
         node.id, ArrowType.current, node.endPosition,
         extras: e.offset));
   } on NodeNotFoundException catch (e) {
     logger.e('$actionType error ${e.message}');
-    nodeContext.onCursor(EditingCursor(index, position));
+    operator.onCursor(EditingCursor(index, position));
   }
 }
 
-void arrowOnRightOrDown(ArrowType type, NodesOperator nodeContext, Type actionType,
+void arrowOnRightOrDown(ArrowType type, NodesOperator operator, Type actionType,
     BasicCursor cursor) {
   int index = -1;
   ArrowType t = type;
@@ -131,24 +131,24 @@ void arrowOnRightOrDown(ArrowType type, NodesOperator nodeContext, Type actionTy
   }
   if (index == -1) return;
   try {
-    nodeContext.onArrowAccept(
-        AcceptArrowData(nodeContext.getNode(index).id, t, position));
+    operator.onArrowAccept(
+        AcceptArrowData(operator.getNode(index).id, t, position));
   } on ArrowRightEndException catch (e) {
     logger.e('$actionType error ${e.message}');
     final nextIndex = index + 1;
-    if (nextIndex > nodeContext.nodeLength - 1) return;
-    nodeContext.onArrowAccept(AcceptArrowData(nodeContext.getNode(nextIndex).id,
-        ArrowType.current, nodeContext.getNode(nextIndex).beginPosition));
+    if (nextIndex > operator.nodeLength - 1) return;
+    operator.onArrowAccept(AcceptArrowData(operator.getNode(nextIndex).id,
+        ArrowType.current, operator.getNode(nextIndex).beginPosition));
   } on ArrowDownBottomException catch (e) {
     logger.e('$actionType error ${e.message}');
     final nextIndex = index + 1;
-    if (nextIndex > nodeContext.nodeLength - 1) return;
-    final node = nodeContext.getNode(nextIndex);
-    nodeContext.onArrowAccept(AcceptArrowData(
+    if (nextIndex > operator.nodeLength - 1) return;
+    final node = operator.getNode(nextIndex);
+    operator.onArrowAccept(AcceptArrowData(
         node.id, ArrowType.current, node.beginPosition,
         extras: e.offset));
   } on NodeNotFoundException catch (e) {
     logger.e('$actionType error ${e.message}');
-    nodeContext.onCursor(EditingCursor(index, position));
+    operator.onCursor(EditingCursor(index, position));
   }
 }

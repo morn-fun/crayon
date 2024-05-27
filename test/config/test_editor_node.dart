@@ -10,7 +10,7 @@ class TestEditorNode extends EditorNode {
   NodePosition get beginPosition => TestNodePosition();
 
   @override
-  Widget build(NodesOperator context, NodeBuildParam param, BuildContext c) {
+  Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {
     // TODO: implement build
     throw UnimplementedError();
   }

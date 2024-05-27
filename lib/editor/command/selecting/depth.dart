@@ -16,13 +16,12 @@ class IncreaseNodesDepth implements BasicCommand {
   IncreaseNodesDepth(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     int lastIndex = leftCursor.index;
-    int lastDepth =
-        lastIndex > 0 ? nodeContext.getNode(lastIndex - 1).depth : 0;
-    final leftNode = nodeContext.getNode(leftCursor.index);
+    int lastDepth = lastIndex > 0 ? operator.getNode(lastIndex - 1).depth : 0;
+    final leftNode = operator.getNode(leftCursor.index);
     int depth = leftNode.depth;
     if (lastDepth < depth) {
       throw NodeUnsupportedException(leftNode.runtimeType,
@@ -32,11 +31,11 @@ class IncreaseNodesDepth implements BasicCommand {
     final r = rightCursor.index;
     final newNodes = <EditorNode>[];
     while (l <= r) {
-      final node = nodeContext.getNode(l);
+      final node = operator.getNode(l);
       newNodes.add(node.newNode(depth: node.depth + 1));
       l++;
     }
-    return nodeContext.replace(Replace(leftCursor.index,
+    return operator.replace(Replace(leftCursor.index,
         leftCursor.index + newNodes.length, newNodes, cursor));
   }
 }
@@ -47,33 +46,33 @@ class DecreaseNodesDepth implements BasicCommand {
   DecreaseNodesDepth(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
     int l = leftCursor.index;
     final r = rightCursor.index;
     final newNodes = <EditorNode>[];
     while (l < r) {
-      final node = nodeContext.getNode(l);
+      final node = operator.getNode(l);
       final newNode =
           node.depth > 0 ? node.newNode(depth: node.depth.decrease()) : node;
       newNodes.add(newNode);
       l++;
     }
 
-    final lastNode = nodeContext.getNode(r);
+    final lastNode = operator.getNode(r);
     try {
       final nodePosition = lastNode.onSelect(SelectingData(
           SelectingNodeCursor(r, lastNode.beginPosition, rightCursor.position),
           EventType.decreaseDepth,
-          nodeContext));
+          operator));
       newNodes.add(nodePosition.node);
     } on DepthNeedDecreaseMoreException catch (e) {
       newNodes.add(lastNode.newNode(depth: lastNode.depth.decrease()));
-      correctDepth(nodeContext.nodeLength, (i) => nodeContext.getNode(i), r + 1,
+      correctDepth(operator.nodeLength, (i) => operator.getNode(i), r + 1,
           e.depth, newNodes);
     }
-    return nodeContext.replace(Replace(leftCursor.index,
+    return operator.replace(Replace(leftCursor.index,
         leftCursor.index + newNodes.length, newNodes, cursor));
   }
 }

@@ -38,8 +38,8 @@ NodeWithCursor increaseDepthWhileSelecting(
     BasicCursor cursor = buildTableCellCursor(
         node.getCell(left.cellPosition), left.cursor, right.cursor);
     final context = buildTableCellNodeContext(
-        data.context, left.cellPosition, node, cursor, data.index);
-    TabAction(ActionContext(context, () => cursor)).invoke(TabIntent());
+        data.operator, left.cellPosition, node, cursor, data.index);
+    TabAction(ActionOperator(context, () => cursor)).invoke(TabIntent());
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'increaseDepthWhileSelecting', data.cursor);
@@ -56,8 +56,8 @@ NodeWithCursor decreaseDepthWhileSelecting(
     BasicCursor cursor = buildTableCellCursor(
         node.getCell(left.cellPosition), left.cursor, right.cursor);
     final context = buildTableCellNodeContext(
-        data.context, left.cellPosition, node, cursor, data.index);
-    ShiftTabAction(ActionContext(context, () => cursor))
+        data.operator, left.cellPosition, node, cursor, data.index);
+    ShiftTabAction(ActionOperator(context, () => cursor))
         .invoke(ShiftTabIntent());
   }
   throw NodeUnsupportedException(

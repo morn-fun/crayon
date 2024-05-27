@@ -20,9 +20,9 @@ class ShiftTabIntent extends Intent {
 }
 
 class TabAction extends ContextAction<TabIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -35,23 +35,23 @@ class TabAction extends ContextAction<TabIntent> {
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
-        final node = nodeContext.getNode(index);
-        int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
+        final node = operator.getNode(index);
+        int lastDepth = index == 0 ? 0 : operator.getNode(index - 1).depth;
         final r = node.onEdit(EditingData(
-            cursor, EventType.increaseDepth, nodeContext,
+            cursor, EventType.increaseDepth, operator,
             extras: lastDepth));
-        nodeContext.execute(
+        operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        int lastDepth = index == 0 ? 0 : nodeContext.getNode(index - 1).depth;
-        final r = nodeContext.getNode(cursor.index).onSelect(SelectingData(
-            cursor, EventType.increaseDepth, nodeContext,
+        int lastDepth = index == 0 ? 0 : operator.getNode(index - 1).depth;
+        final r = operator.getNode(cursor.index).onSelect(SelectingData(
+            cursor, EventType.increaseDepth, operator,
             extras: lastDepth));
-        nodeContext.execute(
+        operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodesCursor) {
-        nodeContext.execute(IncreaseNodesDepth(cursor));
+        operator.execute(IncreaseNodesDepth(cursor));
       }
     } on DepthNotAbleToIncreaseException catch (e) {
       logger.e('$runtimeType, ${e.message}');
@@ -62,9 +62,9 @@ class TabAction extends ContextAction<TabIntent> {
 }
 
 class ShiftTabAction extends ContextAction<ShiftTabIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -77,29 +77,29 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
     try {
       if (cursor is EditingCursor) {
         final index = cursor.index;
-        final node = nodeContext.getNode(index);
+        final node = operator.getNode(index);
         final r = node
-            .onEdit(EditingData(cursor, EventType.decreaseDepth, nodeContext));
-        nodeContext.execute(
+            .onEdit(EditingData(cursor, EventType.decreaseDepth, operator));
+        operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        final r = nodeContext.getNode(index).onSelect(
-            SelectingData(cursor, EventType.decreaseDepth, nodeContext));
-        nodeContext.execute(
+        final r = operator.getNode(index).onSelect(
+            SelectingData(cursor, EventType.decreaseDepth, operator));
+        operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodesCursor) {
-        nodeContext.execute(DecreaseNodesDepth(cursor));
+        operator.execute(DecreaseNodesDepth(cursor));
       }
     } on DepthNeedDecreaseMoreException catch (e) {
       logger.e('$runtimeType, ${e.message}');
       if (cursor is! SingleNodeCursor) return;
       int index = cursor.index;
-      final node = nodeContext.getNode(index);
+      final node = operator.getNode(index);
       final nodes = <EditorNode>[node.newNode(depth: node.depth.decrease())];
-      correctDepth(nodeContext.nodeLength, (i) => nodeContext.getNode(i),
+      correctDepth(operator.nodeLength, (i) => operator.getNode(i),
           index + 1, e.depth, nodes);
-      nodeContext.execute(ReplaceNode(
+      operator.execute(ReplaceNode(
           Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
     } on NodeUnsupportedException catch (e) {
       logger.e('$runtimeType, ${e.message}');

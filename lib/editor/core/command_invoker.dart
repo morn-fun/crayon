@@ -11,11 +11,11 @@ class CommandInvoker {
 
   final tag = 'RichEditorController';
 
-  void execute(BasicCommand command, NodesOperator context,
+  void execute(BasicCommand command, NodesOperator operator,
       {bool noThrottle = false}) {
     try {
       logger.i('$tag, execute 【$command】');
-      final c = command.run(context);
+      final c = command.run(operator);
       final enableThrottle = c?.enableThrottle ?? true;
       if (noThrottle || !enableThrottle) {
         _addToUndoCommands(c);

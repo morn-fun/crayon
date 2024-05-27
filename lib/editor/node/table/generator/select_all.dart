@@ -26,7 +26,7 @@ NodeWithCursor selectAllWhileSelecting(
         if (left.position != innerNode.beginPosition ||
             right.position != innerNode.endPosition) {
           final ctx = buildTableCellNodeContext(
-              data.context, left.cellPosition, node, cursor, data.index);
+              data.operator, left.cellPosition, node, cursor, data.index);
           final r = innerNode.onSelect(SelectingData(
               SelectingNodeCursor(left.index, left.position, right.position),
               EventType.selectAll,

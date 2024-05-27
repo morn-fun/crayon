@@ -28,7 +28,7 @@ NodeWithCursor deleteWhileSelecting(
   }
   if (left.sameCell(right)) {
     final cell = node.getCell(left.cellPosition);
-    final ctx = data.context;
+    final opt = data.operator;
     BasicCursor cursor = buildTableCellCursor(cell, left.cursor, right.cursor);
     if (cell.wholeSelected(cursor)) {
       final newNode = node.updateCell(left.row, left.column, (t) => t.clear());
@@ -39,8 +39,8 @@ NodeWithCursor deleteWhileSelecting(
               .toCursor(data.index));
     }
     final context = buildTableCellNodeContext(
-        ctx, left.cellPosition, node, cursor, data.index);
-    DeleteAction(ActionContext(context, () => cursor)).invoke(DeleteIntent());
+        opt, left.cellPosition, node, cursor, data.index);
+    DeleteAction(ActionOperator(context, () => cursor)).invoke(DeleteIntent());
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);
   }

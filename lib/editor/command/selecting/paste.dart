@@ -14,11 +14,11 @@ class PasteWhileSelectingNodes implements BasicCommand {
   PasteWhileSelectingNodes(this.cursor, this.nodes);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
-    final leftNode = nodeContext.getNode(leftCursor.index);
-    final rightNode = nodeContext.getNode(rightCursor.index);
+    final leftNode = operator.getNode(leftCursor.index);
+    final rightNode = operator.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
     final right =
         rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
@@ -28,12 +28,12 @@ class PasteWhileSelectingNodes implements BasicCommand {
         final r = newNode.onEdit(EditingData(
             EditingCursor(leftCursor.index, left.endPosition),
             EventType.paste,
-            nodeContext,
+            operator,
             extras: nodes));
-        return nodeContext.replace(Replace(
+        return operator.replace(Replace(
             leftCursor.index, rightCursor.index + 1, [r.node], r.cursor));
       } on PasteToCreateMoreNodesException catch (e) {
-        return nodeContext.replace(Replace(
+        return operator.replace(Replace(
             leftCursor.index,
             rightCursor.index + 1,
             e.nodes,
@@ -44,7 +44,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
       final newNodes = List.of(nodes);
       newNodes.insert(0, left);
       newNodes.add(right);
-      return nodeContext.replace(Replace(
+      return operator.replace(Replace(
           leftCursor.index,
           rightCursor.index + 1,
           newNodes,

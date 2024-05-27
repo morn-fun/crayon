@@ -15,26 +15,26 @@ class ReplaceSelectingNodes implements BasicCommand {
   ReplaceSelectingNodes(this.cursor, this.type, this.extra);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final left = cursor.left;
     final right = cursor.right;
-    final leftNode = nodeContext.getNode(left.index);
-    final rightNode = nodeContext.getNode(right.index);
+    final leftNode = operator.getNode(left.index);
+    final rightNode = operator.getNode(right.index);
     final newLeftNP = leftNode.onSelect(SelectingData(
         SelectingNodeCursor(left.index, left.position, leftNode.endPosition),
         type,
-        nodeContext,
+        operator,
         extras: extra));
     final newRight =
         rightNode.rearPartNode(right.position, newId: randomNodeId);
     final newCursor = newLeftNP.cursor;
     try {
       final newNode = newLeftNP.node.merge(newRight);
-      return nodeContext
+      return operator
           .replace(Replace(left.index, right.index + 1, [newNode], newCursor));
     } on UnableToMergeException catch (e) {
       logger.e('$runtimeType error: $e');
-      return nodeContext.replace(Replace(
+      return operator.replace(Replace(
           left.index, right.index + 1, [newLeftNP.node, newRight], newCursor));
     }
   }

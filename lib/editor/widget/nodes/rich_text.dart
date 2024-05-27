@@ -15,19 +15,20 @@ import '../../node/rich_text/rich_text.dart';
 import '../../shortcuts/arrows/arrows.dart';
 import '../editing_cursor.dart';
 import '../editor/shared_node_context_widget.dart';
+import '../menu/link.dart';
 import '../painter.dart';
 import '../../../editor/core/editor_controller.dart';
 
 class RichTextWidget extends StatefulWidget {
   const RichTextWidget(
-    this.context,
+    this.operator,
     this.richTextNode,
     this.param, {
     super.key,
     this.fontSize = 16,
   });
 
-  final NodesOperator context;
+  final NodesOperator operator;
   final RichTextNode richTextNode;
   final NodeBuildParam param;
   final double fontSize;
@@ -55,11 +56,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   TextSpan get textSpan => node.buildTextSpan();
 
-  NodesOperator get nodeContext => widget.context;
+  NodesOperator get operator => widget.operator;
 
   SingleNodeCursor? get nodeCursor => widget.param.cursor;
 
-  ListenerCollection get listeners => nodeContext.listeners;
+  ListenerCollection get listeners => operator.listeners;
 
   int get nodeIndex => widget.param.index;
 
@@ -180,46 +181,48 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
     }
     if (newPosition != null) {
-      nodeContext.onCursor(EditingCursor(nodeIndex, newPosition));
+      operator.onCursor(EditingCursor(nodeIndex, newPosition));
       notifyEditingOffset(newPosition);
     }
   }
 
   double? get y => renderBox?.localToGlobal(Offset.zero).dy;
 
-  void onPanUpdate(Offset global) {
-    if (!containsOffset(global)) return;
+  bool onPanUpdate(Offset global) {
+    if (!containsOffset(global)) return false;
     final box = renderBox;
-    if (box == null) return;
+    if (box == null) return false;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final localPosition =
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     final textPosition = painter.getPositionForOffset(localPosition);
     final richPosition = node.getPositionByOffset(textPosition.offset);
-    nodeContext.onPanUpdate(EditingCursor(nodeIndex, richPosition));
+    operator.onPanUpdate(EditingCursor(nodeIndex, richPosition));
+    return true;
   }
 
-  void confirmToShowTextMenu(Offset offset) {
+  bool confirmToShowTextMenu(Offset offset) {
     final v = selectingCursorNotifier.value;
-    if (v == null) return;
-    if (!containsOffset(offset)) return;
+    if (v == null) return false;
+    if (!containsOffset(offset)) return false;
     final left = v.left, right = v.right;
-    if (left is! RichTextNodePosition || right is! RichTextNodePosition) return;
+    if (left is! RichTextNodePosition || right is! RichTextNodePosition) {
+      return false;
+    }
     final entryManager =
         ShareEditorContextWidget.of(context)?.context.entryManager;
-    if (entryManager == null) return;
-    if (entryManager.showingType == MenuType.text) return;
+    if (entryManager == null) return true;
+    if (entryManager.showingType != null) return true;
     bool isTextEmpty = node.getFromPosition(left, right).isEmpty;
-    if (isTextEmpty) return;
+    if (isTextEmpty) return true;
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
             widget.fontSize;
     final box = renderBox;
-    if (box == null) return;
-    entryManager.showTextMenu(
-        Overlay.of(context),
-        MenuInfo(box.globalToLocal(offset), node.id, h, layerLink),
-        nodeContext);
+    if (box == null) return true;
+    entryManager.showTextMenu(Overlay.of(context),
+        MenuInfo(box.globalToLocal(offset), node.id, h, layerLink), operator);
+    return true;
   }
 
   bool containsOffset(Offset global) =>
@@ -247,7 +250,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void didUpdateWidget(covariant RichTextWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldListeners = oldWidget.context.listeners;
+    final oldListeners = oldWidget.operator.listeners;
     if (oldListeners.hashCode != listeners.hashCode) {
       oldListeners.removeGestureListener(node.id, onGesture);
       oldListeners.removeArrowDelegate(node.id, onArrowAccept);
@@ -275,7 +278,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       final offset = painter.getOffsetFromTextOffset(position.offset);
       final newOffset =
           Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
-      nodeContext.onEditingOffset(
+      operator.onEditingOffset(
           EditingOffset(newOffset, getCurrentCursorHeight(position), node.id));
     }
   }
@@ -356,26 +359,35 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                   ValueListenableBuilder(
                       valueListenable: nodeChangedNotifier,
                       builder: (ctx, v, c) {
-                        return Stack(
-                            children: painter.buildLinkGestures(nodeIndex, v,
-                                onEnter: (o, s, p) {
-                          final url = s.attributes['url'] ?? '';
-                          final h = painter.getFullHeightForCaret(
-                                  buildTextPosition(o), Rect.zero) ??
-                              widget.fontSize;
-                          final entryManager = editorContext?.entryManager;
-                          if (entryManager == null) return;
-                          entryManager.showLinkMenu(
-                              Overlay.of(context),
-                              LinkMenuInfo(MenuInfo(o, node.id, h, layerLink),
-                                  UrlWithPosition(url, p)),
-                              nodeContext);
-                        }, onExit: (e) {
-                          final entryManager = editorContext?.entryManager;
-                          entryManager?.removeEntry();
-                        }, onTap: (s) {
-                          logger.i('$tag,  tapped:${s.text}');
-                        }));
+                        final Set<String> hoveredNodeIds = {};
+                        return LinkHover(
+                            node: v,
+                            nodeIndex: nodeIndex,
+                            painter: painter,
+                            onEnter: (o, s, p) {
+                              hoveredNodeIds.add(node.id);
+                              final url = s.attributes['url'] ?? '';
+                              final alias = s.attributes['alias'] ?? '';
+                              final h = painter.getFullHeightForCaret(
+                                      buildTextPosition(o), Rect.zero) ??
+                                  widget.fontSize;
+                              final entryManager = editorContext?.entryManager;
+                              if (entryManager == null) return;
+                              if (entryManager.showingType == MenuType.link) {
+                                return;
+                              }
+                              entryManager.showLinkMenu(
+                                  Overlay.of(context),
+                                  LinkMenuInfo(
+                                      MenuInfo(o, node.id, h, layerLink),
+                                      p.as<RichTextNodePosition>(),
+                                      UrlInfo(url, alias), hoveredNodeIds),
+                                  operator);
+                            },
+                            onExit: (e) => hoveredNodeIds.remove(node.id),
+                            onTap: (s) {
+                              logger.i('$tag,  tapped:${s.text}');
+                            });
                       }),
                 ],
               ),
@@ -389,23 +401,25 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   TextPosition buildTextPosition(Offset p) =>
       painter.buildTextPosition(p, renderBox);
 
-  void onGesture(GestureState s) {
+  bool onGesture(GestureState s) {
     if (s is TapGestureState) {
-      onTapped(s.globalOffset);
+      return onTapped(s.globalOffset);
     } else if (s is HoverGestureState) {
-      confirmToShowTextMenu(s.globalOffset);
+      return confirmToShowTextMenu(s.globalOffset);
     } else if (s is PanGestureState) {
-      onPanUpdate(s.globalOffset);
+      return onPanUpdate(s.globalOffset);
     }
+    return false;
   }
 
-  void onTapped(Offset globalOffset) {
-    if (!containsOffset(globalOffset)) return;
+  bool onTapped(Offset globalOffset) {
+    if (!containsOffset(globalOffset)) return false;
     final off = buildTextPosition(globalOffset).offset;
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
-    nodeContext.onCursor(EditingCursor(nodeIndex, richPosition));
-    nodeContext.onEditingOffset(EditingOffset(
+    operator.onCursor(EditingCursor(nodeIndex, richPosition));
+    operator.onEditingOffset(EditingOffset(
         globalOffset, getCurrentCursorHeight(richPosition), node.id));
+    return true;
   }
 }

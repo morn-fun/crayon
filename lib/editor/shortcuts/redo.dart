@@ -9,9 +9,9 @@ class RedoIntent extends Intent {
 }
 
 class RedoAction extends ContextAction<RedoIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  EditorContext get editorContext => ac.context as EditorContext;
+  EditorContext get editorContext => ac.operator as EditorContext;
 
   RedoAction(this.ac);
 

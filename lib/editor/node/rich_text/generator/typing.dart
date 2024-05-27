@@ -28,7 +28,7 @@ NodeWithCursor typingRichTextNodeWhileEditing(
     final newNode =
         node.update(index, span.copy(text: (v) => v.insert(oldOffset, text)));
     final newPosition = RichTextNodePosition(index, oldOffset + valueOffset);
-    checkNeedShowSelectingMenu(newNode, newPosition, data.context, data.index);
+    checkNeedShowSelectingMenu(newNode, newPosition, data.operator, data.index);
     return NodeWithCursor(newNode, EditingCursor(data.index, newPosition));
   }
   throw NodeUnsupportedException(
@@ -57,11 +57,11 @@ void checkNeedChangeNodeTyp(
 }
 
 void checkNeedShowSelectingMenu(RichTextNode node,
-    RichTextNodePosition position, NodesOperator context, int index) {
+    RichTextNodePosition position, NodesOperator operator, int index) {
   final frontText = node.frontPartNode(position).text;
   if (frontText == '/') {
     throw TypingRequiredOptionalMenuException(
-        NodeWithCursor(node, position.toCursor(index)), context);
+        NodeWithCursor(node, position.toCursor(index)), operator);
   }
 }
 

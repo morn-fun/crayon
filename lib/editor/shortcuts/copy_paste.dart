@@ -25,9 +25,9 @@ class PasteIntent extends Intent {
 }
 
 class CopyAction extends ContextAction<CopyIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -39,7 +39,7 @@ class CopyAction extends ContextAction<CopyIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) return;
     if (cursor is SelectingNodeCursor) {
-      final node = nodeContext.getNode(cursor.index);
+      final node = operator.getNode(cursor.index);
       final newNode =
           node.getFromPosition(cursor.begin, cursor.end, newId: randomNodeId);
       _copiedNodes.clear();
@@ -47,12 +47,12 @@ class CopyAction extends ContextAction<CopyIntent> {
     } else if (cursor is SelectingNodesCursor) {
       final List<EditorNode> nodes = [];
       final left = cursor.left, right = cursor.right;
-      var beginNode = nodeContext.getNode(left.index);
-      var endNode = nodeContext.getNode(right.index);
+      var beginNode = operator.getNode(left.index);
+      var endNode = operator.getNode(right.index);
       beginNode = beginNode.rearPartNode(left.position, newId: randomNodeId);
       endNode = endNode.frontPartNode(right.position, newId: randomNodeId);
       nodes.add(beginNode);
-      nodes.addAll(nodeContext.getRange(left.index + 1, right.index));
+      nodes.addAll(operator.getRange(left.index + 1, right.index));
       nodes.add(endNode);
       _copiedNodes.clear();
       _copiedNodes.addAll(nodes);
@@ -67,9 +67,9 @@ final List<EditorNode> _copiedNodes = [];
 const _specialEdge = '\u{200C}';
 
 class PasteAction extends ContextAction<PasteIntent> {
-  final ActionContext ac;
+  final ActionOperator ac;
 
-  NodesOperator get nodeContext => ac.context;
+  NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
@@ -117,32 +117,32 @@ class PasteAction extends ContextAction<PasteIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) {
       final index = cursor.index;
-      final node = nodeContext.getNode(index);
+      final node = operator.getNode(index);
       try {
         final r = node.onEdit(
-            EditingData(cursor, EventType.paste, nodeContext, extras: nodes));
-        nodeContext.execute(ModifyNode(r));
+            EditingData(cursor, EventType.paste, operator, extras: nodes));
+        operator.execute(ModifyNode(r));
       } on PasteToCreateMoreNodesException catch (e) {
-        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
+        operator.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodeCursor) {
       final index = cursor.index;
-      final node = nodeContext.getNode(index);
+      final node = operator.getNode(index);
       try {
         final r = node.onSelect(
-            SelectingData(cursor, EventType.paste, nodeContext, extras: nodes));
-        nodeContext.execute(ModifyNode(r));
+            SelectingData(cursor, EventType.paste, operator, extras: nodes));
+        operator.execute(ModifyNode(r));
       } on PasteToCreateMoreNodesException catch (e) {
-        nodeContext.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
+        operator.execute(ReplaceNode(Replace(index, index + 1, e.nodes,
             EditingCursor(index + e.nodes.length - 1, e.position))));
       } on NodeUnsupportedException catch (e) {
         logger.e('$runtimeType, ${e.message}');
       }
     } else if (cursor is SelectingNodesCursor) {
-      nodeContext.execute(PasteWhileSelectingNodes(cursor, nodes));
+      operator.execute(PasteWhileSelectingNodes(cursor, nodes));
     }
   }
 }

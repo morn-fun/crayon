@@ -13,19 +13,18 @@ import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/styles.dart';
 
 class TextMenu extends StatefulWidget {
-  final NodesOperator nodeContext;
+  final NodesOperator operator;
   final MenuInfo info;
   final EntryManager manager;
 
-  const TextMenu(this.nodeContext, this.info, this.manager, {super.key});
+  const TextMenu(this.operator, this.info, this.manager, {super.key});
 
   @override
   State<TextMenu> createState() => _TextMenuState();
 }
 
 class _TextMenuState extends State<TextMenu> {
-
-  ListenerCollection get listeners => nodeContext.listeners;
+  ListenerCollection get listeners => operator.listeners;
 
   MenuInfo get info => widget.info;
 
@@ -33,11 +32,11 @@ class _TextMenuState extends State<TextMenu> {
 
   Set<String> tagSets = {};
 
-  late NodesOperator nodeContext = widget.nodeContext;
+  late NodesOperator operator = widget.operator;
 
-  late BasicCursor cursor = nodeContext.cursor;
+  late BasicCursor cursor = operator.cursor;
 
-  late List<EditorNode> nodes = List.of(nodeContext.nodes);
+  late List<EditorNode> nodes = List.of(operator.nodes);
 
   @override
   void initState() {
@@ -61,7 +60,7 @@ class _TextMenuState extends State<TextMenu> {
       hideMenu();
       return;
     }
-    nodeContext = nodeContext.newOperator(nodes, cursor);
+    operator = operator.newOperator(nodes, cursor);
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
       try {
@@ -76,7 +75,7 @@ class _TextMenuState extends State<TextMenu> {
 
   void onNodesChanged(List<EditorNode> nodes) {
     this.nodes = List.of(nodes);
-    nodeContext = nodeContext.newOperator(nodes, cursor);
+    operator = operator.newOperator(nodes, cursor);
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
       try {
@@ -126,26 +125,26 @@ class _TextMenuState extends State<TextMenu> {
                   verticalDivider(),
                   TextMenuItem(
                     iconData: Icons.format_bold,
-                    onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.bold, cursor),
+                    onTap: () =>
+                        onStyleEvent(operator, RichTextTag.bold, cursor),
                     contains: tagSets.contains(RichTextTag.bold.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_strikethrough_rounded,
-                    onTap: () => onStyleEvent(nodeContext,
-                        RichTextTag.lineThrough, cursor),
+                    onTap: () =>
+                        onStyleEvent(operator, RichTextTag.lineThrough, cursor),
                     contains: tagSets.contains(RichTextTag.lineThrough.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_italic_rounded,
-                    onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.italic, cursor),
+                    onTap: () =>
+                        onStyleEvent(operator, RichTextTag.italic, cursor),
                     contains: tagSets.contains(RichTextTag.italic.name),
                   ),
                   TextMenuItem(
                     iconData: Icons.format_underline_rounded,
-                    onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.underline, cursor),
+                    onTap: () =>
+                        onStyleEvent(operator, RichTextTag.underline, cursor),
                     contains: tagSets.contains(RichTextTag.underline.name),
                   ),
                   if (c is SelectingNodeCursor &&
@@ -156,25 +155,22 @@ class _TextMenuState extends State<TextMenu> {
                       onTap: () {
                         hideMenu();
                         if (tagSets.contains(RichTextTag.link.name)) {
-                          onStyleEvent(
-                              nodeContext, RichTextTag.link, cursor,
+                          onStyleEvent(operator, RichTextTag.link, cursor,
                               attributes: {});
                         } else {
                           manager.showLinkMenu(
                               Overlay.of(context),
                               LinkMenuInfo(
-                                  info,
-                                  UrlWithPosition(
-                                      '', cursor as SelectingNodeCursor)),
-                              nodeContext);
+                                  info, c.as<RichTextNodePosition>(), null, {}),
+                              operator);
                         }
                       },
                       contains: tagSets.contains(RichTextTag.link.name),
                     ),
                   TextMenuItem(
                     iconData: Icons.code,
-                    onTap: () => onStyleEvent(
-                        nodeContext, RichTextTag.code, cursor),
+                    onTap: () =>
+                        onStyleEvent(operator, RichTextTag.code, cursor),
                     contains: tagSets.contains(RichTextTag.code.name),
                   ),
                 ],

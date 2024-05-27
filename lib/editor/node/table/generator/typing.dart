@@ -16,7 +16,7 @@ NodeWithCursor typingWhileEditing(
   final innerNode = cell.getNode(index);
   late NodeWithCursor nodeWithCursor;
   final ctx = buildTableCellNodeContext(
-      data.context, p.cellPosition, node, p.cursor, data.index);
+      data.operator, p.cellPosition, node, p.cursor, data.index);
   final extra = data.extras;
   if (extra is! TextEditingValue) {
     throw NodeUnsupportedException(node.runtimeType,
@@ -37,7 +37,7 @@ NodeWithCursor typingWhileEditing(
                 data.index,
                 TablePosition(
                     p.cellPosition, nodeWithCursor.cursor as EditingCursor))),
-        e.context);
+        e.operator);
   }
   return NodeWithCursor(
       node.updateCell(

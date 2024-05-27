@@ -126,6 +126,8 @@ class EditorContext extends NodesOperator {
   NodesOperator newOperator(
           List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
       this;
+
+  void removeEntry() => entryManager.removeEntry();
 }
 
 abstract class NodesOperator {
@@ -171,13 +173,13 @@ class NodeBuildParam {
         extras = null;
 }
 
-class ActionContext {
-  final NodesOperator context;
+class ActionOperator {
+  final NodesOperator operator;
   final ValueGetter<BasicCursor> cursorGetter;
 
   BasicCursor get cursor => cursorGetter.call();
 
-  ActionContext(this.context, this.cursorGetter);
+  ActionOperator(this.operator, this.cursorGetter);
 }
 
 class TableCellNodeContext extends NodesOperator {

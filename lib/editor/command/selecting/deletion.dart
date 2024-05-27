@@ -15,19 +15,19 @@ class DeletionWhileSelectingNodes implements BasicCommand {
   DeletionWhileSelectingNodes(this.cursor);
 
   @override
-  UpdateControllerOperation? run(NodesOperator nodeContext) {
+  UpdateControllerOperation? run(NodesOperator operator) {
     final leftCursor = cursor.left;
     final rightCursor = cursor.right;
-    final leftNode = nodeContext.getNode(leftCursor.index);
-    final rightNode = nodeContext.getNode(rightCursor.index);
+    final leftNode = operator.getNode(leftCursor.index);
+    final rightNode = operator.getNode(rightCursor.index);
     final left = leftNode.frontPartNode(leftCursor.position);
     final right =
         rightNode.rearPartNode(rightCursor.position, newId: randomNodeId);
     try {
       final newNode = left.merge(right);
       List<EditorNode> listNeedRefreshDepth =
-          nodeContext.listNeedRefreshDepth(rightCursor.index, newNode.depth);
-      return nodeContext.replace(Replace(
+          operator.listNeedRefreshDepth(rightCursor.index, newNode.depth);
+      return operator.replace(Replace(
           leftCursor.index,
           rightCursor.index + 1 + listNeedRefreshDepth.length,
           [newNode, ...listNeedRefreshDepth],
@@ -35,8 +35,8 @@ class DeletionWhileSelectingNodes implements BasicCommand {
     } on UnableToMergeException catch (e) {
       logger.e('$runtimeType error: $e');
       List<EditorNode> listNeedRefreshDepth =
-          nodeContext.listNeedRefreshDepth(rightCursor.index, right.depth);
-      return nodeContext.replace(Replace(
+          operator.listNeedRefreshDepth(rightCursor.index, right.depth);
+      return operator.replace(Replace(
           leftCursor.index,
           rightCursor.index + 1 + listNeedRefreshDepth.length,
           [left, right, ...listNeedRefreshDepth],

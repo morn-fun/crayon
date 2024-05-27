@@ -77,14 +77,22 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
       const ShiftTabIntent(),
 };
 
-final Map<ShortcutActivator, Intent> selectingMenuShortcuts =
-    Map.of(editorShortcuts)
-      ..[const SingleActivator(LogicalKeyboardKey.arrowUp)] =
-          const OptionalMenuUpArrowIntent()
-      ..[const SingleActivator(LogicalKeyboardKey.arrowDown)] =
-          const OptionalMenuDownArrowIntent()
-      ..[const SingleActivator(LogicalKeyboardKey.enter)] =
-          const OptionalMenuEnterIntent();
+final Map<ShortcutActivator, Intent> optionalMenuShortcuts =
+    Map.of(editorShortcuts)..addAll(arrowShortcuts);
+
+final Map<ShortcutActivator, Intent> arrowShortcuts = {
+  const SingleActivator(LogicalKeyboardKey.arrowUp):
+      const OptionalMenuUpArrowIntent(),
+  const SingleActivator(LogicalKeyboardKey.arrowDown):
+      const OptionalMenuDownArrowIntent(),
+  const SingleActivator(LogicalKeyboardKey.enter):
+      const OptionalMenuEnterIntent()
+};
+
+final Map<ShortcutActivator, Intent> linkMenuShortcuts = {
+  const SingleActivator(LogicalKeyboardKey.enter):
+      const OptionalMenuEnterIntent()
+};
 
 Map<Type, RichEditorControllerAction> shortcutActions = {
   DeleteIntent: (c) => DeleteAction(c),
@@ -111,7 +119,7 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>
     shortcutActions.map((key, value) => MapEntry(
-        key, value.call(ActionContext(context, () => context.cursor))));
+        key, value.call(ActionOperator(context, () => context.cursor))));
 
 typedef RichEditorControllerAction = Action<Intent> Function(
-    ActionContext context);
+    ActionOperator context);
