@@ -104,40 +104,49 @@ class _RichTableState extends State<RichTable> {
   }
 
   bool onGesture(GestureState s) {
-    if (s is TapGestureState) {
-      return onTap(s);
-    } else if (s is HoverGestureState) {
-      return onHover(s);
-    } else if (s is PanGestureState) {
-      return onPan(s);
-    }
-    return false;
-  }
-
-  bool onTap(TapGestureState s) {
     final box = renderBox;
     if (box == null) return false;
+    if (!containsOffset(s.globalOffset)) return false;
     final heights = List.of(heightsNotifier.value);
     final widths = List.of(node.widths);
     final cellPosition = box.getCellPosition(s.globalOffset, heights, widths);
     if (cellPosition == null) return false;
-    final cell = node.getCell(cellPosition);
+    if (s is TapGestureState) {
+      return onTap(s, cellPosition);
+    } else if (s is DoubleTapGestureState) {
+      return onDoubleTap(s, cellPosition);
+    } else if (s is TripleTapGestureState) {
+      return onTripleTap(s, cellPosition);
+    } else if (s is HoverGestureState) {
+      return onHover(s, cellPosition);
+    } else if (s is PanGestureState) {
+      return onPan(s, cellPosition);
+    }
+    return false;
+  }
+
+  bool onTap(TapGestureState s, CellPosition cp) {
+    final cell = node.getCell(cp);
     final accepted = localListeners.notifyGesture(cell.id, s);
     if (!accepted) {
-      final opt = buildTableCellNodeContext(
-          operator,
-          cellPosition,
-          node,
-          node.getCursorInCell(nodeCursor, cellPosition) ?? NoneCursor(),
-          widgetIndex);
+      final opt = buildTableCellNodeContext(operator, cp, node,
+          node.getCursorInCell(nodeCursor, cp) ?? NoneCursor(), widgetIndex);
       opt.execute(AddRichTextNode(RichTextNode.from([])));
     }
     return true;
   }
 
-  bool onHover(GestureState s) {
-    final offset = s.globalOffset;
-    if (!containsOffset(offset)) return false;
+  bool onDoubleTap(DoubleTapGestureState s, CellPosition cp) {
+    final cell = node.getCell(cp);
+    return localListeners.notifyGesture(cell.id, s);
+  }
+
+  bool onTripleTap(TripleTapGestureState s, CellPosition cp) {
+    final cell = node.getCell(cp);
+    return localListeners.notifyGesture(cell.id, s);
+  }
+
+  bool onHover(GestureState s, CellPosition cp) {
     var p = nodeCursor;
     if (p == null) return true;
     if (p is EditingCursor) return true;
@@ -170,32 +179,28 @@ class _RichTableState extends State<RichTable> {
         right.cellPosition, heights, widths)) {
       entryManager.showTextMenu(
           Overlay.of(context),
-          MenuInfo(box.globalToLocal(s.globalOffset), node.id, 0, layerLink),
+          MenuInfo(box.globalToLocal(s.globalOffset), node.id, 20, layerLink),
           operator);
     }
     return true;
   }
 
-  bool onPan(PanGestureState o) {
-    final box = renderBox;
-    if (box == null) return false;
+  bool onPan(PanGestureState o, CellPosition cp) {
+    final box = renderBox!;
     final heights = List.of(heightsNotifier.value);
     final widths = List.of(node.widths);
     final lastCellPosition =
         box.getCellPosition(o.beginOffset, heights, widths);
-    final cellPosition = box.getCellPosition(o.globalOffset, heights, widths);
-    logger.i(
-        'last:$lastCellPosition,  current:$cellPosition,  global:${o.globalOffset}');
-    if (cellPosition == null) return false;
-    final cell = node.getCell(cellPosition);
+    logger.i('last:$lastCellPosition,  current:$cp,  global:${o.globalOffset}');
+    final cell = node.getCell(cp);
     if (lastCellPosition != null) {
-      if (lastCellPosition.sameCell(cellPosition)) {
+      if (lastCellPosition.sameCell(cp)) {
         localListeners.notifyGestures(o);
         return true;
       }
     }
-    operator.onPanUpdate(EditingCursor(
-        widgetIndex, TablePosition(cellPosition, cell.endCursor)));
+    operator.onPanUpdate(
+        EditingCursor(widgetIndex, TablePosition(cp, cell.endCursor)));
     return true;
   }
 

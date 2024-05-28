@@ -38,7 +38,7 @@ class _RichEditorPageState extends State<RichEditor> {
     controller = RichEditorController.fromNodes(widget.nodes);
     final listeners = controller.listeners;
     entryManager = EntryManager((t) {
-      shortcutManager.shortcuts = menuType2Shortcuts[t] ?? {};
+      shortcutManager.shortcuts = menuType2Shortcuts[t] ?? editorShortcuts;
     }, (t) {
       shortcutManager.shortcuts = editorShortcuts;
       focusNode.requestFocus();

@@ -36,7 +36,8 @@ class RichTextNode extends EditorNode {
 
   TextSpan buildTextSpan() => TextSpan(
       children:
-          List.generate(spans.length, (index) => spans[index].buildSpan()));
+          List.generate(spans.length, (index) => spans[index].buildSpan()),
+      style: TextStyle(height: 1.5));
 
   @override
   RichTextNode frontPartNode(covariant RichTextNodePosition end,

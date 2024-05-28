@@ -208,6 +208,10 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   bool onGesture(GestureState s) {
     if (s is TapGestureState) {
       return onTapped(s.globalOffset);
+    } else if (s is DoubleTapGestureState) {
+      return onDoubleTap(s.globalOffset);
+    } else if (s is TripleTapGestureState) {
+      return onTripleTap(s.globalOffset);
     } else if (s is PanGestureState) {
       return onPanUpdate(s.globalOffset);
     }
@@ -220,6 +224,19 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     controller.onEditingPosition.call(off);
     controller.onEditingOffsetChanged
         .call(EditingOffset(globalOffset, painter.height, widget.nodeId));
+    return true;
+  }
+
+  bool onDoubleTap(Offset s) {
+    if (!containsY(s)) return false;
+    controller.onLineSelected
+        .call(painter.getWordBoundary(buildTextPosition(s)));
+    return true;
+  }
+
+  bool onTripleTap(Offset s) {
+    if (!containsY(s)) return false;
+    controller.onLineSelected.call(TextRange(start: 0, end: code.length));
     return true;
   }
 
@@ -254,12 +271,14 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
 class CodeNodeController {
   final ValueChanged<int> onEditingPosition;
   final ValueChanged<int> onPanUpdatePosition;
+  final ValueChanged<TextRange> onLineSelected;
   final ValueChanged<EditingOffset> onEditingOffsetChanged;
   final ListenerCollection listeners;
 
   CodeNodeController({
     required this.onEditingPosition,
     required this.onPanUpdatePosition,
+    required this.onLineSelected,
     required this.listeners,
     required this.onEditingOffsetChanged,
   });

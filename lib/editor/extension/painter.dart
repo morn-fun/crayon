@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import 'package:crayon/editor/cursor/basic.dart';
 import 'package:flutter/material.dart';
 
 import '../node/rich_text/rich_text.dart';
+import '../../../editor/cursor/basic.dart';
 import '../node/rich_text/rich_text_span.dart';
 
 extension PainterExtension on TextPainter {
@@ -16,10 +16,10 @@ extension PainterExtension on TextPainter {
     List<Widget> widgets = [];
     final boxList = getBoxesForSelection(
         TextSelection(baseOffset: begin, extentOffset: end));
-    Map<int, double> baseline2MaxHeight = baseline2MaxHeightMap(boxList);
+    final maxHeight = baseline2MaxHeightMap(boxList);
     for (var box in boxList) {
       final baseline = ((box.bottom + box.top) / 2).round();
-      final height = baseline2MaxHeight[baseline] ?? (box.bottom - box.top);
+      final height = maxHeight;
       widgets.add(Positioned(
           left: box.left,
           top: baseline - height / 2,
@@ -32,19 +32,13 @@ extension PainterExtension on TextPainter {
     return widgets;
   }
 
-  Map<int, double> baseline2MaxHeightMap(List<TextBox> boxList) {
-    Map<int, double> baseline2MaxHeight = {};
+  double baseline2MaxHeightMap(List<TextBox> boxList) {
+    double result = 0.0;
     for (var box in boxList) {
-      final baseline = ((box.bottom + box.top) / 2).round();
       final height = box.bottom - box.top;
-      if (baseline2MaxHeight[baseline] == null) {
-        baseline2MaxHeight[baseline] = height;
-      } else {
-        final oldHeight = baseline2MaxHeight[baseline]!;
-        baseline2MaxHeight[baseline] = max(oldHeight, height);
-      }
+      result = max(height, result);
     }
-    return baseline2MaxHeight;
+    return result;
   }
 
   List<Widget> buildInlineCodes(RichTextNode node) {
@@ -54,11 +48,11 @@ extension PainterExtension on TextPainter {
       if (!span.tags.contains(RichTextTag.code.name)) continue;
       final boxList = getBoxesForSelection(
           TextSelection(baseOffset: span.offset, extentOffset: span.endOffset));
-      Map<int, double> baseline2MaxHeight = baseline2MaxHeightMap(boxList);
+      final maxHeight = baseline2MaxHeightMap(boxList);
       int j = 0;
       for (var box in boxList) {
         final baseline = ((box.bottom + box.top) / 2).round();
-        final height = baseline2MaxHeight[baseline] ?? (box.bottom - box.top);
+        final height = maxHeight;
         bool isFirst = j == 0;
         bool isLast = j == boxList.length - 1;
         final leftRadius = isFirst ? Radius.circular(4) : Radius.zero;

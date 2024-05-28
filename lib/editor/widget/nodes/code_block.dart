@@ -100,12 +100,17 @@ class _CodeBlockState extends State<CodeBlock> {
   bool onGesture(GestureState s) {
     final box = renderBox;
     if (box == null) return false;
+    bool contains = box.containsOffset(s.globalOffset);
+    if (!contains) return false;
     if (s is TapGestureState) {
-      bool contains = box.containsOffset(s.globalOffset);
-      if (contains) {
-        localListeners.notifyGestures(s);
-        return true;
-      }
+      localListeners.notifyGestures(s);
+      return true;
+    } else if (s is DoubleTapGestureState) {
+      localListeners.notifyGestures(s);
+      return true;
+    } else if (s is TripleTapGestureState) {
+      localListeners.notifyGestures(s);
+      return true;
     } else if (s is PanGestureState) {
       final currentOffsetContains = box.containsOffset(s.globalOffset);
       if (!currentOffsetContains) return false;
@@ -185,127 +190,134 @@ class _CodeBlockState extends State<CodeBlock> {
     final theme = Theme.of(context);
     bool allSelected = isAllSelected();
     final editorContext = ShareEditorContextWidget.of(context)?.context;
-    return Stack(
+    return Padding(
       key: key,
-      children: [
-        MouseRegion(
-          cursor: SystemMouseCursors.text,
-          onEnter: (e) => toHover(),
-          onHover: (e) => toHover(),
-          onExit: (e) => hoveredNotifier.value = false,
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: theme.hoverColor),
-            foregroundDecoration: allSelected
-                ? BoxDecoration(
-                    color: Colors.blue.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  )
-                : null,
-            child: Row(
-              children: [
-                Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(codes.length, (index) {
-                      return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: widget.maxLineHeight,
-                          child: Center(
-                              child: Text(
-                            '${index + 1}.',
-                            style: theme.textTheme.bodyMedium,
-                          )));
-                    })),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+      padding: EdgeInsets.only(top: 8, bottom: 8),
+      child: Stack(
+        children: [
+          MouseRegion(
+            cursor: SystemMouseCursors.text,
+            onEnter: (e) => toHover(),
+            onHover: (e) => toHover(),
+            onExit: (e) => hoveredNotifier.value = false,
+            child: Container(
+              padding: padding,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: theme.hoverColor),
+              foregroundDecoration: allSelected
+                  ? BoxDecoration(
+                      color: Colors.blue.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    )
+                  : null,
+              child: Row(
+                children: [
+                  Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: List.generate(codes.length, (index) {
-                        final code = codes[index];
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          height: widget.maxLineHeight,
-                          child: CodeBlockLine(
-                            code: code,
-                            dark: theme.brightness == Brightness.dark,
-                            language: node.language,
-                            editingOffset: getEditingOffset(index),
-                            selectingOffset: getSelectingRange(index),
-                            style: theme.textTheme.bodyMedium,
-                            controller: CodeNodeController(
-                              onEditingOffsetChanged: (o) {
-                                lastEditOffset = o.offset;
-                                operator
-                                    .onEditingOffset(o);
-                              },
-                              onPanUpdatePosition: (o) =>
-                                  operator.onPanUpdate(EditingCursor(
-                                      widgetIndex,
-                                      CodeBlockPosition(index, o))),
-                              listeners: localListeners,
-                              onEditingPosition: (o) => operator.onCursor(
-                                  EditingCursor(widgetIndex,
-                                      CodeBlockPosition(index, o))),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height: widget.maxLineHeight,
+                            child: Center(
+                                child: Text(
+                              '${index + 1}.',
+                              style: theme.textTheme.bodyMedium,
+                            )));
+                      })),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: List.generate(codes.length, (index) {
+                          final code = codes[index];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            height: widget.maxLineHeight,
+                            child: CodeBlockLine(
+                              code: code,
+                              dark: theme.brightness == Brightness.dark,
+                              language: node.language,
+                              editingOffset: getEditingOffset(index),
+                              selectingOffset: getSelectingRange(index),
+                              style: theme.textTheme.bodyMedium,
+                              controller: CodeNodeController(
+                                  onEditingOffsetChanged: (o) {
+                                    lastEditOffset = o.offset;
+                                    operator.onEditingOffset(o);
+                                  },
+                                  onPanUpdatePosition: (o) =>
+                                      operator.onPanUpdate(EditingCursor(
+                                          widgetIndex,
+                                          CodeBlockPosition(index, o))),
+                                  listeners: localListeners,
+                                  onEditingPosition: (o) => operator.onCursor(
+                                      EditingCursor(widgetIndex,
+                                          CodeBlockPosition(index, o))),
+                                  onLineSelected: (range) => operator.onCursor(
+                                      SelectingNodeCursor(
+                                          widgetIndex,
+                                          CodeBlockPosition(index, range.start),
+                                          CodeBlockPosition(
+                                              index, range.end)))),
+                              nodeId: node.id,
                             ),
-                            nodeId: node.id,
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        ValueListenableBuilder(
-            valueListenable: hoveredNotifier,
-            builder: (context, v, c) {
-              if (!v) return Container();
-              return Positioned(
-                child: OverlayPortal(
-                  controller: languageController,
-                  overlayChildBuilder: (ctx) {
-                    return LanguageSelectMenu(
-                      languages: constLanguages,
-                      onSelect: (s) {
-                        if (s == node.language) return;
-                        operator.onNode(node.newLanguage(s), widgetIndex);
-                      },
-                      onHide: () {
-                        languageController.hide();
-                        editorContext?.controller
-                            .updateStatus(ControllerStatus.idle);
-                      },
-                    );
-                  },
-                  child: InkWell(
-                    onTap: () {
-                      editorContext?.controller
-                          .updateStatus(ControllerStatus.typing);
-                      languageController.show();
+          ValueListenableBuilder(
+              valueListenable: hoveredNotifier,
+              builder: (context, v, c) {
+                if (!v) return Container();
+                return Positioned(
+                  child: OverlayPortal(
+                    controller: languageController,
+                    overlayChildBuilder: (ctx) {
+                      return LanguageSelectMenu(
+                        languages: constLanguages,
+                        onSelect: (s) {
+                          if (s == node.language) return;
+                          operator.onNode(node.newLanguage(s), widgetIndex);
+                        },
+                        onHide: () {
+                          languageController.hide();
+                          editorContext?.controller
+                              .updateStatus(ControllerStatus.idle);
+                        },
+                      );
                     },
-                    onHover: (e) => toHover(),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(node.language),
-                        Icon(Icons.arrow_drop_down_rounded)
-                      ],
+                    child: InkWell(
+                      onTap: () {
+                        editorContext?.controller
+                            .updateStatus(ControllerStatus.typing);
+                        languageController.show();
+                      },
+                      onHover: (e) => toHover(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(node.language),
+                          Icon(Icons.arrow_drop_down_rounded)
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                left: 8,
-                top: 0,
-              );
-            })
-      ],
+                  left: 8,
+                  top: 0,
+                );
+              })
+        ],
+      ),
     );
   }
 

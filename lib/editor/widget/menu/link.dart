@@ -246,16 +246,16 @@ class _LinkHoverState extends State<LinkHover> {
       final url = span.attributes['url'] ?? '';
       final boxList = painter.getBoxesForSelection(
           TextSelection(baseOffset: span.offset, extentOffset: span.endOffset));
-      Map<int, double> baseline2MaxHeight =
+      final maxHeight =
           painter.baseline2MaxHeightMap(boxList);
       final selectingPosition = SelectingNodeCursor(nodeIndex,
           RichTextNodePosition(i, 0), RichTextNodePosition(i, span.textLength));
       final hovered = url2hovered[url] ?? false;
       final left = boxList.first.left;
-      var top = baseline2MaxHeight[0];
+      var top = maxHeight;
       for (var box in boxList) {
         final baseline = ((box.bottom + box.top) / 2).round();
-        final height = baseline2MaxHeight[baseline] ?? (box.bottom - box.top);
+        final height = maxHeight;
         final child = Padding(
             padding: EdgeInsets.only(top: baseline - height / 2),
             child: GestureDetector(

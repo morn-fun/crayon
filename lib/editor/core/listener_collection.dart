@@ -229,6 +229,20 @@ class TapGestureState implements GestureState {
   TapGestureState(this.globalOffset);
 }
 
+class DoubleTapGestureState implements GestureState {
+  @override
+  final Offset globalOffset;
+
+  DoubleTapGestureState(this.globalOffset);
+}
+
+class TripleTapGestureState implements GestureState {
+  @override
+  final Offset globalOffset;
+
+  TripleTapGestureState(this.globalOffset);
+}
+
 class HoverGestureState implements GestureState {
   @override
   final Offset globalOffset;

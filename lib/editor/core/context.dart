@@ -235,8 +235,9 @@ class TableCellNodeContext extends NodesOperator {
   }
 
   @override
-  SelectingNodesCursor<NodePosition> get selectAllCursor =>
-      SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
+  BasicCursor<NodePosition> get selectAllCursor => cell.length == 1
+      ? SelectingNodeCursor(0, cell.first.beginPosition, cell.first.endPosition)
+      : SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
           EditingCursor(cell.length - 1, cell.last.endPosition));
 
   @override
@@ -260,7 +261,7 @@ class TableCellNodeContext extends NodesOperator {
 
   @override
   NodesOperator newOperator(
-      List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
+          List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
       TableCellNodeContext(
           cursor: cursor,
           cell: cell.copy(nodes: nodes),

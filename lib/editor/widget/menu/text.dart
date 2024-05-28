@@ -38,11 +38,18 @@ class _TextMenuState extends State<TextMenu> {
 
   late List<EditorNode> nodes = List.of(operator.nodes);
 
+  EditorNode? node;
+
   @override
   void initState() {
     listeners.addCursorChangedListener(onCursorChanged);
     listeners.addNodesChangedListener(onNodesChanged);
-    tagSets = cursor.tagIntersection(nodes);
+    final c = cursor;
+    tagSets = c.tagIntersection(nodes);
+    if (c is SelectingNodeCursor) {
+      node = operator.getNode(c.index);
+      listeners.addNodeChangedListener(node!.id, onNodeChanged);
+    }
     super.initState();
   }
 
@@ -51,7 +58,28 @@ class _TextMenuState extends State<TextMenu> {
     nodes.clear();
     listeners.removeCursorChangedListener(onCursorChanged);
     listeners.removeNodesChangedListener(onNodesChanged);
+    if (node != null) {
+      listeners.removeNodeChangedListener(node!.id, onNodeChanged);
+    }
     super.dispose();
+  }
+
+  void onNodeChanged(EditorNode node) {
+    if(this.node?.id != node.id) return;
+    this.node = node;
+    WidgetsBinding.instance.addPostFrameCallback((t) {
+      if (!mounted) return;
+      final c = cursor;
+      if (c is! SelectingNodeCursor) return;
+      try {
+        nodes[c.index] = node;
+        final newTags = cursor.tagIntersection(nodes);
+        if (!newTags.equalsTo(tagSets)) refresh();
+        tagSets = newTags;
+      } catch (e) {
+        logger.e('onNodeChanged error:$e');
+      }
+    });
   }
 
   void onCursorChanged(BasicCursor cursor) {

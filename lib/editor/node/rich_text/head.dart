@@ -47,10 +47,9 @@ abstract class HeadNode extends RichTextNode {
 
   @override
   TextSpan buildTextSpan() => TextSpan(
-      children: List.generate(
-          spans.length,
-          (index) => spans[index].buildSpan(
-              style: TextStyle(fontSize: fontSize, color: Colors.black))));
+      children:
+          List.generate(spans.length, (index) => spans[index].buildSpan()),
+      style: TextStyle(fontSize: fontSize, color: Colors.black));
 
   @override
   Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c) {

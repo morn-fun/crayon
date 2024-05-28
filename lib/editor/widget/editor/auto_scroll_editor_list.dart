@@ -47,6 +47,8 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   Offset panStartOffset = Offset.zero;
   final tag = 'AutoScrollEditorList';
   late BasicCursor cursor = editorContext.cursor;
+  DateTime? doubleTappedTime;
+
 
   @override
   void initState() {
@@ -141,12 +143,30 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       key: key,
       behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
-        logger.i('onTapDown:$d');
+        logger.i('onTapDown:$d,  doubleTappedTime:$doubleTappedTime');
         editorContext.restartInput();
-        final id = controller.notifyGesture(TapGestureState(d.globalPosition));
-        if (id == null) {
-          editorContext.execute(AddRichTextNode(RichTextNode.from([])));
+        ///FIXME: it's a temporary solution
+        bool isTripleTap = false;
+        if(doubleTappedTime != null){
+          final diffMillSecond = DateTime.now().difference(doubleTappedTime!).inMilliseconds;
+          isTripleTap = diffMillSecond < 700;
+          logger.i('diffMillSecond:$diffMillSecond');
         }
+        if(isTripleTap){
+          controller.notifyGesture(TripleTapGestureState(d.globalPosition));
+        } else {
+          final id = controller.notifyGesture(TapGestureState(d.globalPosition));
+          if (id == null) {
+            editorContext.execute(AddRichTextNode(RichTextNode.from([])));
+          }
+        }
+        editorContext.removeEntry();
+      },
+      onDoubleTapDown: (d){
+        logger.i('onDoubleTapDown:$d');
+        doubleTappedTime = DateTime.now();
+        editorContext.restartInput();
+        controller.notifyGesture(DoubleTapGestureState(d.globalPosition));
         editorContext.removeEntry();
       },
       onPanStart: (d) {

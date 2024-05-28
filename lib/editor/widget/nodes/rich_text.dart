@@ -331,7 +331,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                             TextPosition(offset: node.getOffset(v));
                         final h = painter.getFullHeightForCaret(
                                 textPosition, Rect.zero) ??
-                            widget.fontSize;
+                            widget.fontSize * 1.5;
                         return Positioned(
                           left: offset.dx,
                           top: offset.dy,
@@ -381,7 +381,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                                   LinkMenuInfo(
                                       MenuInfo(o, node.id, h, layerLink),
                                       p.as<RichTextNodePosition>(),
-                                      UrlInfo(url, alias), hoveredNodeIds),
+                                      UrlInfo(url, alias),
+                                      hoveredNodeIds),
                                   operator);
                             },
                             onExit: (e) => hoveredNodeIds.remove(node.id),
@@ -408,6 +409,10 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       return confirmToShowTextMenu(s.globalOffset);
     } else if (s is PanGestureState) {
       return onPanUpdate(s.globalOffset);
+    } else if (s is DoubleTapGestureState) {
+      return onDoubleTap(s.globalOffset);
+    } else if (s is TripleTapGestureState) {
+      return onTripleTap(s.globalOffset);
     }
     return false;
   }
@@ -420,6 +425,24 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     operator.onCursor(EditingCursor(nodeIndex, richPosition));
     operator.onEditingOffset(EditingOffset(
         globalOffset, getCurrentCursorHeight(richPosition), node.id));
+    return true;
+  }
+
+  bool onDoubleTap(Offset globalOffset) {
+    if (!containsOffset(globalOffset)) return false;
+    final range = painter.getWordBoundary(buildTextPosition(globalOffset));
+    operator.onCursor(SelectingNodeCursor(
+      nodeIndex,
+      node.getPositionByOffset(range.start),
+      node.getPositionByOffset(range.end),
+    ));
+    return true;
+  }
+
+  bool onTripleTap(Offset globalOffset) {
+    if (!containsOffset(globalOffset)) return false;
+    operator.onCursor(
+        SelectingNodeCursor(nodeIndex, node.beginPosition, node.endPosition));
     return true;
   }
 }
