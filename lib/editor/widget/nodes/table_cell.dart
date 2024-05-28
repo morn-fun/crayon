@@ -73,7 +73,9 @@ class _RichTableCellState extends State<RichTableCell> {
 
   bool onGesture(GestureState s) => localListeners.notifyGestures(s) != null;
 
-  void onArrowAccept(AcceptArrowData d) {}
+  void onArrowAccept(AcceptArrowData d) {
+
+  }
 
   @override
   void didUpdateWidget(covariant RichTableCell oldWidget) {

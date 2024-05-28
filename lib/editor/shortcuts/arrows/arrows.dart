@@ -25,14 +25,15 @@ enum ArrowType {
 class AcceptArrowData {
   final String id;
   final ArrowType type;
+  final ArrowType lastType;
   final NodePosition position;
   final dynamic extras;
 
-  AcceptArrowData(this.id, this.type, this.position, {this.extras});
+  AcceptArrowData(this.id, this.type, this.position, this.lastType, {this.extras});
 
   @override
   String toString() {
-    return 'AcceptArrowData{id: $id, type: $type, position: $position, extras: $extras}';
+    return 'AcceptArrowData{id: $id, type: $type, lastType: $lastType, position: $position, extras: $extras}';
   }
 }
 

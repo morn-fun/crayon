@@ -1,7 +1,9 @@
 import 'dart:math';
+import 'dart:ui';
 import '../core/copier.dart';
 import '../exception/editor_node.dart';
 import '../../../editor/cursor/rich_text.dart';
+import '../node/table/table.dart';
 import 'basic.dart';
 
 class TablePosition extends NodePosition {
@@ -95,6 +97,31 @@ class CellPosition {
     int c = max(column, end.column);
     int r = max(row, end.row);
     return CellPosition(r, c);
+  }
+
+  CellPosition lastInHorizontal(TableNode node) {
+    if (column == 0 && row == 0) throw ArrowLeftBeginException(this);
+    if (column == 0) return CellPosition(row - 1, node.columnCount - 1);
+    return CellPosition(row, column - 1);
+  }
+
+  CellPosition nextInHorizontal(TableNode node) {
+    final maxColumn = node.columnCount - 1, maxRow = node.rowCount - 1;
+    if (column == maxColumn && row == maxRow) {
+      throw ArrowRightEndException(this);
+    }
+    if (column == maxColumn) return CellPosition(row + 1, 0);
+    return CellPosition(row, column + 1);
+  }
+
+  CellPosition lastInVertical(TableNode node, Offset offset) {
+    if (row == 0) throw ArrowUpTopException(this, offset);
+    return CellPosition(row - 1, column);
+  }
+
+  CellPosition nextInVertical(TableNode node, Offset offset) {
+    if (row == node.rowCount - 1) throw ArrowDownBottomException(this, offset);
+    return CellPosition(row + 1, column);
   }
 
   bool containSelf(CellPosition begin, CellPosition end) {

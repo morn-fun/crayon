@@ -120,7 +120,7 @@ class ArrowIsEndException implements EditorNodeException {
 }
 
 class ArrowLeftBeginException implements EditorNodeException {
-  final NodePosition position;
+  final dynamic position;
 
   ArrowLeftBeginException(this.position);
 
@@ -129,7 +129,7 @@ class ArrowLeftBeginException implements EditorNodeException {
 }
 
 class ArrowRightEndException implements EditorNodeException {
-  final NodePosition position;
+  final dynamic position;
 
   ArrowRightEndException(this.position);
 
@@ -138,7 +138,7 @@ class ArrowRightEndException implements EditorNodeException {
 }
 
 class ArrowUpTopException implements EditorNodeException {
-  final NodePosition position;
+  final dynamic position;
   final Offset offset;
 
   ArrowUpTopException(this.position, this.offset);
@@ -148,7 +148,7 @@ class ArrowUpTopException implements EditorNodeException {
 }
 
 class ArrowDownBottomException implements EditorNodeException {
-  final NodePosition position;
+  final dynamic position;
   final Offset offset;
 
   ArrowDownBottomException(this.position, this.offset);

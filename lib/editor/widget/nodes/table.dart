@@ -205,37 +205,116 @@ class _RichTableState extends State<RichTable> {
     final p = d.position;
     if (p is! TablePosition) return;
     final widgetPosition = box.localToGlobal(Offset.zero);
-    final type = d.type;
-    final cursor = node.getCursorInCell(nodeCursor, p.cellPosition);
+    final size = box.size;
+    final type = d.type, cellPosition = p.cellPosition;
+    final cursor = node.getCursorInCell(nodeCursor, cellPosition);
     switch (type) {
       case ArrowType.current:
         final extra = d.extras;
         if (extra is Offset) {
-          final globalY = widgetPosition.dy;
-          Offset? tapOffset;
-          if (p == node.endPosition) {
-            tapOffset = Offset(extra.dx, globalY + box.size.height);
-          } else if (p == node.beginPosition) {
-            tapOffset = Offset(extra.dx, globalY);
+          final lastType = d.lastType;
+          final globalX = min(widgetPosition.dx + size.width - 5, extra.dx);
+          if (lastType == ArrowType.up) {
+            final offset = Offset(globalX, widgetPosition.dy + size.height - 5);
+            var newCellPosition = box.getCellPosition(
+                    offset, heightsNotifier.value, node.widths) ??
+                CellPosition(node.rowCount - 1, 0);
+            final cell = node.getCell(newCellPosition);
+            operator.onCursor(TablePosition(newCellPosition, cell.endCursor)
+                .toCursor(widgetIndex));
+          } else if (lastType == ArrowType.down) {
+            final offset = Offset(globalX, widgetPosition.dy + 5);
+            final newCellPosition = box.getCellPosition(
+                    offset, heightsNotifier.value, node.widths) ??
+                CellPosition(0, 0);
+            final cell = node.getCell(newCellPosition);
+            operator.onCursor(TablePosition(newCellPosition, cell.beginCursor)
+                .toCursor(widgetIndex));
           }
-          if (tapOffset == null) return;
-          listeners.notifyGestures(TapGestureState(tapOffset));
+        } else {
+          operator.onCursor(p.toCursor(widgetIndex));
         }
         break;
       case ArrowType.left:
       case ArrowType.up:
         if (cursor != null) {
           final opt = buildTableCellNodeContext(
-              operator, p.cellPosition, node, cursor, widgetIndex);
-          arrowOnLeftOrUp(type, opt, runtimeType, cursor);
+              operator, cellPosition, node, cursor, widgetIndex);
+          try {
+            arrowOnLeftOrUp(type, opt, runtimeType, cursor);
+          } on ArrowLeftBeginException catch (e) {
+            logger.i(
+                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
+            try {
+              final newCellPosition = cellPosition.lastInHorizontal(node);
+              final newCursor = node.getCell(newCellPosition).endCursor;
+              final newOpt = buildTableCellNodeContext(
+                  operator, newCellPosition, node, newCursor, widgetIndex);
+              arrowOnLeftOrUp(
+                  ArrowType.current, newOpt, runtimeType, newCursor);
+            } on ArrowLeftBeginException catch (e2) {
+              logger.i(
+                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
+              rethrow;
+            }
+          } on ArrowUpTopException catch (e) {
+            logger.i(
+                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
+            try {
+              final newCellPosition =
+                  cellPosition.lastInVertical(node, e.offset);
+              final newCursor = node.getCell(newCellPosition).endCursor;
+              final newOpt = buildTableCellNodeContext(
+                  operator, newCellPosition, node, newCursor, widgetIndex);
+              arrowOnLeftOrUp(
+                  ArrowType.current, newOpt, runtimeType, newCursor);
+            } on ArrowUpTopException catch (e2) {
+              logger.i(
+                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
+              rethrow;
+            }
+          }
         }
         break;
       case ArrowType.right:
       case ArrowType.down:
         if (cursor != null) {
           final opt = buildTableCellNodeContext(
-              operator, p.cellPosition, node, cursor, widgetIndex);
-          arrowOnRightOrDown(type, opt, runtimeType, cursor);
+              operator, cellPosition, node, cursor, widgetIndex);
+          try {
+            arrowOnRightOrDown(type, opt, runtimeType, cursor);
+          } on ArrowRightEndException catch (e) {
+            logger.i(
+                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
+            try {
+              final newCellPosition = cellPosition.nextInHorizontal(node);
+              final newCursor = node.getCell(newCellPosition).beginCursor;
+              final newOpt = buildTableCellNodeContext(
+                  operator, newCellPosition, node, newCursor, widgetIndex);
+              arrowOnRightOrDown(
+                  ArrowType.current, newOpt, runtimeType, newCursor);
+            } on ArrowRightEndException catch (e2) {
+              logger.i(
+                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
+              rethrow;
+            }
+          } on ArrowDownBottomException catch (e) {
+            logger
+                .i('onArrowAccept of ${node.runtimeType} error: ${e.message}');
+            try {
+              final newCellPosition =
+                  cellPosition.nextInVertical(node, e.offset);
+              final newCursor = node.getCell(newCellPosition).beginCursor;
+              final newOpt = buildTableCellNodeContext(
+                  operator, newCellPosition, node, newCursor, widgetIndex);
+              arrowOnRightOrDown(
+                  ArrowType.current, newOpt, runtimeType, newCursor);
+            } on ArrowDownBottomException catch (e2) {
+              logger.i(
+                  'onArrowAccept of ${node.runtimeType} error: ${e2.message}');
+              rethrow;
+            }
+          }
         }
         break;
       default:
