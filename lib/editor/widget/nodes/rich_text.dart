@@ -177,6 +177,24 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final newTapOffset = tapOffset.move(globalOffset);
         listeners.notifyGestures(TapGestureState(newTapOffset));
         break;
+      case ArrowType.lastWord:
+        if(p == node.beginPosition) throw ArrowLeftBeginException(p);
+        final currentOffset = node.getOffset(p);
+        var wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset));
+        if(wordRange.start == currentOffset){
+          wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset - 1));
+        }
+        newPosition = node.getPositionByOffset(wordRange.start);
+        break;
+      case ArrowType.nextWord:
+        if(p == node.endPosition) throw ArrowRightEndException(p);
+        final currentOffset = node.getOffset(p);
+        var wordRange = painter.getWordBoundary(TextPosition(offset: node.getOffset(p)));
+        if(wordRange.end == currentOffset){
+          wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset + 1));
+        }
+        newPosition = node.getPositionByOffset(wordRange.end);
+        break;
       default:
         break;
     }

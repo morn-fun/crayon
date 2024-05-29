@@ -12,14 +12,10 @@ enum ArrowType {
   selectionRight,
   selectionUp,
   selectionDown,
-  moveToNextWordLeft,
-  moveToNextWordRight,
-  moveToNextWordUp,
-  moveToNextWordDown,
-  nextWordSelectionLeft,
-  nextWordSelectionRight,
-  nextWordSelectionUp,
-  nextWordSelectionDown,
+  nextWord,
+  lastWord,
+  nextWordSelection,
+  lastWordSelection,
 }
 
 class AcceptArrowData {
@@ -79,26 +75,10 @@ class RightWordArrowIntent extends Intent {
   const RightWordArrowIntent();
 }
 
-class UpWordArrowIntent extends Intent {
-  const UpWordArrowIntent();
-}
-
-class DownWordArrowIntent extends Intent {
-  const DownWordArrowIntent();
-}
-
 class LeftWordSelectionArrowIntent extends Intent {
   const LeftWordSelectionArrowIntent();
 }
 
 class RightWordSelectionArrowIntent extends Intent {
   const RightWordSelectionArrowIntent();
-}
-
-class UpWordSelectionArrowIntent extends Intent {
-  const UpWordSelectionArrowIntent();
-}
-
-class DownWordSelectionArrowIntent extends Intent {
-  const DownWordSelectionArrowIntent();
 }

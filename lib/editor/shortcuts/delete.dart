@@ -52,10 +52,8 @@ class DeleteAction extends ContextAction<DeleteIntent> {
               EditingCursor(index - 1, lastNode.endPosition))));
         } on UnableToMergeException catch (e) {
           logger.e('$runtimeType, ${e.message}');
-          operator.execute(ModifyNode(NodeWithCursor(
-              node,
-              SelectingNodeCursor(
-                  index - 1, lastNode.beginPosition, lastNode.endPosition))));
+          operator.onCursor(SelectingNodeCursor(
+              index - 1, lastNode.beginPosition, lastNode.endPosition));
         }
       } on DeleteToChangeNodeException catch (e) {
         logger.e('$runtimeType, ${e.message}');

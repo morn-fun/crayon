@@ -38,4 +38,17 @@ void main() {
     assert(!m3.immutable().equalsTo(m6.immutable()));
     assert(!m5.immutable().equalsTo(m6.immutable()));
   });
+
+  test('map', () {
+    final map = {
+      if (true) ...{
+        'a':'a',
+        'b':'b',
+        'c':'c',
+      },
+
+    };
+
+    print(map);
+  });
 }

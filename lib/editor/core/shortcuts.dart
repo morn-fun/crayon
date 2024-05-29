@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:crayon/editor/shortcuts/arrows/word_arrow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,54 +25,61 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   const SingleActivator(LogicalKeyboardKey.arrowUp): const UpArrowIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowDown): const DownArrowIntent(),
 
-  ///TODO:selection arrow
-  ///TODO:word arrow
+
+  if (Platform.isMacOS) ...{
+    LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowLeft):
+        const LeftWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowRight):
+        const RightWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
+        const UndoIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shift,
+        LogicalKeyboardKey.keyZ): const RedoIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyA):
+        const SelectAllIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyU):
+        const UnderlineIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyB):
+        const BoldIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyI):
+        const ItalicIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyL):
+        const LineThroughIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyC):
+        const CopyIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyV):
+        const PasteIntent(),
+  },
+  if (!Platform.isMacOS) ...{
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
+        const LeftWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
+        const RightWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
+        const UndoIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+        LogicalKeyboardKey.keyZ): const RedoIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyA):
+        const SelectAllIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyU):
+        const UnderlineIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
+        const BoldIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
+        const ItalicIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
+        const LineThroughIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyC):
+        const CopyIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV):
+        const PasteIntent(),
+  },
+
   ///TODO:word selection arrow
+  ///TODO:selection arrow
 
   const SingleActivator(LogicalKeyboardKey.backspace): const DeleteIntent(),
   const SingleActivator(LogicalKeyboardKey.enter): const NewlineIntent(),
-
-  ///redo、undo
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
-      const UndoIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shift,
-      LogicalKeyboardKey.keyZ): const RedoIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
-      const UndoIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-      LogicalKeyboardKey.keyZ): const RedoIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyA):
-      const SelectAllIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyA):
-      const SelectAllIntent(),
-
-  ///styles
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyU):
-      const UnderlineIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyU):
-      const UnderlineIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyB):
-      const BoldIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
-      const BoldIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyI):
-      const ItalicIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
-      const ItalicIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyL):
-      const LineThroughIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
-      const LineThroughIntent(),
-
-  ///copy and paste
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyC):
-      const CopyIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyC):
-      const CopyIntent(),
-  LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyV):
-      const PasteIntent(),
-  LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV):
-      const PasteIntent(),
 
   ///tab
   const SingleActivator(LogicalKeyboardKey.tab): const TabIntent(),
@@ -105,6 +115,8 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
   RightArrowIntent: (c) => RightArrowAction(c),
   UpArrowIntent: (c) => UpArrowAction(c),
   DownArrowIntent: (c) => DownArrowAction(c),
+  LeftWordArrowIntent: (c) => LeftWordArrowAction(c),
+  RightWordArrowIntent: (c) => RightWordArrowAction(c),
   SelectAllIntent: (c) => SelectAllAction(c),
   UnderlineIntent: (c) => UnderlineAction(c),
   BoldIntent: (c) => BoldAction(c),
