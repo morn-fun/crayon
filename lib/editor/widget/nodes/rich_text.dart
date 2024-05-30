@@ -100,9 +100,18 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   void onArrowAccept(AcceptArrowData data) {
     final type = data.type;
-    final p = data.position;
+    late RichTextNodePosition p;
+    final cursor = data.cursor;
+    if (cursor is EditingCursor) {
+      if (cursor.position is! RichTextNodePosition) return;
+      p = cursor.position as RichTextNodePosition;
+    } else if (cursor is SelectingNodeCursor) {
+      if (cursor.end is! RichTextNodePosition) return;
+      p = cursor.end as RichTextNodePosition;
+    } else {
+      return;
+    }
     logger.i('$tag, onArrowAccept $data');
-    if (p is! RichTextNodePosition) return;
     RichTextNodePosition? newPosition;
     switch (type) {
       case ArrowType.current:
@@ -178,20 +187,24 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         listeners.notifyGestures(TapGestureState(newTapOffset));
         break;
       case ArrowType.lastWord:
-        if(p == node.beginPosition) throw ArrowLeftBeginException(p);
+        if (p == node.beginPosition) throw ArrowLeftBeginException(p);
         final currentOffset = node.getOffset(p);
-        var wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset));
-        if(wordRange.start == currentOffset){
-          wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset - 1));
+        var wordRange =
+            painter.getWordBoundary(TextPosition(offset: currentOffset));
+        if (wordRange.start == currentOffset) {
+          wordRange =
+              painter.getWordBoundary(TextPosition(offset: currentOffset - 1));
         }
         newPosition = node.getPositionByOffset(wordRange.start);
         break;
       case ArrowType.nextWord:
-        if(p == node.endPosition) throw ArrowRightEndException(p);
+        if (p == node.endPosition) throw ArrowRightEndException(p);
         final currentOffset = node.getOffset(p);
-        var wordRange = painter.getWordBoundary(TextPosition(offset: node.getOffset(p)));
-        if(wordRange.end == currentOffset){
-          wordRange = painter.getWordBoundary(TextPosition(offset: currentOffset + 1));
+        var wordRange =
+            painter.getWordBoundary(TextPosition(offset: node.getOffset(p)));
+        if (wordRange.end == currentOffset) {
+          wordRange =
+              painter.getWordBoundary(TextPosition(offset: currentOffset + 1));
         }
         newPosition = node.getPositionByOffset(wordRange.end);
         break;

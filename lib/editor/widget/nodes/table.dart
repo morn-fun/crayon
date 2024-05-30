@@ -207,8 +207,17 @@ class _RichTableState extends State<RichTable> {
   void onArrowAccept(AcceptArrowData d) {
     final box = renderBox;
     if (box == null) return;
-    final p = d.position;
-    if (p is! TablePosition) return;
+    late TablePosition p;
+    final c = d.cursor;
+    if (c is EditingCursor) {
+      if (c.position is! TablePosition) return;
+      p = c.position as TablePosition;
+    } else if (c is SelectingNodeCursor) {
+      if (c.end is! TablePosition) return;
+      p = c.end as TablePosition;
+    } else {
+      return;
+    }
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
     final type = d.type, cellPosition = p.cellPosition;

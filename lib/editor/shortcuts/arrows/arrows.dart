@@ -22,15 +22,19 @@ class AcceptArrowData {
   final String id;
   final ArrowType type;
   final ArrowType lastType;
-  final NodePosition position;
+  final SingleNodeCursor cursor;
   final dynamic extras;
 
-  AcceptArrowData(this.id, this.type, this.position, this.lastType, {this.extras});
+  AcceptArrowData(this.id, this.type, this.cursor, this.lastType,
+      {this.extras});
 
   @override
   String toString() {
-    return 'AcceptArrowData{id: $id, type: $type, lastType: $lastType, position: $position, extras: $extras}';
+    return 'AcceptArrowData{id: $id, type: $type, lastType: $lastType, cursor: $cursor, extras: $extras}';
   }
+
+  AcceptArrowData newId(String id) =>
+      AcceptArrowData(id, type, cursor, lastType, extras: extras);
 }
 
 typedef ArrowDelegate = void Function(AcceptArrowData arrowData);

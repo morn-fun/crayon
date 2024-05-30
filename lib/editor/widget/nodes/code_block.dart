@@ -56,7 +56,12 @@ class _CodeBlockState extends State<CodeBlock> {
 
   int get widgetIndex => widget.param.index;
 
+  double get lineHeight => widget.maxLineHeight;
+
+  String get nodeId => node.id;
+
   final padding = EdgeInsets.all(24);
+  final margin = EdgeInsets.symmetric(vertical: 8);
 
   final hoveredNotifier = ValueNotifier(false);
 
@@ -70,18 +75,18 @@ class _CodeBlockState extends State<CodeBlock> {
   @override
   void initState() {
     super.initState();
-    listeners.addArrowDelegate(node.id, onArrowAccept);
-    listeners.addGestureListener(node.id, onGesture);
+    listeners.addArrowDelegate(nodeId, onArrowAccept);
+    listeners.addGestureListener(nodeId, onGesture);
   }
 
   @override
   void didUpdateWidget(covariant CodeBlock oldWidget) {
     final oldListeners = oldWidget.operator.listeners;
     if (oldListeners.hashCode != listeners.hashCode) {
-      oldListeners.removeGestureListener(node.id, onGesture);
-      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
-      listeners.addGestureListener(node.id, onGesture);
-      listeners.addArrowDelegate(node.id, onArrowAccept);
+      oldListeners.removeGestureListener(nodeId, onGesture);
+      oldListeners.removeArrowDelegate(nodeId, onArrowAccept);
+      listeners.addGestureListener(nodeId, onGesture);
+      listeners.addArrowDelegate(nodeId, onArrowAccept);
       logger.i(
           '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
@@ -90,8 +95,8 @@ class _CodeBlockState extends State<CodeBlock> {
 
   @override
   void dispose() {
-    listeners.removeArrowDelegate(node.id, onArrowAccept);
-    listeners.removeGestureListener(node.id, onGesture);
+    listeners.removeArrowDelegate(nodeId, onArrowAccept);
+    listeners.removeGestureListener(nodeId, onGesture);
     localListeners.dispose();
     hoveredNotifier.dispose();
     super.dispose();
@@ -102,21 +107,24 @@ class _CodeBlockState extends State<CodeBlock> {
     if (box == null) return false;
     bool contains = box.containsOffset(s.globalOffset);
     if (!contains) return false;
+    final localY = box.globalToLocal(s.globalOffset).dy - margin.top - padding.top;
+    final index = localY ~/ lineHeight;
+    final notifyId = '$nodeId$index';
     if (s is TapGestureState) {
-      localListeners.notifyGestures(s);
+      localListeners.notifyGesture(notifyId, s);
       return true;
     } else if (s is DoubleTapGestureState) {
-      localListeners.notifyGestures(s);
+      localListeners.notifyGesture(notifyId, s);
       return true;
     } else if (s is TripleTapGestureState) {
-      localListeners.notifyGestures(s);
+      localListeners.notifyGesture(notifyId, s);
       return true;
     } else if (s is PanGestureState) {
       final currentOffsetContains = box.containsOffset(s.globalOffset);
       if (!currentOffsetContains) return false;
       final beginOffsetContains = box.containsOffset(s.beginOffset);
       if (beginOffsetContains) {
-        localListeners.notifyGestures(s);
+        localListeners.notifyGesture(notifyId, s);
         return true;
       } else {
         final beginHigherThanCurrent = s.beginOffset.dy < s.globalOffset.dy;
@@ -129,9 +137,19 @@ class _CodeBlockState extends State<CodeBlock> {
 
   void onArrowAccept(AcceptArrowData data) {
     final type = data.type;
-    final p = data.position;
+    late CodeBlockPosition p;
+    final cursor = data.cursor;
+    if (cursor is EditingCursor) {
+      if (cursor.position is! CodeBlockPosition) return;
+      p = cursor.position as CodeBlockPosition;
+    } else if (cursor is SelectingNodeCursor) {
+      if (cursor.end is! CodeBlockPosition) return;
+      p = cursor.end as CodeBlockPosition;
+    } else {
+      return;
+    }
+    final index = p.index;
     logger.i('$tag, onArrowAccept $data');
-    if (p is! CodeBlockPosition) return;
     CodeBlockPosition? newPosition;
     switch (type) {
       case ArrowType.current:
@@ -139,7 +157,7 @@ class _CodeBlockState extends State<CodeBlock> {
         if (box == null) return;
         final extra = data.extras;
         if (extra is Offset) {
-          final h = widget.maxLineHeight;
+          final h = lineHeight;
           final globalOffset = box.localToGlobal(Offset.zero);
           final globalY = globalOffset.dy;
           Offset? tapOffset;
@@ -150,7 +168,8 @@ class _CodeBlockState extends State<CodeBlock> {
             tapOffset = Offset(extra.dx, globalY + h + padding.top);
           }
           if (tapOffset == null) return;
-          localListeners.notifyGestures(TapGestureState(tapOffset));
+          localListeners.notifyGesture(
+              '$nodeId$index', TapGestureState(tapOffset));
         } else {
           newPosition = p;
         }
@@ -177,6 +196,22 @@ class _CodeBlockState extends State<CodeBlock> {
         final minOffset = min(nextCode.length, p.offset);
         newPosition = CodeBlockPosition(nextIndex, minOffset);
         break;
+      case ArrowType.lastWord:
+        try {
+          localListeners.onArrowAccept(data.newId('$nodeId$index'));
+        } on ArrowLeftBeginException {
+          if (index == 0) rethrow;
+          newPosition = CodeBlockPosition(index - 1, codes[index - 1].length);
+        }
+        break;
+      case ArrowType.nextWord:
+        try {
+          localListeners.onArrowAccept(data.newId('$nodeId$index'));
+        } on ArrowRightEndException {
+          if (index == codes.length - 1) rethrow;
+          newPosition = CodeBlockPosition(index + 1, 0);
+        }
+        break;
       default:
         break;
     }
@@ -192,7 +227,7 @@ class _CodeBlockState extends State<CodeBlock> {
     final editorContext = ShareEditorContextWidget.of(context)?.context;
     return Padding(
       key: key,
-      padding: EdgeInsets.only(top: 8, bottom: 8),
+      padding: margin,
       child: Stack(
         children: [
           MouseRegion(
@@ -219,7 +254,7 @@ class _CodeBlockState extends State<CodeBlock> {
                       children: List.generate(codes.length, (index) {
                         return Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
-                            height: widget.maxLineHeight,
+                            height: lineHeight,
                             child: Center(
                                 child: Text(
                               '${index + 1}.',
@@ -236,7 +271,7 @@ class _CodeBlockState extends State<CodeBlock> {
                           final code = codes[index];
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
-                            height: widget.maxLineHeight,
+                            height: lineHeight,
                             child: CodeBlockLine(
                               code: code,
                               dark: theme.brightness == Brightness.dark,
@@ -263,7 +298,7 @@ class _CodeBlockState extends State<CodeBlock> {
                                           CodeBlockPosition(index, range.start),
                                           CodeBlockPosition(
                                               index, range.end)))),
-                              nodeId: node.id,
+                              nodeId: '$nodeId$index',
                             ),
                           );
                         }),

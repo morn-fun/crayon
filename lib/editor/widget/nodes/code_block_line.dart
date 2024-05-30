@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:crayon/editor/shortcuts/arrows/arrows.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/atelier-heath-dark.dart';
 import 'package:flutter_highlight/themes/atelier-heath-light.dart';
@@ -10,6 +11,9 @@ import '../../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
+import '../../cursor/basic.dart';
+import '../../cursor/code_block.dart';
+import '../../exception/editor_node.dart';
 import '../editing_cursor.dart';
 import '../painter.dart';
 
@@ -80,6 +84,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
         text: span);
     painter.layout();
     listeners.addGestureListener(nodeId, onGesture);
+    listeners.addArrowDelegate(nodeId, onArrowAccept);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       notifyEditingOffset(editingOffset);
     });
@@ -91,7 +96,9 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     final oldListeners = oldWidget.controller.listeners;
     if (oldListeners.hashCode != listeners.hashCode) {
       oldListeners.removeGestureListener(nodeId, onGesture);
+      oldListeners.removeArrowDelegate(nodeId, onArrowAccept);
       listeners.addGestureListener(nodeId, onGesture);
+      listeners.addArrowDelegate(nodeId, onArrowAccept);
       logger.i(
           'CodeBlockLine onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
@@ -120,6 +127,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   void dispose() {
     painter.dispose();
     listeners.removeGestureListener(nodeId, onGesture);
+    listeners.removeArrowDelegate(nodeId, onArrowAccept);
     super.dispose();
   }
 
@@ -203,6 +211,43 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
       traverse(node);
     }
     return spans;
+  }
+
+  void onArrowAccept(AcceptArrowData data) {
+    final type = data.type;
+    late CodeBlockPosition p;
+    final cursor = data.cursor;
+    if (cursor is EditingCursor) {
+      if (cursor.position is! CodeBlockPosition) return;
+      p = cursor.position as CodeBlockPosition;
+    } else if (cursor is SelectingNodeCursor) {
+      if (cursor.end is! CodeBlockPosition) return;
+      p = cursor.end as CodeBlockPosition;
+    } else {
+      return;
+    }
+    switch (type) {
+      case ArrowType.lastWord:
+        final offset = p.offset;
+        if (offset == 0) throw ArrowLeftBeginException(p);
+        var wordRange = painter.getWordBoundary(TextPosition(offset: offset));
+        if (wordRange.start == offset) {
+          wordRange = painter.getWordBoundary(TextPosition(offset: offset - 1));
+        }
+        controller.onEditingPosition(wordRange.start);
+        break;
+      case ArrowType.nextWord:
+        final offset = p.offset;
+        if (offset == code.length) throw ArrowRightEndException(p);
+        var wordRange = painter.getWordBoundary(TextPosition(offset: offset));
+        if (wordRange.end == offset) {
+          wordRange = painter.getWordBoundary(TextPosition(offset: offset + 1));
+        }
+        controller.onEditingPosition(wordRange.end);
+        break;
+      default:
+        break;
+    }
   }
 
   bool onGesture(GestureState s) {

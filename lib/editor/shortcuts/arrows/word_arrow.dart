@@ -48,65 +48,65 @@ class RightWordArrowAction extends ContextAction<RightWordArrowIntent> {
 }
 
 void wordArrowOnLeft(NodesOperator operator, BasicCursor cursor) {
-  late NodePosition position;
-  int index = -1;
+  EditingCursor? newCursor;
   ArrowType t = ArrowType.lastWord;
   if (cursor is EditingCursor) {
-    index = cursor.index;
-    position = cursor.position;
+    newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
-    index = cursor.index;
-    position = cursor.left;
+    newCursor = cursor.leftCursor;
     t = ArrowType.current;
   } else if (cursor is SelectingNodesCursor) {
-    index = cursor.left.index;
-    position = cursor.left.position;
+    newCursor = cursor.left;
     t = ArrowType.current;
   }
-  if (index == -1) return;
+  if (newCursor == null) return;
+  final index = newCursor.index;
   try {
     operator.onArrowAccept(
-        AcceptArrowData(operator.getNode(index).id, t, position, t));
+        AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
   } on ArrowLeftBeginException catch (e) {
     logger.e('${ArrowType.lastWord} error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) rethrow;
-    operator.onArrowAccept(AcceptArrowData(operator.getNode(lastIndex).id,
-        ArrowType.current, operator.getNode(lastIndex).endPosition, t));
+    operator.onArrowAccept(AcceptArrowData(
+        operator.getNode(lastIndex).id,
+        ArrowType.current,
+        operator.getNode(lastIndex).endPosition.toCursor(lastIndex),
+        t));
   } on NodeNotFoundException catch (e) {
     logger.e('${ArrowType.lastWord} error ${e.message}');
-    operator.onCursor(EditingCursor(index, position));
+    operator.onCursor(newCursor);
   }
 }
 
 void wordArrowOnRight(NodesOperator operator, BasicCursor cursor) {
-  int index = -1;
+  EditingCursor? newCursor;
   ArrowType t = ArrowType.nextWord;
-  late NodePosition position;
   if (cursor is EditingCursor) {
-    index = cursor.index;
-    position = cursor.position;
+    newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
-    index = cursor.index;
-    position = cursor.right;
+    newCursor = cursor.rightCursor;
     t = ArrowType.current;
   } else if (cursor is SelectingNodesCursor) {
-    index = cursor.right.index;
-    position = cursor.right.position;
+    newCursor = cursor.right;
     t = ArrowType.current;
   }
-  if (index == -1) return;
+  if (newCursor == null) return;
+  final index = newCursor.index;
   try {
     operator.onArrowAccept(
-        AcceptArrowData(operator.getNode(index).id, t, position, t));
+        AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
   } on ArrowRightEndException catch (e) {
     logger.e('${ArrowType.nextWord} error ${e.message}');
     final nextIndex = index + 1;
     if (nextIndex > operator.nodeLength - 1) rethrow;
-    operator.onArrowAccept(AcceptArrowData(operator.getNode(nextIndex).id,
-        ArrowType.current, operator.getNode(nextIndex).beginPosition, t));
+    operator.onArrowAccept(AcceptArrowData(
+        operator.getNode(nextIndex).id,
+        ArrowType.current,
+        operator.getNode(nextIndex).beginPosition.toCursor(nextIndex),
+        t));
   } on NodeNotFoundException catch (e) {
     logger.e('${ArrowType.nextWord} error ${e.message}');
-    operator.onCursor(EditingCursor(index, position));
+    operator.onCursor(newCursor);
   }
 }

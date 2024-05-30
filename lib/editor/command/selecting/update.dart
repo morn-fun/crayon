@@ -20,8 +20,8 @@ class UpdateSelectingNodes implements BasicCommand {
     final right = cursor.right;
     List<EditorNode> nodes = [];
     int i = left.index;
-    late SingleNodeCursor leftPosition;
-    late SingleNodeCursor rightPosition;
+    SingleNodeCursor leftPosition = left;
+    SingleNodeCursor rightPosition = right;
     while (i <= right.index) {
       final node = operator.getNode(i);
       try {
