@@ -4,7 +4,6 @@ import 'package:flutter/material.dart' hide TableCell;
 import '../../../command/modification.dart';
 import '../../../core/context.dart';
 import '../../../core/copier.dart';
-import '../../../core/listener_collection.dart';
 import '../../../cursor/basic.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
@@ -46,7 +45,7 @@ TableCellNodeContext buildTableCellNodeContext(NodesOperator ctx,
     CellPosition p, TableNode node, BasicCursor cursor, int index) {
   final cell = node.getCell(p);
   final childListener =
-      ctx.listeners.getListener(cell.id) ?? ListenerCollection();
+      ctx.listeners.getListener(cell.id)!;
   return TableCellNodeContext(
       cell: cell,
       cursor: cursor,

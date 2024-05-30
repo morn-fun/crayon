@@ -74,6 +74,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   @override
   void initState() {
     super.initState();
+    logger.i('$runtimeType $nodeId  init');
     editingCursorNotifier = ValueNotifier(editingOffset);
     selectingCursorNotifier = ValueNotifier(selectingOffset);
     codeNotifier = ValueNotifier(code);
@@ -93,14 +94,14 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
   @override
   void didUpdateWidget(covariant CodeBlockLine oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.nodeId;
     final oldListeners = oldWidget.controller.listeners;
-    if (oldListeners.hashCode != listeners.hashCode) {
+    if (oldId != nodeId || oldListeners.hashCode != listeners.hashCode) {
+      logger.i('$runtimeType,  didUpdateWidget oldId:$oldId, id:$nodeId');
       oldListeners.removeGestureListener(nodeId, onGesture);
       oldListeners.removeArrowDelegate(nodeId, onArrowAccept);
       listeners.addGestureListener(nodeId, onGesture);
       listeners.addArrowDelegate(nodeId, onArrowAccept);
-      logger.i(
-          'CodeBlockLine onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
     bool needRefresh = false;
     if (codeNotifier.value != code) {

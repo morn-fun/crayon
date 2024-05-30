@@ -1,10 +1,10 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:crayon/editor/widget/editor/shared_node_context_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:highlight/languages/all.dart';
 import '../../../../editor/extension/render_box.dart';
+import '../../../../editor/widget/editor/shared_node_context_widget.dart';
 import '../../core/context.dart';
 import '../../../editor/cursor/basic.dart';
 import '../../core/listener_collection.dart';
@@ -75,6 +75,7 @@ class _CodeBlockState extends State<CodeBlock> {
   @override
   void initState() {
     super.initState();
+    logger.i('$runtimeType $nodeId  init');
     listeners.addArrowDelegate(nodeId, onArrowAccept);
     listeners.addGestureListener(nodeId, onGesture);
   }
@@ -82,13 +83,13 @@ class _CodeBlockState extends State<CodeBlock> {
   @override
   void didUpdateWidget(covariant CodeBlock oldWidget) {
     final oldListeners = oldWidget.operator.listeners;
-    if (oldListeners.hashCode != listeners.hashCode) {
-      oldListeners.removeGestureListener(nodeId, onGesture);
-      oldListeners.removeArrowDelegate(nodeId, onArrowAccept);
+    final oldId = oldWidget.node.id;
+    if (oldId != nodeId || oldListeners.hashCode != listeners.hashCode) {
+      logger.i('$runtimeType,  didUpdateWidget oldId:$oldId, id:$nodeId');
+      oldListeners.removeGestureListener(oldId, onGesture);
+      oldListeners.removeArrowDelegate(oldId, onArrowAccept);
       listeners.addGestureListener(nodeId, onGesture);
       listeners.addArrowDelegate(nodeId, onArrowAccept);
-      logger.i(
-          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -107,7 +108,8 @@ class _CodeBlockState extends State<CodeBlock> {
     if (box == null) return false;
     bool contains = box.containsOffset(s.globalOffset);
     if (!contains) return false;
-    final localY = box.globalToLocal(s.globalOffset).dy - margin.top - padding.top;
+    final localY =
+        box.globalToLocal(s.globalOffset).dy - margin.top - padding.top;
     final index = localY ~/ lineHeight;
     final notifyId = '$nodeId$index';
     if (s is TapGestureState) {
@@ -162,10 +164,11 @@ class _CodeBlockState extends State<CodeBlock> {
           final globalY = globalOffset.dy;
           Offset? tapOffset;
           if (p == node.endPosition) {
-            tapOffset =
-                Offset(extra.dx, globalY + box.size.height - padding.bottom);
+            tapOffset = Offset(extra.dx,
+                globalY + box.size.height - padding.bottom - margin.bottom);
           } else if (p == node.beginPosition) {
-            tapOffset = Offset(extra.dx, globalY + h + padding.top);
+            tapOffset =
+                Offset(extra.dx, globalY + h + padding.top + margin.top);
           }
           if (tapOffset == null) return;
           localListeners.notifyGesture(

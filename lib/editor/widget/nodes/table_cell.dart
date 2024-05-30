@@ -5,10 +5,13 @@ import '../../../../editor/cursor/basic.dart';
 import '../../../../editor/extension/cursor.dart';
 import '../../core/logger.dart';
 import '../../cursor/table.dart';
+import '../../exception/editor_node.dart';
 import '../../node/table/generator/common.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../shortcuts/arrows/arrows.dart';
+import '../../shortcuts/arrows/single_arrow.dart';
+import '../../shortcuts/arrows/word_arrow.dart';
 
 class RichTableCell extends StatefulWidget {
   final tc.TableCell cell;
@@ -49,7 +52,9 @@ class _RichTableCellState extends State<RichTableCell> {
 
   CellPosition get cellPosition => widget.cellPosition;
 
-  int get index => widget.param.index;
+  SingleNodeCursor? get nodeCursor => widget.param.cursor;
+  
+  int get widgetIndex => widget.param.index;
 
   String get cellId => widget.cellId;
 
@@ -59,7 +64,7 @@ class _RichTableCellState extends State<RichTableCell> {
 
   @override
   void initState() {
-    logger.i('$cellId  init');
+    logger.i('$runtimeType $cellId  init');
     localListeners = listeners.copy(
         nodeListeners: {},
         nodesListeners: {},
@@ -74,19 +79,107 @@ class _RichTableCellState extends State<RichTableCell> {
   bool onGesture(GestureState s) => localListeners.notifyGestures(s) != null;
 
   void onArrowAccept(AcceptArrowData d) {
-
+    final type = d.type;
+    final cursor = node.getCursorInCell(nodeCursor, cellPosition);
+    switch (type){
+      case ArrowType.left:
+      case ArrowType.up:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          arrowOnLeftOrUp(type, opt, runtimeType, cursor);
+        } on ArrowLeftBeginException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.lastInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
+        } on ArrowUpTopException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.lastInVertical(node, e.offset);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
+        }
+        break;
+      case ArrowType.right:
+      case ArrowType.down:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          arrowOnRightOrDown(type, opt, runtimeType, cursor);
+        } on ArrowRightEndException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.nextInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+        } on ArrowDownBottomException catch (e) {
+          logger.i('onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.nextInVertical(node, e.offset);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+        }
+        break;
+      case ArrowType.lastWord:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          wordArrowOnLeft(opt, cursor);
+        } on ArrowLeftBeginException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.lastInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
+        }
+        break;
+      case ArrowType.nextWord:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          wordArrowOnRight(opt, cursor);
+        } on ArrowRightEndException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          final newCellPosition = cellPosition.nextInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   @override
   void didUpdateWidget(covariant RichTableCell oldWidget) {
-    // logger.i(
-    //     'onTableUpdateWidget , old:${oldWidget.cellId} ${oldWidget.cellPosition},  new:$cellId, $cellPosition');
     final oldListeners = oldWidget.listeners;
-    if (oldListeners.hashCode != listeners.hashCode) {
-      oldListeners.removeGestureListener(node.id, onGesture);
-      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
-      listeners.addGestureListener(node.id, onGesture);
-      listeners.addArrowDelegate(node.id, onArrowAccept);
+    final oldId = oldWidget.cellId;
+    if (oldId != cellId || oldListeners.hashCode != listeners.hashCode) {
+      logger.i('$runtimeType,  didUpdateWidget oldId:$oldId, id:$cellId');
+      oldListeners.removeGestureListener(oldId, onGesture);
+      oldListeners.removeArrowDelegate(oldId, onArrowAccept);
+      listeners.addGestureListener(cellId, onGesture);
+      listeners.addArrowDelegate(cellId, onArrowAccept);
+      operator.listeners.removeListener(oldId, localListeners);
+      operator.listeners.addListener(cellId, localListeners);
       logger.i(
           'TableCell onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
     }
@@ -126,7 +219,7 @@ class _RichTableCellState extends State<RichTableCell> {
             padding: EdgeInsets.only(left: innerNode.depth * 12, right: 4),
             child: innerNode.build(
                 buildTableCellNodeContext(operator, cellPosition, node,
-                    cursor ?? NoneCursor(), index),
+                    cursor ?? NoneCursor(), widgetIndex),
                 NodeBuildParam(
                   index: i,
                   cursor: wholeSelected

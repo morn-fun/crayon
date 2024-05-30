@@ -64,6 +64,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   int get nodeIndex => widget.param.index;
 
+  String get nodeId => node.id;
+
   RenderBox? get renderBox {
     if (!mounted) return null;
     return key.currentContext?.findRenderObject() as RenderBox?;
@@ -72,6 +74,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void initState() {
     super.initState();
+    logger.i('$runtimeType $nodeId  init');
     editingCursorNotifier = ValueNotifier(editorPosition(nodeCursor));
     selectingCursorNotifier = ValueNotifier(selectingPosition(nodeCursor));
     nodeChangedNotifier = ValueNotifier(node);
@@ -83,15 +86,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       notifyEditingOffset(editorPosition(nodeCursor));
     });
-    listeners.addGestureListener(node.id, onGesture);
-    listeners.addArrowDelegate(node.id, onArrowAccept);
+    listeners.addGestureListener(nodeId, onGesture);
+    listeners.addArrowDelegate(nodeId, onArrowAccept);
   }
 
   @override
   void dispose() {
     super.dispose();
-    listeners.removeGestureListener(node.id, onGesture);
-    listeners.removeArrowDelegate(node.id, onArrowAccept);
+    listeners.removeGestureListener(nodeId, onGesture);
+    listeners.removeArrowDelegate(nodeId, onArrowAccept);
     editingCursorNotifier.dispose();
     selectingCursorNotifier.dispose();
     nodeChangedNotifier.dispose();
@@ -252,7 +255,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final box = renderBox;
     if (box == null) return true;
     entryManager.showTextMenu(Overlay.of(context),
-        MenuInfo(box.globalToLocal(offset), node.id, h, layerLink), operator);
+        MenuInfo(box.globalToLocal(offset), nodeId, h, layerLink), operator);
     return true;
   }
 
@@ -281,14 +284,17 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   @override
   void didUpdateWidget(covariant RichTextWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.richTextNode.id;
     final oldListeners = oldWidget.operator.listeners;
-    if (oldListeners.hashCode != listeners.hashCode) {
-      oldListeners.removeGestureListener(node.id, onGesture);
-      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
-      listeners.addGestureListener(node.id, onGesture);
-      listeners.addArrowDelegate(node.id, onArrowAccept);
-      logger.i(
-          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    if (oldId != nodeId || oldListeners.hashCode != listeners.hashCode) {
+      logger.i('$runtimeType didUpdateWidget oldId:$oldId,  id:$nodeId');
+      oldListeners.removeGestureListener(oldId, onGesture);
+      oldListeners.removeArrowDelegate(oldId, onArrowAccept);
+      listeners.addGestureListener(nodeId, onGesture);
+      listeners.addArrowDelegate(nodeId, onArrowAccept);
+    }
+    if(oldListeners.hashCode != listeners.hashCode){
+      logger.i('$runtimeType didUpdateWidget listeners is different');
     }
     if (node != oldWidget.richTextNode) {
       nodeChangedNotifier.value = node;
@@ -310,7 +316,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       final newOffset =
           Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
       operator.onEditingOffset(
-          EditingOffset(newOffset, getCurrentCursorHeight(position), node.id));
+          EditingOffset(newOffset, getCurrentCursorHeight(position), nodeId));
     }
   }
 
@@ -396,7 +402,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                             nodeIndex: nodeIndex,
                             painter: painter,
                             onEnter: (o, s, p) {
-                              hoveredNodeIds.add(node.id);
+                              hoveredNodeIds.add(nodeId);
                               final url = s.attributes['url'] ?? '';
                               final alias = s.attributes['alias'] ?? '';
                               final h = painter.getFullHeightForCaret(
@@ -410,13 +416,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                               entryManager.showLinkMenu(
                                   Overlay.of(context),
                                   LinkMenuInfo(
-                                      MenuInfo(o, node.id, h, layerLink),
+                                      MenuInfo(o, nodeId, h, layerLink),
                                       p.as<RichTextNodePosition>(),
                                       UrlInfo(url, alias),
                                       hoveredNodeIds),
                                   operator);
                             },
-                            onExit: (e) => hoveredNodeIds.remove(node.id),
+                            onExit: (e) => hoveredNodeIds.remove(nodeId),
                             onTap: (s) {
                               logger.i('$tag,  tapped:${s.text}');
                             });
@@ -455,7 +461,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     operator.onCursor(EditingCursor(nodeIndex, richPosition));
     operator.onEditingOffset(EditingOffset(
-        globalOffset, getCurrentCursorHeight(richPosition), node.id));
+        globalOffset, getCurrentCursorHeight(richPosition), nodeId));
     return true;
   }
 

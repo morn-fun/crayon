@@ -21,7 +21,6 @@ import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../node/table/table_cell_list.dart';
 import '../../shortcuts/arrows/arrows.dart';
-import '../../shortcuts/arrows/single_arrow.dart';
 import '../editor/shared_node_context_widget.dart';
 import 'table_cell.dart';
 import 'table_operator.dart';
@@ -48,18 +47,23 @@ class _RichTableState extends State<RichTable> {
 
   int get widgetIndex => widget.param.index;
 
+  String get nodeId => node.id;
+
   final ValueNotifier<double?> heightNotifier = ValueNotifier(null);
   final ValueNotifier<List<double>> heightsNotifier = ValueNotifier([]);
   final ValueNotifier<bool> operatorShowerNotifier = ValueNotifier(false);
   final ValueNotifier<_MouseState?> mouseNotifier = ValueNotifier(null);
+  final tableKey = GlobalKey();
   final key = GlobalKey();
 
   late ListenerCollection localListeners;
 
   final LayerLink layerLink = LayerLink();
+  final operatorSize = 16.0;
 
   @override
   void initState() {
+    logger.i('$runtimeType $nodeId  init');
     updateSize();
     localListeners = listeners.copy(
       nodeListeners: {},
@@ -68,22 +72,22 @@ class _RichTableState extends State<RichTable> {
       gestureListeners: {},
       arrowDelegates: {},
     );
-    listeners.addGestureListener(node.id, onGesture);
-    listeners.addArrowDelegate(node.id, onArrowAccept);
+    listeners.addGestureListener(nodeId, onGesture);
+    listeners.addArrowDelegate(nodeId, onArrowAccept);
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant RichTable oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.node.id;
     final oldListeners = oldWidget.operator.listeners;
-    if (oldListeners.hashCode != listeners.hashCode) {
-      oldListeners.removeGestureListener(node.id, onGesture);
-      oldListeners.removeArrowDelegate(node.id, onArrowAccept);
-      listeners.addGestureListener(node.id, onGesture);
-      listeners.addArrowDelegate(node.id, onArrowAccept);
-      logger.i(
-          '${node.runtimeType} onListenerChanged:${oldListeners.hashCode},  newListener:${listeners.hashCode}');
+    if (oldId != nodeId || oldListeners.hashCode != listeners.hashCode) {
+      logger.i('$runtimeType,  didUpdateWidget oldId:$oldId, id:$nodeId');
+      oldListeners.removeGestureListener(oldId, onGesture);
+      oldListeners.removeArrowDelegate(oldId, onArrowAccept);
+      listeners.addGestureListener(nodeId, onGesture);
+      listeners.addArrowDelegate(nodeId, onArrowAccept);
     }
   }
 
@@ -94,8 +98,8 @@ class _RichTableState extends State<RichTable> {
   @override
   void dispose() {
     super.dispose();
-    listeners.removeGestureListener(node.id, onGesture);
-    listeners.removeArrowDelegate(node.id, onArrowAccept);
+    listeners.removeGestureListener(nodeId, onGesture);
+    listeners.removeArrowDelegate(nodeId, onArrowAccept);
     localListeners.dispose();
     heightNotifier.dispose();
     heightsNotifier.dispose();
@@ -104,13 +108,13 @@ class _RichTableState extends State<RichTable> {
   }
 
   bool onGesture(GestureState s) {
-    final box = renderBox;
+    final box = tableBox;
     if (box == null) return false;
     if (!containsOffset(s.globalOffset)) return false;
     final heights = List.of(heightsNotifier.value);
     final widths = List.of(node.widths);
     final cellPosition = box.getCellPosition(s.globalOffset, heights, widths);
-    if (cellPosition == null) return false;
+    if (cellPosition == null) return true;
     if (s is TapGestureState) {
       return onTap(s, cellPosition);
     } else if (s is DoubleTapGestureState) {
@@ -122,7 +126,7 @@ class _RichTableState extends State<RichTable> {
     } else if (s is PanGestureState) {
       return onPan(s, cellPosition);
     }
-    return false;
+    return true;
   }
 
   bool onTap(TapGestureState s, CellPosition cp) {
@@ -173,20 +177,20 @@ class _RichTableState extends State<RichTable> {
     heights.insert(0, 0);
     final widths = List.of(node.widths);
     widths.insert(0, 0);
-    final box = renderBox;
+    final box = tableBox;
     if (box == null) return false;
     if (box.containsOffsetInTable(s.globalOffset, left.cellPosition,
         right.cellPosition, heights, widths)) {
       entryManager.showTextMenu(
           Overlay.of(context),
-          MenuInfo(box.globalToLocal(s.globalOffset), node.id, 20, layerLink),
+          MenuInfo(box.globalToLocal(s.globalOffset), nodeId, 20, layerLink),
           operator);
     }
     return true;
   }
 
   bool onPan(PanGestureState o, CellPosition cp) {
-    final box = renderBox!;
+    final box = tableBox!;
     final heights = List.of(heightsNotifier.value);
     final widths = List.of(node.widths);
     final lastCellPosition =
@@ -205,7 +209,7 @@ class _RichTableState extends State<RichTable> {
   }
 
   void onArrowAccept(AcceptArrowData d) {
-    final box = renderBox;
+    final box = tableBox;
     if (box == null) return;
     late TablePosition p;
     final c = d.cursor;
@@ -221,7 +225,6 @@ class _RichTableState extends State<RichTable> {
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
     final type = d.type, cellPosition = p.cellPosition;
-    final cursor = node.getCursorInCell(nodeCursor, cellPosition);
     switch (type) {
       case ArrowType.current:
         final extra = d.extras;
@@ -249,89 +252,9 @@ class _RichTableState extends State<RichTable> {
           operator.onCursor(p.toCursor(widgetIndex));
         }
         break;
-      case ArrowType.left:
-      case ArrowType.up:
-        if (cursor != null) {
-          final opt = buildTableCellNodeContext(
-              operator, cellPosition, node, cursor, widgetIndex);
-          try {
-            arrowOnLeftOrUp(type, opt, runtimeType, cursor);
-          } on ArrowLeftBeginException catch (e) {
-            logger.i(
-                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
-            try {
-              final newCellPosition = cellPosition.lastInHorizontal(node);
-              final newCursor = node.getCell(newCellPosition).endCursor;
-              final newOpt = buildTableCellNodeContext(
-                  operator, newCellPosition, node, newCursor, widgetIndex);
-              arrowOnLeftOrUp(
-                  ArrowType.current, newOpt, runtimeType, newCursor);
-            } on ArrowLeftBeginException catch (e2) {
-              logger.i(
-                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
-              rethrow;
-            }
-          } on ArrowUpTopException catch (e) {
-            logger.i(
-                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
-            try {
-              final newCellPosition =
-                  cellPosition.lastInVertical(node, e.offset);
-              final newCursor = node.getCell(newCellPosition).endCursor;
-              final newOpt = buildTableCellNodeContext(
-                  operator, newCellPosition, node, newCursor, widgetIndex);
-              arrowOnLeftOrUp(
-                  ArrowType.current, newOpt, runtimeType, newCursor);
-            } on ArrowUpTopException catch (e2) {
-              logger.i(
-                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
-              rethrow;
-            }
-          }
-        }
-        break;
-      case ArrowType.right:
-      case ArrowType.down:
-        if (cursor != null) {
-          final opt = buildTableCellNodeContext(
-              operator, cellPosition, node, cursor, widgetIndex);
-          try {
-            arrowOnRightOrDown(type, opt, runtimeType, cursor);
-          } on ArrowRightEndException catch (e) {
-            logger.i(
-                'Table onArrowAccept of ${node.runtimeType} error: ${e.message}');
-            try {
-              final newCellPosition = cellPosition.nextInHorizontal(node);
-              final newCursor = node.getCell(newCellPosition).beginCursor;
-              final newOpt = buildTableCellNodeContext(
-                  operator, newCellPosition, node, newCursor, widgetIndex);
-              arrowOnRightOrDown(
-                  ArrowType.current, newOpt, runtimeType, newCursor);
-            } on ArrowRightEndException catch (e2) {
-              logger.i(
-                  'Table onArrowAccept of ${node.runtimeType} error: ${e2.message}');
-              rethrow;
-            }
-          } on ArrowDownBottomException catch (e) {
-            logger
-                .i('onArrowAccept of ${node.runtimeType} error: ${e.message}');
-            try {
-              final newCellPosition =
-                  cellPosition.nextInVertical(node, e.offset);
-              final newCursor = node.getCell(newCellPosition).beginCursor;
-              final newOpt = buildTableCellNodeContext(
-                  operator, newCellPosition, node, newCursor, widgetIndex);
-              arrowOnRightOrDown(
-                  ArrowType.current, newOpt, runtimeType, newCursor);
-            } on ArrowDownBottomException catch (e2) {
-              logger.i(
-                  'onArrowAccept of ${node.runtimeType} error: ${e2.message}');
-              rethrow;
-            }
-          }
-        }
-        break;
       default:
+        final cell = node.getCell(cellPosition);
+        localListeners.onArrowAccept(d.newId(cell.id));
         break;
     }
   }
@@ -356,7 +279,7 @@ class _RichTableState extends State<RichTable> {
 
   void updateSize() {
     if (!mounted) return;
-    final box = renderBox;
+    final box = tableBox;
     if (box is RenderTable) {
       final h = box.size.height;
       bool needUpdateHeights = false;
@@ -379,6 +302,11 @@ class _RichTableState extends State<RichTable> {
     WidgetsBinding.instance.addPostFrameCallback((t) => updateSize());
   }
 
+  RenderBox? get tableBox {
+    if (!mounted) return null;
+    return tableKey.currentContext?.findRenderObject() as RenderBox?;
+  }
+
   RenderBox? get renderBox {
     if (!mounted) return null;
     return key.currentContext?.findRenderObject() as RenderBox?;
@@ -391,10 +319,10 @@ class _RichTableState extends State<RichTable> {
     final table = node.table;
     final wholeContain = node.wholeContain(nodeCursor);
     final tableBorderWidth = 1.0;
-    final operatorSize = 16.0;
     final nodeContext = ShareEditorContextWidget.of(context)!.context;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      key: key,
       child: MouseRegion(
         onHover: (d) => toggleShowerNotifier(true),
         onExit: (d) => toggleShowerNotifier(false),
@@ -413,7 +341,7 @@ class _RichTableState extends State<RichTable> {
                       top: operatorSize,
                       bottom: operatorSize),
                   child: Table(
-                    key: key,
+                    key: tableKey,
                     columnWidths: widthsMap,
                     border: TableBorder.all(width: tableBorderWidth),
                     children: List.generate(table.length, (r) {
