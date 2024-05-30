@@ -10,6 +10,7 @@ import '../../node/table/generator/common.dart';
 import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../shortcuts/arrows/arrows.dart';
+import '../../shortcuts/arrows/line_arrow.dart';
 import '../../shortcuts/arrows/single_arrow.dart';
 import '../../shortcuts/arrows/word_arrow.dart';
 
@@ -53,7 +54,7 @@ class _RichTableCellState extends State<RichTableCell> {
   CellPosition get cellPosition => widget.cellPosition;
 
   SingleNodeCursor? get nodeCursor => widget.param.cursor;
-  
+
   int get widgetIndex => widget.param.index;
 
   String get cellId => widget.cellId;
@@ -81,7 +82,7 @@ class _RichTableCellState extends State<RichTableCell> {
   void onArrowAccept(AcceptArrowData d) {
     final type = d.type;
     final cursor = node.getCursorInCell(nodeCursor, cellPosition);
-    switch (type){
+    switch (type) {
       case ArrowType.left:
       case ArrowType.up:
         if (cursor == null) return;
@@ -136,7 +137,7 @@ class _RichTableCellState extends State<RichTableCell> {
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
         try {
-          wordArrowOnLeft(opt, cursor);
+          wordArrowOnLast(opt, cursor);
         } on ArrowLeftBeginException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -152,7 +153,7 @@ class _RichTableCellState extends State<RichTableCell> {
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
         try {
-          wordArrowOnRight(opt, cursor);
+          wordArrowOnNext(opt, cursor);
         } on ArrowRightEndException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -162,6 +163,19 @@ class _RichTableCellState extends State<RichTableCell> {
               operator, newCellPosition, node, newCursor, widgetIndex);
           arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
         }
+        break;
+      case ArrowType.lineBegin:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        lineArrowOnBegin(opt, cursor);
+        break;
+
+      case ArrowType.lineEnd:
+        if (cursor == null) return;
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        lineArrowOnEnd(opt, cursor);
         break;
       default:
         break;

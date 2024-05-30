@@ -4,6 +4,7 @@ import 'package:crayon/editor/shortcuts/arrows/word_arrow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../shortcuts/arrows/line_arrow.dart';
 import '../shortcuts/optional_menu.dart';
 import 'context.dart';
 import '../shortcuts/arrows/single_arrow.dart';
@@ -25,12 +26,15 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   const SingleActivator(LogicalKeyboardKey.arrowUp): const UpArrowIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowDown): const DownArrowIntent(),
 
-
   if (Platform.isMacOS) ...{
     LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowLeft):
-        const LeftWordArrowIntent(),
+        const LastWordArrowIntent(),
     LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowRight):
-        const RightWordArrowIntent(),
+        const NextWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.arrowLeft):
+        const LineBeginArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.arrowRight):
+        const LineEndArrowIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
         const UndoIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shift,
@@ -52,9 +56,13 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   },
   if (!Platform.isMacOS) ...{
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
-        const LeftWordArrowIntent(),
+        const LastWordArrowIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
-        const RightWordArrowIntent(),
+        const NextWordArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
+        const LineBeginArrowIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
+        const LineEndArrowIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
         const UndoIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
@@ -115,8 +123,10 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
   RightArrowIntent: (c) => RightArrowAction(c),
   UpArrowIntent: (c) => UpArrowAction(c),
   DownArrowIntent: (c) => DownArrowAction(c),
-  LeftWordArrowIntent: (c) => LeftWordArrowAction(c),
-  RightWordArrowIntent: (c) => RightWordArrowAction(c),
+  LastWordArrowIntent: (c) => LastWordArrowAction(c),
+  NextWordArrowIntent: (c) => NextWordArrowAction(c),
+  LineBeginArrowIntent: (c) => LineBeginArrowAction(c),
+  LineEndArrowIntent: (c) => LineEndArrowAction(c),
   SelectAllIntent: (c) => SelectAllAction(c),
   UnderlineIntent: (c) => UnderlineAction(c),
   BoldIntent: (c) => BoldAction(c),

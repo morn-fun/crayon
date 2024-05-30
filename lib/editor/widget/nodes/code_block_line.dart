@@ -246,6 +246,24 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
         }
         controller.onEditingPosition(wordRange.end);
         break;
+      case ArrowType.lineBegin:
+        final offset = p.offset;
+        if (offset == 0) {
+          throw NodeUnsupportedException(
+              runtimeType, 'lineBegin is disabled, now is in lineBegin', data);
+        }
+        var lineRange = painter.getLineBoundary(TextPosition(offset: offset));
+        controller.onEditingPosition(lineRange.start);
+        break;
+      case ArrowType.lineEnd:
+        final offset = p.offset;
+        if (offset == code.length) {
+          throw NodeUnsupportedException(
+              runtimeType, 'lineEnd is disabled, now is in lineEnd', data);
+        }
+        var lineRange = painter.getLineBoundary(TextPosition(offset: offset));
+        controller.onEditingPosition(lineRange.end);
+        break;
       default:
         break;
     }

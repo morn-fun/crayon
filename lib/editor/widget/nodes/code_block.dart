@@ -215,6 +215,10 @@ class _CodeBlockState extends State<CodeBlock> {
           newPosition = CodeBlockPosition(index + 1, 0);
         }
         break;
+      case ArrowType.lineBegin:
+      case ArrowType.lineEnd:
+        localListeners.onArrowAccept(data.newId('$nodeId$index'));
+        break;
       default:
         break;
     }

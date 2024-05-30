@@ -7,47 +7,47 @@ import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import 'arrows.dart';
 
-class LeftWordArrowAction extends ContextAction<LeftWordArrowIntent> {
+class LastWordArrowAction extends ContextAction<LastWordArrowIntent> {
   final ActionOperator ac;
 
   NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
-  LeftWordArrowAction(this.ac);
+  LastWordArrowAction(this.ac);
 
   @override
-  void invoke(LeftWordArrowIntent intent, [BuildContext? context]) {
+  void invoke(LastWordArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      wordArrowOnLeft(operator, cursor);
+      wordArrowOnLast(operator, cursor);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class RightWordArrowAction extends ContextAction<RightWordArrowIntent> {
+class NextWordArrowAction extends ContextAction<NextWordArrowIntent> {
   final ActionOperator ac;
 
   NodesOperator get operator => ac.operator;
 
   BasicCursor get cursor => ac.cursor;
 
-  RightWordArrowAction(this.ac);
+  NextWordArrowAction(this.ac);
 
   @override
-  void invoke(RightWordArrowIntent intent, [BuildContext? context]) {
+  void invoke(NextWordArrowIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      wordArrowOnRight(operator, cursor);
+      wordArrowOnNext(operator, cursor);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-void wordArrowOnLeft(NodesOperator operator, BasicCursor cursor) {
+void wordArrowOnLast(NodesOperator operator, BasicCursor cursor) {
   EditingCursor? newCursor;
   ArrowType t = ArrowType.lastWord;
   if (cursor is EditingCursor) {
@@ -79,7 +79,7 @@ void wordArrowOnLeft(NodesOperator operator, BasicCursor cursor) {
   }
 }
 
-void wordArrowOnRight(NodesOperator operator, BasicCursor cursor) {
+void wordArrowOnNext(NodesOperator operator, BasicCursor cursor) {
   EditingCursor? newCursor;
   ArrowType t = ArrowType.nextWord;
   if (cursor is EditingCursor) {

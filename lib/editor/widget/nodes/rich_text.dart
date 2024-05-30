@@ -211,6 +211,26 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         }
         newPosition = node.getPositionByOffset(wordRange.end);
         break;
+      case ArrowType.lineBegin:
+        final currentOffset = node.getOffset(p);
+        var lineRange =
+            painter.getLineBoundary(TextPosition(offset: currentOffset));
+        if (lineRange.start == currentOffset) {
+          throw NodeUnsupportedException(node.runtimeType,
+              'lineBegin is disabled, now is in lineBegin', data);
+        }
+        newPosition = node.getPositionByOffset(lineRange.start);
+        break;
+      case ArrowType.lineEnd:
+        final currentOffset = node.getOffset(p);
+        var lineRange =
+            painter.getLineBoundary(TextPosition(offset: node.getOffset(p)));
+        if (lineRange.end == currentOffset) {
+          throw NodeUnsupportedException(
+              node.runtimeType, 'lineEnd is disabled, now is in lineEnd', data);
+        }
+        newPosition = node.getPositionByOffset(lineRange.end);
+        break;
       default:
         break;
     }
@@ -293,7 +313,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       listeners.addGestureListener(nodeId, onGesture);
       listeners.addArrowDelegate(nodeId, onArrowAccept);
     }
-    if(oldListeners.hashCode != listeners.hashCode){
+    if (oldListeners.hashCode != listeners.hashCode) {
       logger.i('$runtimeType didUpdateWidget listeners is different');
     }
     if (node != oldWidget.richTextNode) {

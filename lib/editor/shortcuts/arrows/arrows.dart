@@ -14,6 +14,8 @@ enum ArrowType {
   selectionDown,
   nextWord,
   lastWord,
+  lineBegin,
+  lineEnd,
   nextWordSelection,
   lastWordSelection,
 }
@@ -71,12 +73,20 @@ class DownSelectionArrowIntent extends Intent {
   const DownSelectionArrowIntent();
 }
 
-class LeftWordArrowIntent extends Intent {
-  const LeftWordArrowIntent();
+class LastWordArrowIntent extends Intent {
+  const LastWordArrowIntent();
 }
 
-class RightWordArrowIntent extends Intent {
-  const RightWordArrowIntent();
+class NextWordArrowIntent extends Intent {
+  const NextWordArrowIntent();
+}
+
+class LineBeginArrowIntent extends Intent {
+  const LineBeginArrowIntent();
+}
+
+class LineEndArrowIntent extends Intent {
+  const LineEndArrowIntent();
 }
 
 class LeftWordSelectionArrowIntent extends Intent {
