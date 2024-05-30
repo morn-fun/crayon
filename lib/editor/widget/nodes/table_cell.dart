@@ -85,11 +85,16 @@ class _RichTableCellState extends State<RichTableCell> {
     switch (type) {
       case ArrowType.left:
       case ArrowType.up:
-        if (cursor == null) return;
+      case ArrowType.right:
+      case ArrowType.down:
+        if (cursor == null) {
+          throw NodeUnsupportedException(
+              node.runtimeType, 'onArrowAccept $type without cursor', d);
+        }
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
         try {
-          arrowOnLeftOrUp(type, opt, runtimeType, cursor);
+          onArrow(opt, cursor, type);
         } on ArrowLeftBeginException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -97,7 +102,7 @@ class _RichTableCellState extends State<RichTableCell> {
           final newCursor = node.getCell(newCellPosition).endCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         } on ArrowUpTopException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -105,16 +110,7 @@ class _RichTableCellState extends State<RichTableCell> {
           final newCursor = node.getCell(newCellPosition).endCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
-        }
-        break;
-      case ArrowType.right:
-      case ArrowType.down:
-        if (cursor == null) return;
-        final opt = buildTableCellNodeContext(
-            operator, cellPosition, node, cursor, widgetIndex);
-        try {
-          arrowOnRightOrDown(type, opt, runtimeType, cursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         } on ArrowRightEndException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -122,17 +118,16 @@ class _RichTableCellState extends State<RichTableCell> {
           final newCursor = node.getCell(newCellPosition).beginCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         } on ArrowDownBottomException catch (e) {
           logger.i('onArrowAccept of ${node.runtimeType} error: ${e.message}');
           final newCellPosition = cellPosition.nextInVertical(node, e.offset);
           final newCursor = node.getCell(newCellPosition).beginCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         }
-        break;
-      case ArrowType.lastWord:
+      case ArrowType.wordLast:
         if (cursor == null) return;
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
@@ -145,10 +140,10 @@ class _RichTableCellState extends State<RichTableCell> {
           final newCursor = node.getCell(newCellPosition).endCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnLeftOrUp(ArrowType.current, newOpt, runtimeType, newCursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         }
         break;
-      case ArrowType.nextWord:
+      case ArrowType.wordNext:
         if (cursor == null) return;
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
@@ -161,21 +156,15 @@ class _RichTableCellState extends State<RichTableCell> {
           final newCursor = node.getCell(newCellPosition).beginCursor;
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
-          arrowOnRightOrDown(ArrowType.current, newOpt, runtimeType, newCursor);
+          onArrow(newOpt, newCursor, ArrowType.current);
         }
         break;
       case ArrowType.lineBegin:
-        if (cursor == null) return;
-        final opt = buildTableCellNodeContext(
-            operator, cellPosition, node, cursor, widgetIndex);
-        lineArrowOnBegin(opt, cursor);
-        break;
-
       case ArrowType.lineEnd:
         if (cursor == null) return;
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
-        lineArrowOnEnd(opt, cursor);
+        arrowOnLine(opt, cursor, type);
         break;
       default:
         break;

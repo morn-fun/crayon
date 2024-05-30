@@ -20,7 +20,7 @@ class OrderedNode extends RichTextNode with SpecialNewlineMixin {
       return Row(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
+            padding: EdgeInsets.symmetric(vertical: 7),
             child: Text(
               '${generateOrderedNumber(getIndex(param.index, operator) + 1, depth)}. ',
               style: TextStyle(

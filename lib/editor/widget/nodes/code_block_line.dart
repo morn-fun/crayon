@@ -228,7 +228,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
       return;
     }
     switch (type) {
-      case ArrowType.lastWord:
+      case ArrowType.wordLast:
         final offset = p.offset;
         if (offset == 0) throw ArrowLeftBeginException(p);
         var wordRange = painter.getWordBoundary(TextPosition(offset: offset));
@@ -237,7 +237,7 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
         }
         controller.onEditingPosition(wordRange.start);
         break;
-      case ArrowType.nextWord:
+      case ArrowType.wordNext:
         final offset = p.offset;
         if (offset == code.length) throw ArrowRightEndException(p);
         var wordRange = painter.getWordBoundary(TextPosition(offset: offset));

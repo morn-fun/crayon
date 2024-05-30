@@ -7,40 +7,32 @@ import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import 'arrows.dart';
 
-class LastWordArrowAction extends ContextAction<LastWordArrowIntent> {
+class ArrowWordLastAction extends ContextAction<ArrowWordLastIntent> {
   final ActionOperator ac;
 
-  NodesOperator get operator => ac.operator;
-
-  BasicCursor get cursor => ac.cursor;
-
-  LastWordArrowAction(this.ac);
+  ArrowWordLastAction(this.ac);
 
   @override
-  void invoke(LastWordArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowWordLastIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      wordArrowOnLast(operator, cursor);
+      wordArrowOnLast(ac.operator, ac.cursor);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class NextWordArrowAction extends ContextAction<NextWordArrowIntent> {
+class ArrowWordNextAction extends ContextAction<ArrowWordNextIntent> {
   final ActionOperator ac;
 
-  NodesOperator get operator => ac.operator;
-
-  BasicCursor get cursor => ac.cursor;
-
-  NextWordArrowAction(this.ac);
+  ArrowWordNextAction(this.ac);
 
   @override
-  void invoke(NextWordArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowWordNextIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      wordArrowOnNext(operator, cursor);
+      wordArrowOnNext(ac.operator, ac.cursor);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
@@ -49,7 +41,7 @@ class NextWordArrowAction extends ContextAction<NextWordArrowIntent> {
 
 void wordArrowOnLast(NodesOperator operator, BasicCursor cursor) {
   EditingCursor? newCursor;
-  ArrowType t = ArrowType.lastWord;
+  ArrowType t = ArrowType.wordLast;
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
@@ -65,7 +57,7 @@ void wordArrowOnLast(NodesOperator operator, BasicCursor cursor) {
     operator.onArrowAccept(
         AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
   } on ArrowLeftBeginException catch (e) {
-    logger.e('${ArrowType.lastWord} error ${e.message}');
+    logger.e('${ArrowType.wordLast} error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) rethrow;
     operator.onArrowAccept(AcceptArrowData(
@@ -74,14 +66,14 @@ void wordArrowOnLast(NodesOperator operator, BasicCursor cursor) {
         operator.getNode(lastIndex).endPosition.toCursor(lastIndex),
         t));
   } on NodeNotFoundException catch (e) {
-    logger.e('${ArrowType.lastWord} error ${e.message}');
+    logger.e('${ArrowType.wordLast} error ${e.message}');
     operator.onCursor(newCursor);
   }
 }
 
 void wordArrowOnNext(NodesOperator operator, BasicCursor cursor) {
   EditingCursor? newCursor;
-  ArrowType t = ArrowType.nextWord;
+  ArrowType t = ArrowType.wordNext;
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
@@ -97,7 +89,7 @@ void wordArrowOnNext(NodesOperator operator, BasicCursor cursor) {
     operator.onArrowAccept(
         AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
   } on ArrowRightEndException catch (e) {
-    logger.e('${ArrowType.nextWord} error ${e.message}');
+    logger.e('${ArrowType.wordNext} error ${e.message}');
     final nextIndex = index + 1;
     if (nextIndex > operator.nodeLength - 1) rethrow;
     operator.onArrowAccept(AcceptArrowData(
@@ -106,7 +98,7 @@ void wordArrowOnNext(NodesOperator operator, BasicCursor cursor) {
         operator.getNode(nextIndex).beginPosition.toCursor(nextIndex),
         t));
   } on NodeNotFoundException catch (e) {
-    logger.e('${ArrowType.nextWord} error ${e.message}');
+    logger.e('${ArrowType.wordNext} error ${e.message}');
     operator.onCursor(newCursor);
   }
 }

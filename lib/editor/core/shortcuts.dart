@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:crayon/editor/shortcuts/arrows/selection_arrow.dart';
 import 'package:crayon/editor/shortcuts/arrows/word_arrow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,13 +29,13 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
 
   if (Platform.isMacOS) ...{
     LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowLeft):
-        const LastWordArrowIntent(),
+        const ArrowWordLastIntent(),
     LogicalKeySet(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.arrowRight):
-        const NextWordArrowIntent(),
+        const ArrowWordNextIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.arrowLeft):
-        const LineBeginArrowIntent(),
+        const ArrowLineBeginIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.arrowRight):
-        const LineEndArrowIntent(),
+        const ArrowLineEndIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ):
         const UndoIntent(),
     LogicalKeySet(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shift,
@@ -56,13 +57,13 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   },
   if (!Platform.isMacOS) ...{
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
-        const LastWordArrowIntent(),
+        const ArrowWordLastIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
-        const NextWordArrowIntent(),
+        const ArrowWordNextIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
-        const LineBeginArrowIntent(),
+        const ArrowLineBeginIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
-        const LineEndArrowIntent(),
+        const ArrowLineEndIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
         const UndoIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
@@ -84,7 +85,14 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   },
 
   ///TODO:word selection arrow
-  ///TODO:selection arrow
+  LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.arrowLeft):
+      const ArrowLeftSelectionIntent(),
+  LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.arrowRight):
+      const ArrowRightSelectionIntent(),
+  LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.arrowUp):
+      const ArrowUpSelectionIntent(),
+  LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.arrowDown):
+      const ArrowDownSelectionIntent(),
 
   const SingleActivator(LogicalKeyboardKey.backspace): const DeleteIntent(),
   const SingleActivator(LogicalKeyboardKey.enter): const NewlineIntent(),
@@ -123,10 +131,14 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
   RightArrowIntent: (c) => RightArrowAction(c),
   UpArrowIntent: (c) => UpArrowAction(c),
   DownArrowIntent: (c) => DownArrowAction(c),
-  LastWordArrowIntent: (c) => LastWordArrowAction(c),
-  NextWordArrowIntent: (c) => NextWordArrowAction(c),
-  LineBeginArrowIntent: (c) => LineBeginArrowAction(c),
-  LineEndArrowIntent: (c) => LineEndArrowAction(c),
+  ArrowLeftSelectionIntent: (c) => ArrowLeftSelectionAction(c),
+  ArrowRightSelectionIntent: (c) => ArrowRightSelectionAction(c),
+  ArrowUpSelectionIntent: (c) => ArrowUpSelectionAction(c),
+  ArrowDownSelectionIntent: (c) => ArrowDownSelectionAction(c),
+  ArrowWordLastIntent: (c) => ArrowWordLastAction(c),
+  ArrowWordNextIntent: (c) => ArrowWordNextAction(c),
+  ArrowLineBeginIntent: (c) => ArrowLineBeginAction(c),
+  ArrowLineEndIntent: (c) => ArrowLineEndAction(c),
   SelectAllIntent: (c) => SelectAllAction(c),
   UnderlineIntent: (c) => UnderlineAction(c),
   BoldIntent: (c) => BoldAction(c),

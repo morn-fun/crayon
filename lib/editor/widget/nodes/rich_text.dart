@@ -64,6 +64,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   int get nodeIndex => widget.param.index;
 
+  double get fontSize => widget.fontSize * 1.5;
+
   String get nodeId => node.id;
 
   RenderBox? get renderBox {
@@ -116,8 +118,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     }
     logger.i('$tag, onArrowAccept $data');
     RichTextNodePosition? newPosition;
+    bool isSelecting = false;
     switch (type) {
       case ArrowType.current:
+      case ArrowType.selectionCurrent:
+        isSelecting = type == ArrowType.selectionCurrent;
         final extra = data.extras;
         if (extra is Offset) {
           final box = renderBox;
@@ -125,8 +130,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           final rect =
               Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
           final textPosition = TextPosition(offset: node.getOffset(p));
-          final h = painter.getFullHeightForCaret(textPosition, rect) ??
-              widget.fontSize;
+          final h =
+              painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
           final offset = painter.getOffsetFromTextOffset(node.getOffset(p));
           Offset? tapOffset;
           if (p == node.endPosition) {
@@ -137,15 +142,23 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           if (tapOffset == null) return;
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
-          listeners.notifyGestures(TapGestureState(newTapOffset));
+          if (isSelecting) {
+            operator.onPanUpdate(EditingCursor(nodeIndex, p));
+          } else {
+            listeners.notifyGestures(TapGestureState(newTapOffset));
+          }
         } else {
           newPosition = p;
         }
         break;
       case ArrowType.left:
+      case ArrowType.selectionLeft:
+        isSelecting = type == ArrowType.selectionLeft;
         newPosition = node.lastPosition(p);
         break;
       case ArrowType.right:
+      case ArrowType.selectionRight:
+        isSelecting = type == ArrowType.selectionRight;
         newPosition = node.nextPosition(p);
         break;
       case ArrowType.up:
@@ -157,8 +170,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final offset =
             painter.getOffsetFromTextOffset(node.getOffset(p), rect: rect);
         final lineRange = painter.getLineBoundary(textPosition);
-        final h = painter.getFullHeightForCaret(textPosition, rect) ??
-            widget.fontSize;
+        final h = painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
         if (lineRange.start == 0 || lineRange == TextRange.empty) {
           throw ArrowUpTopException(p, offset);
         }
@@ -181,15 +193,14 @@ class _RichTextWidgetState extends State<RichTextWidget> {
             lineRange == TextRange.empty) {
           throw ArrowDownBottomException(p, offset);
         }
-        final h = painter.getFullHeightForCaret(textPosition, rect) ??
-            widget.fontSize;
+        final h = painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
         final newOffset = painter.getOffsetFromTextOffset(lineRange.end);
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
         listeners.notifyGestures(TapGestureState(newTapOffset));
         break;
-      case ArrowType.lastWord:
+      case ArrowType.wordLast:
         if (p == node.beginPosition) throw ArrowLeftBeginException(p);
         final currentOffset = node.getOffset(p);
         var wordRange =
@@ -200,7 +211,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         }
         newPosition = node.getPositionByOffset(wordRange.start);
         break;
-      case ArrowType.nextWord:
+      case ArrowType.wordNext:
         if (p == node.endPosition) throw ArrowRightEndException(p);
         final currentOffset = node.getOffset(p);
         var wordRange =
@@ -234,10 +245,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
       default:
         break;
     }
-    if (newPosition != null) {
-      operator.onCursor(EditingCursor(nodeIndex, newPosition));
-      notifyEditingOffset(newPosition);
+    if (newPosition == null) return;
+    if (isSelecting) {
+      operator.onPanUpdate(EditingCursor(nodeIndex, newPosition));
+      return;
     }
+    operator.onCursor(EditingCursor(nodeIndex, newPosition));
+    notifyEditingOffset(newPosition);
   }
 
   double? get y => renderBox?.localToGlobal(Offset.zero).dy;
@@ -271,7 +285,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (isTextEmpty) return true;
     final h =
         painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
-            widget.fontSize;
+            fontSize;
     final box = renderBox;
     if (box == null) return true;
     entryManager.showTextMenu(Overlay.of(context),
@@ -332,12 +346,16 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final box = renderBox;
     if (box == null) return;
     if (position != null && y != null) {
-      final offset = painter.getOffsetFromTextOffset(position.offset);
-      final newOffset =
-          Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
-      operator.onEditingOffset(
-          EditingOffset(newOffset, getCurrentCursorHeight(position), nodeId));
+      operator.onEditingOffset(EditingOffset(getOffsetByPosition(position, box),
+          getCurrentCursorHeight(position), nodeId));
     }
+  }
+
+  Offset getOffsetByPosition(RichTextNodePosition position, RenderBox box) {
+    final offset = painter.getOffsetFromTextOffset(position.offset);
+    final newOffset =
+        Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
+    return newOffset;
   }
 
   double getCurrentCursorHeight(RichTextNodePosition offset) {
@@ -345,7 +363,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         Offset.zero, renderBox?.globalToLocal(Offset.zero) ?? Offset.zero);
     return painter.getFullHeightForCaret(
             TextPosition(offset: node.getOffset(offset)), rect) ??
-        widget.fontSize;
+        fontSize;
   }
 
   @override
@@ -364,7 +382,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
             key: key,
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: SizedBox(
-              height: max(painter.height, widget.fontSize),
+              height: max(painter.height, fontSize),
               width: recordWidth,
               child: Stack(
                 children: [
@@ -388,7 +406,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                             TextPosition(offset: node.getOffset(v));
                         final h = painter.getFullHeightForCaret(
                                 textPosition, Rect.zero) ??
-                            widget.fontSize * 1.5;
+                            fontSize;
                         return Positioned(
                           left: offset.dx,
                           top: offset.dy,
@@ -410,6 +428,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                         }
                         final begin = node.getOffset(left);
                         final end = node.getOffset(right);
+                        if (begin == end) {
+                          Offset offset =
+                              painter.getOffsetFromTextOffset(begin);
+                          return Container(
+                              height: fontSize,
+                              width: begin == 0 ? 4 : 2,
+                              margin: EdgeInsets.only(left: offset.dx),
+                              color: Colors.blue.withOpacity(0.5));
+                        }
                         return Stack(
                             children: painter.buildSelectedAreas(begin, end));
                       }),
@@ -427,7 +454,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                               final alias = s.attributes['alias'] ?? '';
                               final h = painter.getFullHeightForCaret(
                                       buildTextPosition(o), Rect.zero) ??
-                                  widget.fontSize;
+                                  fontSize;
                               final entryManager = editorContext?.entryManager;
                               if (entryManager == null) return;
                               if (entryManager.showingType == MenuType.link) {

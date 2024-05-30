@@ -1,91 +1,92 @@
 import 'package:flutter/material.dart';
 
-import '../../../editor/extension/node_context.dart';
 import '../../core/context.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
+import '../../../editor/extension/node_context.dart';
 import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
-class LeftArrowAction extends ContextAction<LeftArrowIntent> {
+class ArrowLeftSelectionAction extends ContextAction<ArrowLeftSelectionIntent> {
   final ActionOperator ac;
 
-  LeftArrowAction(this.ac);
+  ArrowLeftSelectionAction(this.ac);
 
   @override
-  void invoke(LeftArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowLeftSelectionIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.left);
+      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionLeft);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class RightArrowAction extends ContextAction<RightArrowIntent> {
+class ArrowRightSelectionAction
+    extends ContextAction<ArrowRightSelectionIntent> {
   final ActionOperator ac;
 
-  RightArrowAction(this.ac);
+  ArrowRightSelectionAction(this.ac);
 
   @override
-  void invoke(RightArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowRightSelectionIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.right);
+      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionRight);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class UpArrowAction extends ContextAction<UpArrowIntent> {
+class ArrowUpSelectionAction extends ContextAction<ArrowUpSelectionIntent> {
   final ActionOperator ac;
 
-  UpArrowAction(this.ac);
+  ArrowUpSelectionAction(this.ac);
 
   @override
-  void invoke(UpArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowUpSelectionIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.up);
+      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionUp);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class DownArrowAction extends ContextAction<DownArrowIntent> {
+class ArrowDownSelectionAction extends ContextAction<ArrowDownSelectionIntent> {
   final ActionOperator ac;
 
-  DownArrowAction(this.ac);
+  ArrowDownSelectionAction(this.ac);
 
   @override
-  void invoke(DownArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowDownSelectionIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.down);
+      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionDown);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type) {
-  ArrowType t = type;
+void arrowSelection(
+    NodesOperator operator, BasicCursor cursor, ArrowType type) {
   EditingCursor? newCursor;
+
+  ArrowType t = type;
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
-    newCursor = cursor.rightCursor;
-    t = ArrowType.current;
+    newCursor = cursor.endCursor;
   } else if (cursor is SelectingNodesCursor) {
-    newCursor = cursor.right;
-    t = ArrowType.current;
+    newCursor = cursor.end;
   }
   if (newCursor == null) {
     throw NodeUnsupportedException(
-        operator.runtimeType, 'onArrow $type without cursor', cursor);
+        operator.runtimeType, 'arrowSelection $type without cursor', cursor);
   }
   final index = newCursor.index;
   try {
@@ -97,36 +98,33 @@ void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type) {
     if (lastIndex < 0) rethrow;
     operator.onArrowAccept(AcceptArrowData(
         operator.getNode(lastIndex).id,
-        ArrowType.current,
+        ArrowType.selectionCurrent,
         operator.getNode(lastIndex).endPosition.toCursor(lastIndex),
+        t));
+  } on ArrowRightEndException catch (e) {
+    logger.e('$type error ${e.message}');
+    final nextIndex = index + 1;
+    if (nextIndex >= operator.nodeLength) rethrow;
+    operator.onArrowAccept(AcceptArrowData(
+        operator.getNode(nextIndex).id,
+        ArrowType.selectionCurrent,
+        operator.getNode(nextIndex).beginPosition.toCursor(nextIndex),
         t));
   } on ArrowUpTopException catch (e) {
     logger.e('$type error ${e.message}');
     final lastIndex = index - 1;
     if (lastIndex < 0) rethrow;
     final node = operator.getNode(lastIndex);
-    operator.onArrowAccept(AcceptArrowData(
-        node.id, ArrowType.current, node.endPosition.toCursor(index), t,
+    operator.onArrowAccept(AcceptArrowData(node.id, ArrowType.selectionCurrent,
+        node.endPosition.toCursor(index), t,
         extras: e.offset));
-  } on ArrowRightEndException catch (e) {
-    logger.e('$type error ${e.message}');
-    final nextIndex = index + 1;
-    if (nextIndex > operator.nodeLength - 1) rethrow;
-    operator.onArrowAccept(AcceptArrowData(
-        operator.getNode(nextIndex).id,
-        ArrowType.current,
-        operator.getNode(nextIndex).beginPosition.toCursor(nextIndex),
-        t));
   } on ArrowDownBottomException catch (e) {
     logger.e('$type error ${e.message}');
     final nextIndex = index + 1;
     if (nextIndex > operator.nodeLength - 1) rethrow;
     final node = operator.getNode(nextIndex);
-    operator.onArrowAccept(AcceptArrowData(
-        node.id, ArrowType.current, node.beginPosition.toCursor(index), t,
+    operator.onArrowAccept(AcceptArrowData(node.id, ArrowType.selectionCurrent,
+        node.beginPosition.toCursor(index), t,
         extras: e.offset));
-  } on NodeNotFoundException catch (e) {
-    logger.e('$type error ${e.message}');
-    operator.onCursor(newCursor);
   }
 }

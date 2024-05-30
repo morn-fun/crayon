@@ -19,7 +19,7 @@ class UnorderedNode extends RichTextNode with SpecialNewlineMixin {
       final theme = Theme.of(c);
       return Row(
         children: [
-          buildMarker(26, theme),
+          buildMarker(16 * 2, theme),
           Expanded(child: RichTextWidget(operator, this, param)),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,

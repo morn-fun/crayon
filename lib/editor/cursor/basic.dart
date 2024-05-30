@@ -61,6 +61,10 @@ class SelectingNodeCursor<T extends NodePosition> extends SingleNodeCursor<T> {
 
   EditingCursor<T> get rightCursor => EditingCursor(index, right);
 
+  EditingCursor<T> get beginCursor => EditingCursor(index, begin);
+
+  EditingCursor<T> get endCursor => EditingCursor(index, end);
+
   SelectingNodeCursor<E> as<E extends NodePosition>() =>
       SelectingNodeCursor<E>(index, begin as E, end as E);
 

@@ -199,7 +199,7 @@ class _CodeBlockState extends State<CodeBlock> {
         final minOffset = min(nextCode.length, p.offset);
         newPosition = CodeBlockPosition(nextIndex, minOffset);
         break;
-      case ArrowType.lastWord:
+      case ArrowType.wordLast:
         try {
           localListeners.onArrowAccept(data.newId('$nodeId$index'));
         } on ArrowLeftBeginException {
@@ -207,7 +207,7 @@ class _CodeBlockState extends State<CodeBlock> {
           newPosition = CodeBlockPosition(index - 1, codes[index - 1].length);
         }
         break;
-      case ArrowType.nextWord:
+      case ArrowType.wordNext:
         try {
           localListeners.onArrowAccept(data.newId('$nodeId$index'));
         } on ArrowRightEndException {

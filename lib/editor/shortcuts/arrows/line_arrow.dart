@@ -7,49 +7,41 @@ import '../../../editor/extension/node_context.dart';
 import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
-class LineBeginArrowAction extends ContextAction<LineBeginArrowIntent> {
+class ArrowLineBeginAction extends ContextAction<ArrowLineBeginIntent> {
   final ActionOperator ac;
 
-  NodesOperator get operator => ac.operator;
-
-  BasicCursor get cursor => ac.cursor;
-
-  LineBeginArrowAction(this.ac);
+  ArrowLineBeginAction(this.ac);
 
   @override
-  void invoke(LineBeginArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowLineBeginIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      lineArrowOnBegin(operator, cursor);
+      arrowOnLine(ac.operator, ac.cursor, ArrowType.lineBegin);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class LineEndArrowAction extends ContextAction<LineEndArrowIntent> {
+class ArrowLineEndAction extends ContextAction<ArrowLineEndIntent> {
   final ActionOperator ac;
 
-  NodesOperator get operator => ac.operator;
-
-  BasicCursor get cursor => ac.cursor;
-
-  LineEndArrowAction(this.ac);
+  ArrowLineEndAction(this.ac);
 
   @override
-  void invoke(LineEndArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowLineEndIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      lineArrowOnEnd(operator, cursor);
+      arrowOnLine(ac.operator, ac.cursor, ArrowType.lineEnd);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-void lineArrowOnBegin(NodesOperator operator, BasicCursor cursor) {
+void arrowOnLine(NodesOperator operator, BasicCursor cursor, ArrowType type) {
   EditingCursor? newCursor;
-  ArrowType t = ArrowType.lineBegin;
+  ArrowType t = type;
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
@@ -59,34 +51,11 @@ void lineArrowOnBegin(NodesOperator operator, BasicCursor cursor) {
     newCursor = cursor.left;
     t = ArrowType.current;
   }
-  if (newCursor == null) return;
+  if (newCursor == null) {
+    throw NodeUnsupportedException(
+        operator.runtimeType, 'arrowOnLine $type without cursor', cursor);
+  }
   final index = newCursor.index;
-  try {
-    operator.onArrowAccept(
-        AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
-  } on NodeUnsupportedException catch (e) {
-    logger.e('lineArrowOnBegin error: ${e.message}');
-  }
-}
-
-void lineArrowOnEnd(NodesOperator operator, BasicCursor cursor) {
-  EditingCursor? newCursor;
-  ArrowType t = ArrowType.lineEnd;
-  if (cursor is EditingCursor) {
-    newCursor = cursor;
-  } else if (cursor is SelectingNodeCursor) {
-    newCursor = cursor.rightCursor;
-    t = ArrowType.current;
-  } else if (cursor is SelectingNodesCursor) {
-    newCursor = cursor.right;
-    t = ArrowType.current;
-  }
-  if (newCursor == null) return;
-  final index = newCursor.index;
-  try {
-    operator.onArrowAccept(
-        AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
-  } on NodeUnsupportedException catch (e) {
-    logger.e('lineArrowOnEnd error: ${e.message}');
-  }
+  operator.onArrowAccept(
+      AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
 }

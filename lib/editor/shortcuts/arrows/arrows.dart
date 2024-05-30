@@ -8,16 +8,17 @@ enum ArrowType {
   right,
   up,
   down,
+  selectionCurrent,
   selectionLeft,
   selectionRight,
   selectionUp,
   selectionDown,
-  nextWord,
-  lastWord,
+  selectionNextWord,
+  selectionLastWord,
+  wordNext,
+  wordLast,
   lineBegin,
   lineEnd,
-  nextWordSelection,
-  lastWordSelection,
 }
 
 class AcceptArrowData {
@@ -57,36 +58,36 @@ class DownArrowIntent extends Intent {
   const DownArrowIntent();
 }
 
-class LeftSelectionArrowIntent extends Intent {
-  const LeftSelectionArrowIntent();
+class ArrowLeftSelectionIntent extends Intent {
+  const ArrowLeftSelectionIntent();
 }
 
-class RightSelectionArrowIntent extends Intent {
-  const RightSelectionArrowIntent();
+class ArrowRightSelectionIntent extends Intent {
+  const ArrowRightSelectionIntent();
 }
 
-class UpSelectionArrowIntent extends Intent {
-  const UpSelectionArrowIntent();
+class ArrowUpSelectionIntent extends Intent {
+  const ArrowUpSelectionIntent();
 }
 
-class DownSelectionArrowIntent extends Intent {
-  const DownSelectionArrowIntent();
+class ArrowDownSelectionIntent extends Intent {
+  const ArrowDownSelectionIntent();
 }
 
-class LastWordArrowIntent extends Intent {
-  const LastWordArrowIntent();
+class ArrowWordLastIntent extends Intent {
+  const ArrowWordLastIntent();
 }
 
-class NextWordArrowIntent extends Intent {
-  const NextWordArrowIntent();
+class ArrowWordNextIntent extends Intent {
+  const ArrowWordNextIntent();
 }
 
-class LineBeginArrowIntent extends Intent {
-  const LineBeginArrowIntent();
+class ArrowLineBeginIntent extends Intent {
+  const ArrowLineBeginIntent();
 }
 
-class LineEndArrowIntent extends Intent {
-  const LineEndArrowIntent();
+class ArrowLineEndIntent extends Intent {
+  const ArrowLineEndIntent();
 }
 
 class LeftWordSelectionArrowIntent extends Intent {

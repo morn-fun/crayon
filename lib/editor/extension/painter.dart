@@ -20,11 +20,12 @@ extension PainterExtension on TextPainter {
     for (var box in boxList) {
       final baseline = ((box.bottom + box.top) / 2).round();
       final height = maxHeight;
+      final width = box.right - box.left;
       widgets.add(Positioned(
           left: box.left,
           top: baseline - height / 2,
           child: Container(
-            width: box.right - box.left,
+            width: width,
             height: height,
             decoration: BoxDecoration(color: Colors.blue.withOpacity(0.5)),
           )));
