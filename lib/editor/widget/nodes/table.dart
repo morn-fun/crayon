@@ -191,16 +191,16 @@ class _RichTableState extends State<RichTable> {
 
   bool onPan(PanGestureState o, CellPosition cp) {
     final box = tableBox;
-    if(box == null) return false;
+    if (box == null) return false;
     var c = nodeCursor;
-    if(c is SelectingNodeCursor){
+    if (c is SelectingNodeCursor) {
       final newCursor = c.as<TablePosition>();
-      if(newCursor.begin.cellPosition.sameCell(cp)){
+      if (newCursor.begin.cellPosition.sameCell(cp)) {
         return localListeners.notifyGestures(o) != null;
       }
-    } else if(c is EditingCursor){
+    } else if (c is EditingCursor) {
       final newCursor = c.as<TablePosition>();
-      if(newCursor.position.cellPosition.sameCell(cp)){
+      if (newCursor.position.cellPosition.sameCell(cp)) {
         return localListeners.notifyGestures(o) != null;
       }
     }
@@ -213,49 +213,121 @@ class _RichTableState extends State<RichTable> {
   void onArrowAccept(AcceptArrowData d) {
     final box = tableBox;
     if (box == null) return;
+    logger.i('$runtimeType onArrowAccept:$d');
     late TablePosition p;
     final c = d.cursor;
-    if (c is EditingCursor) {
-      if (c.position is! TablePosition) return;
-      p = c.position as TablePosition;
-    } else if (c is SelectingNodeCursor) {
-      if (c.end is! TablePosition) return;
-      p = c.end as TablePosition;
-    } else {
-      return;
-    }
+    if (c.position is! TablePosition) return;
+    p = c.position as TablePosition;
     final widgetPosition = box.localToGlobal(Offset.zero);
     final size = box.size;
     final type = d.type, cellPosition = p.cellPosition;
-    switch (type) {
-      case ArrowType.current:
-        final extra = d.extras;
-        if (extra is Offset) {
-          final lastType = d.lastType;
-          final globalX = min(widgetPosition.dx + size.width - 5, extra.dx);
-          if (lastType == ArrowType.up) {
-            final offset = Offset(globalX, widgetPosition.dy + size.height - 5);
-            var newCellPosition = box.getCellPosition(
-                    offset, heightsNotifier.value, node.widths) ??
-                CellPosition(node.rowCount - 1, 0);
-            final cell = node.getCell(newCellPosition);
+    final cell = node.getCell(cellPosition);
+    if (type == ArrowType.current || type == ArrowType.selectionCurrent) {
+      bool isSelection = type == ArrowType.selectionCurrent;
+      final extra = d.extras;
+      if (extra is Offset) {
+        final lastType = d.lastType;
+        final globalX = min(widgetPosition.dx + size.width - 5, extra.dx);
+        if (lastType == ArrowType.up || lastType == ArrowType.selectionUp) {
+          final offset = Offset(globalX, widgetPosition.dy + size.height - 5);
+          var newCellPosition =
+              box.getCellPosition(offset, heightsNotifier.value, node.widths) ??
+                  CellPosition(node.rowCount - 1, 0);
+          final cell = node.getCell(newCellPosition);
+          if (isSelection) {
+            operator.onPanUpdate(TablePosition(newCellPosition, cell.endCursor)
+                .toCursor(widgetIndex));
+          } else {
             operator.onCursor(TablePosition(newCellPosition, cell.endCursor)
                 .toCursor(widgetIndex));
-          } else if (lastType == ArrowType.down) {
-            final offset = Offset(globalX, widgetPosition.dy + 5);
-            final newCellPosition = box.getCellPosition(
-                    offset, heightsNotifier.value, node.widths) ??
-                CellPosition(0, 0);
-            final cell = node.getCell(newCellPosition);
+          }
+        } else if (lastType == ArrowType.down ||
+            lastType == ArrowType.selectionDown) {
+          final offset = Offset(globalX, widgetPosition.dy + 5);
+          final newCellPosition =
+              box.getCellPosition(offset, heightsNotifier.value, node.widths) ??
+                  CellPosition(0, 0);
+          final cell = node.getCell(newCellPosition);
+          if (isSelection) {
+            operator.onPanUpdate(
+                TablePosition(newCellPosition, cell.beginCursor)
+                    .toCursor(widgetIndex));
+          } else {
             operator.onCursor(TablePosition(newCellPosition, cell.beginCursor)
                 .toCursor(widgetIndex));
           }
+        }
+      } else {
+        if (isSelection) {
+          operator.onPanUpdate(p.toCursor(widgetIndex));
         } else {
           operator.onCursor(p.toCursor(widgetIndex));
         }
+      }
+      return;
+    }
+    final nc = nodeCursor;
+    if (nc is EditingCursor) {
+      localListeners.onArrowAccept(d.newId(cell.id));
+      return;
+    }
+    final newCursor = (nc as SelectingNodeCursor).as<TablePosition>();
+    switch (type) {
+      case ArrowType.selectionLeft:
+      case ArrowType.selectionWordLast:
+        if (newCursor.begin.cellPosition.sameCell(cellPosition)) {
+          localListeners.onArrowAccept(d.newId(cell.id));
+          return;
+        }
+        if (cellPosition.column == 0) throw ArrowLeftBeginException(this);
+        final newCp = cellPosition.lastInHorizontal(node);
+        final newCell = node.getCell(newCp);
+        operator.onPanUpdate(EditingCursor(
+            widgetIndex, TablePosition(newCp, newCell.beginCursor)));
+        break;
+      case ArrowType.selectionUp:
+        if (newCursor.begin.cellPosition.sameCell(cellPosition)) {
+          localListeners.onArrowAccept(d.newId(cell.id));
+          return;
+        }
+        if (cellPosition.row == 0) {
+          throw ArrowUpTopException(this, d.extras ?? Offset.zero);
+        }
+        final newCp =
+            cellPosition.lastInVertical(node, d.extras ?? Offset.zero);
+        final newCell = node.getCell(newCp);
+        operator.onPanUpdate(EditingCursor(
+            widgetIndex, TablePosition(newCp, newCell.beginCursor)));
+        break;
+      case ArrowType.selectionRight:
+      case ArrowType.selectionWordNext:
+        if (newCursor.end.cellPosition.sameCell(cellPosition)) {
+          localListeners.onArrowAccept(d.newId(cell.id));
+          return;
+        }
+        if (cellPosition.column == node.columnCount - 1) {
+          throw ArrowRightEndException(this);
+        }
+        final newCp = cellPosition.nextInHorizontal(node);
+        final newCell = node.getCell(newCp);
+        operator.onPanUpdate(EditingCursor(
+            widgetIndex, TablePosition(newCp, newCell.endCursor)));
+        break;
+      case ArrowType.selectionDown:
+        if (newCursor.end.cellPosition.sameCell(cellPosition)) {
+          localListeners.onArrowAccept(d.newId(cell.id));
+          return;
+        }
+        if (cellPosition.row == node.rowCount - 1) {
+          throw ArrowDownBottomException(this, d.extras ?? Offset.zero);
+        }
+        final newCp =
+            cellPosition.nextInVertical(node, d.extras ?? Offset.zero);
+        final newCell = node.getCell(newCp);
+        operator.onPanUpdate(EditingCursor(
+            widgetIndex, TablePosition(newCp, newCell.endCursor)));
         break;
       default:
-        final cell = node.getCell(cellPosition);
         localListeners.onArrowAccept(d.newId(cell.id));
         break;
     }

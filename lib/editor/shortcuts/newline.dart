@@ -19,7 +19,7 @@ class NewlineAction extends ContextAction<NewlineIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   NewlineAction(this.ac);
 

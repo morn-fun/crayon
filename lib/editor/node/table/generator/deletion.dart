@@ -38,9 +38,9 @@ NodeWithCursor deleteWhileSelecting(
               .copy(cursor: to(newNode.getCell(left.cellPosition).beginCursor))
               .toCursor(data.index));
     }
-    final context = buildTableCellNodeContext(
+    final newOpt = buildTableCellNodeContext(
         opt, left.cellPosition, node, cursor, data.index);
-    DeleteAction(ActionOperator(context, () => cursor)).invoke(DeleteIntent());
+    DeleteAction(ActionOperator(newOpt, () => null)).invoke(DeleteIntent());
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);
   }

@@ -19,7 +19,8 @@ class RichEditorController {
   ControllerStatus _status = ControllerStatus.idle;
   BasicCursor _cursor = NoneCursor();
   CursorOffset _lastCursorOffset = CursorOffset.zero();
-  EditingCursor _panStartCursor = EditingCursor(0, RichTextNodePosition.zero());
+  EditingCursor _panBeginCursor = EditingCursor(0, RichTextNodePosition.zero());
+  EditingCursor? _panEndCursor;
   final Set<ValueChanged<ControllerStatus>> _statusListeners = {};
   final Set<ValueChanged<CursorOffset>> _cursorOffsetListeners = {};
 
@@ -36,10 +37,11 @@ class RichEditorController {
 
   EditorNode get lastNode => _nodes.last;
 
-  BasicCursor get selectAllCursor => nodeLength == 1
-      ? SelectingNodeCursor(
+  BasicCursor get selectAllCursor =>
+      nodeLength == 1
+          ? SelectingNodeCursor(
           0, nodes.first.beginPosition, nodes.last.endPosition)
-      : SelectingNodesCursor(EditingCursor(0, firstNode.beginPosition),
+          : SelectingNodesCursor(EditingCursor(0, firstNode.beginPosition),
           EditingCursor(nodeLength - 1, lastNode.endPosition));
 
   UpdateControllerOperation? update(Update data, {bool record = true}) {
@@ -69,6 +71,12 @@ class RichEditorController {
     }
   }
 
+  void updatePanEndCursor(EditingCursor cursor) {
+    if (_panEndCursor == cursor) return;
+    logger.i('$tag, updatePanEndCursor: $cursor');
+    _panEndCursor = cursor;
+  }
+
   void addStatusChangedListener(ValueChanged<ControllerStatus> listener) =>
       _statusListeners.add(listener);
 
@@ -81,7 +89,10 @@ class RichEditorController {
   void removeCursorOffsetListeners(ValueChanged<CursorOffset> listener) =>
       _cursorOffsetListeners.remove(listener);
 
-  void _updatePanStartCursor(EditingCursor c) => _panStartCursor = c;
+  void _updatePanStartCursor(EditingCursor c) {
+    _panBeginCursor = c;
+    _panEndCursor = null;
+  }
 
   void onArrowAccept(AcceptArrowData data) => listeners.onArrowAccept(data);
 
@@ -119,7 +130,9 @@ class RichEditorController {
 
   CursorOffset get lastCursorOffset => _lastCursorOffset;
 
-  EditingCursor get panStartCursor => _panStartCursor;
+  EditingCursor get panBeginCursor => _panBeginCursor;
+
+  EditingCursor? get panEndCursor => _panEndCursor;
 }
 
 class Update extends UpdateControllerOperation {
@@ -155,7 +168,7 @@ class Replace extends UpdateControllerOperation {
     final nodes = controller._nodes;
     final oldNodes = nodes.sublist(begin, end);
     final operation =
-        Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
+    Replace(begin, begin + newNodes.length, oldNodes, controller.cursor);
     nodes.replaceRange(begin, end, List.of(newNodes));
     controller.updateCursor(cursor, notify: false);
     controller.notifyNodes();
@@ -194,11 +207,11 @@ class EditingOffset {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is EditingOffset &&
-          runtimeType == other.runtimeType &&
-          offset == other.offset &&
-          height == other.height &&
-          nodeId == other.nodeId;
+          other is EditingOffset &&
+              runtimeType == other.runtimeType &&
+              offset == other.offset &&
+              height == other.height &&
+              nodeId == other.nodeId;
 
   @override
   int get hashCode => offset.hashCode ^ height.hashCode ^ nodeId.hashCode;

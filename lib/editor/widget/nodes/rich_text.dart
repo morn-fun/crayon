@@ -107,22 +107,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final type = data.type;
     late RichTextNodePosition p;
     final cursor = data.cursor;
-    if (cursor is EditingCursor) {
-      if (cursor.position is! RichTextNodePosition) return;
-      p = cursor.position as RichTextNodePosition;
-    } else if (cursor is SelectingNodeCursor) {
-      if (cursor.end is! RichTextNodePosition) return;
-      p = cursor.end as RichTextNodePosition;
-    } else {
-      return;
-    }
+    if (cursor.position is! RichTextNodePosition) return;
+    p = cursor.position as RichTextNodePosition;
     logger.i('$tag, onArrowAccept $data');
     RichTextNodePosition? newPosition;
-    bool isSelecting = false;
+    bool isSelection = false;
     switch (type) {
       case ArrowType.current:
       case ArrowType.selectionCurrent:
-        isSelecting = type == ArrowType.selectionCurrent;
+        isSelection = type == ArrowType.selectionCurrent;
         final extra = data.extras;
         if (extra is Offset) {
           final box = renderBox;
@@ -142,7 +135,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           if (tapOffset == null) return;
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
-          if (isSelecting) {
+          if (isSelection) {
             listeners.notifyGestures(PanGestureState(newTapOffset));
           } else {
             listeners.notifyGestures(TapGestureState(newTapOffset));
@@ -153,17 +146,17 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
       case ArrowType.left:
       case ArrowType.selectionLeft:
-        isSelecting = type == ArrowType.selectionLeft;
+        isSelection = type == ArrowType.selectionLeft;
         newPosition = node.lastPosition(p);
         break;
       case ArrowType.right:
       case ArrowType.selectionRight:
-        isSelecting = type == ArrowType.selectionRight;
+        isSelection = type == ArrowType.selectionRight;
         newPosition = node.nextPosition(p);
         break;
       case ArrowType.up:
       case ArrowType.selectionUp:
-        isSelecting = type == ArrowType.selectionUp;
+        isSelection = type == ArrowType.selectionUp;
         final box = renderBox;
         if (box == null) return;
         final rect =
@@ -180,7 +173,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        if (isSelecting) {
+        if (isSelection) {
           listeners.notifyGestures(PanGestureState(newTapOffset));
         } else {
           listeners.notifyGestures(TapGestureState(newTapOffset));
@@ -188,7 +181,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
       case ArrowType.down:
       case ArrowType.selectionDown:
-        isSelecting = type == ArrowType.selectionDown;
+        isSelection = type == ArrowType.selectionDown;
         final box = renderBox;
         if (box == null) return;
         final rect =
@@ -206,13 +199,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        if (isSelecting) {
+        if (isSelection) {
           listeners.notifyGestures(PanGestureState(newTapOffset));
         } else {
           listeners.notifyGestures(TapGestureState(newTapOffset));
         }
         break;
       case ArrowType.wordLast:
+      case ArrowType.selectionWordLast:
+        isSelection = type == ArrowType.selectionWordLast;
         if (p == node.beginPosition) throw ArrowLeftBeginException(p);
         final currentOffset = node.getOffset(p);
         var wordRange =
@@ -224,6 +219,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         newPosition = node.getPositionByOffset(wordRange.start);
         break;
       case ArrowType.wordNext:
+      case ArrowType.selectionWordNext:
+        isSelection = type == ArrowType.selectionWordNext;
         if (p == node.endPosition) throw ArrowRightEndException(p);
         final currentOffset = node.getOffset(p);
         var wordRange =
@@ -258,7 +255,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         break;
     }
     if (newPosition == null) return;
-    if (isSelecting) {
+    if (isSelection) {
       operator.onPanUpdate(EditingCursor(nodeIndex, newPosition));
       return;
     }

@@ -4,7 +4,8 @@ import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 
 extension CursorExtension on BasicCursor {
-  SelectingNodeCursor? getSelectingPosition(int index, EditorNode node) {
+  SelectingNodeCursor? getSelectingPosition(
+      int index, EditorNode node, EditingCursor lastCursor) {
     final cursor = this;
     if (cursor is EditingCursor) return null;
     if (cursor is SelectingNodeCursor) {
@@ -12,26 +13,44 @@ extension CursorExtension on BasicCursor {
       return cursor;
     } else if (cursor is SelectingNodesCursor) {
       if (!cursor.contains(index)) return null;
+      bool lowerThanLast = index < lastCursor.index;
       if (index == cursor.left.index) {
-        return SelectingNodeCursor(
-            index, cursor.left.position, node.endPosition);
+        if (lowerThanLast) {
+          return SelectingNodeCursor(
+              index, node.endPosition, cursor.left.position);
+        } else {
+          return SelectingNodeCursor(
+              index, cursor.left.position, node.endPosition);
+        }
       } else if (index == cursor.right.index) {
-        return SelectingNodeCursor(
-            index, node.beginPosition, cursor.right.position);
+        if (lowerThanLast) {
+          return SelectingNodeCursor(
+              index, node.beginPosition, cursor.right.position);
+        } else {
+          return SelectingNodeCursor(
+              index, cursor.right.position, node.beginPosition);
+        }
       } else {
-        return SelectingNodeCursor(index, node.beginPosition, node.endPosition);
+        if (lowerThanLast) {
+          return SelectingNodeCursor(
+              index, node.endPosition, node.beginPosition);
+        } else {
+          return SelectingNodeCursor(
+              index, node.beginPosition, node.endPosition);
+        }
       }
     }
     return null;
   }
 
-  SingleNodeCursor? getSingleNodeCursor(int index, EditorNode node) {
+  SingleNodeCursor? getSingleNodeCursor(
+      int index, EditorNode node, EditingCursor lastCursor) {
     final cursor = this;
     if (cursor is EditingCursor) {
       if (cursor.index != index) return null;
       return cursor;
     }
-    return getSelectingPosition(index, node);
+    return getSelectingPosition(index, node, lastCursor);
   }
 
   Set<String> tagIntersection(List<EditorNode> nodes) {

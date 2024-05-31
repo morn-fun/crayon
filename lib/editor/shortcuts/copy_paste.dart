@@ -29,7 +29,7 @@ class CopyAction extends ContextAction<CopyIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   CopyAction(this.ac);
 
@@ -71,7 +71,7 @@ class PasteAction extends ContextAction<PasteIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   PasteAction(this.ac);
 

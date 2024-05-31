@@ -244,7 +244,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                         editorContext,
                         NodeBuildParam(
                           index: index,
-                          cursor: cursor.getSingleNodeCursor(index, current),
+                          cursor: cursor.getSingleNodeCursor(index, current, controller.panBeginCursor),
                         ),
                         context),
                   ),

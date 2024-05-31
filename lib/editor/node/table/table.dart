@@ -201,18 +201,18 @@ class TableNode extends EditorNode {
       }
       if (c is SelectingNodeCursor) {
         final selectingCursor = c.as<TablePosition>();
-        final left = selectingCursor.left;
-        final right = selectingCursor.right;
+        final begin = selectingCursor.begin;
+        final end = selectingCursor.end;
         bool containsSelf =
-            cellPosition.containSelf(left.cellPosition, right.cellPosition);
+            cellPosition.containSelf(begin.cellPosition, end.cellPosition);
         if (!containsSelf) return null;
-        if (left.sameCell(right)) {
-          final sameIndex = left.index == right.index;
+        if (begin.sameCell(end)) {
+          final sameIndex = begin.index == end.index;
           if (sameIndex) {
             return SelectingNodeCursor(
-                left.index, left.position, right.position);
+                begin.index, begin.position, end.position);
           }
-          return SelectingNodesCursor(left.cursor, right.cursor);
+          return SelectingNodesCursor(begin.cursor, end.cursor);
         }
         return getCell(cellPosition).selectAllCursor;
       }

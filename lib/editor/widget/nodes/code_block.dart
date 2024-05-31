@@ -131,20 +131,16 @@ class _CodeBlockState extends State<CodeBlock> {
     final type = data.type;
     late CodeBlockPosition p;
     final cursor = data.cursor;
-    if (cursor is EditingCursor) {
-      if (cursor.position is! CodeBlockPosition) return;
-      p = cursor.position as CodeBlockPosition;
-    } else if (cursor is SelectingNodeCursor) {
-      if (cursor.end is! CodeBlockPosition) return;
-      p = cursor.end as CodeBlockPosition;
-    } else {
-      return;
-    }
+    if (cursor.position is! CodeBlockPosition) return;
+    p = cursor.position as CodeBlockPosition;
     final index = p.index;
     logger.i('$tag, onArrowAccept $data');
     CodeBlockPosition? newPosition;
+    bool isSelection = false;
     switch (type) {
       case ArrowType.current:
+      case ArrowType.selectionCurrent:
+        isSelection = type == ArrowType.selectionCurrent;
         final box = renderBox;
         if (box == null) return;
         final extra = data.extras;
@@ -161,19 +157,30 @@ class _CodeBlockState extends State<CodeBlock> {
                 Offset(extra.dx, globalY + h + padding.top + margin.top);
           }
           if (tapOffset == null) return;
-          localListeners.notifyGesture(
-              '$nodeId$index', TapGestureState(tapOffset));
+          if (isSelection) {
+            localListeners.notifyGesture(
+                '$nodeId$index', PanGestureState(tapOffset));
+          } else {
+            localListeners.notifyGesture(
+                '$nodeId$index', TapGestureState(tapOffset));
+          }
         } else {
           newPosition = p;
         }
         break;
       case ArrowType.left:
+      case ArrowType.selectionLeft:
+        isSelection = type == ArrowType.selectionLeft;
         newPosition = node.lastPosition(p);
         break;
       case ArrowType.right:
+      case ArrowType.selectionRight:
+        isSelection = type == ArrowType.selectionRight;
         newPosition = node.nextPosition(p);
         break;
       case ArrowType.up:
+      case ArrowType.selectionUp:
+        isSelection = type == ArrowType.selectionUp;
         final lastIndex = p.index - 1;
         if (lastIndex < 0) throw ArrowUpTopException(p, lastEditOffset);
         final lastCode = codes[lastIndex];
@@ -181,6 +188,8 @@ class _CodeBlockState extends State<CodeBlock> {
         newPosition = CodeBlockPosition(lastIndex, minOffset);
         break;
       case ArrowType.down:
+      case ArrowType.selectionDown:
+        isSelection = type == ArrowType.selectionDown;
         final nextIndex = p.index + 1;
         if (nextIndex > codes.length - 1) {
           throw ArrowDownBottomException(p, lastEditOffset);
@@ -190,6 +199,8 @@ class _CodeBlockState extends State<CodeBlock> {
         newPosition = CodeBlockPosition(nextIndex, minOffset);
         break;
       case ArrowType.wordLast:
+      case ArrowType.selectionWordLast:
+        isSelection = type == ArrowType.selectionWordLast;
         try {
           localListeners.onArrowAccept(data.newId('$nodeId$index'));
         } on ArrowLeftBeginException {
@@ -198,6 +209,8 @@ class _CodeBlockState extends State<CodeBlock> {
         }
         break;
       case ArrowType.wordNext:
+      case ArrowType.selectionWordNext:
+        isSelection = type == ArrowType.selectionWordNext;
         try {
           localListeners.onArrowAccept(data.newId('$nodeId$index'));
         } on ArrowRightEndException {
@@ -212,7 +225,10 @@ class _CodeBlockState extends State<CodeBlock> {
       default:
         break;
     }
-    if (newPosition != null) {
+    if (newPosition == null) return;
+    if (isSelection) {
+      operator.onPanUpdate(EditingCursor(widgetIndex, newPosition));
+    } else {
       operator.onCursor(EditingCursor(widgetIndex, newPosition));
     }
   }

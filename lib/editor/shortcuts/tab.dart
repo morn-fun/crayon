@@ -24,7 +24,7 @@ class TabAction extends ContextAction<TabIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   TabAction(this.ac);
 
@@ -66,7 +66,7 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   ShiftTabAction(this.ac);
 

@@ -67,9 +67,6 @@ class EditorContext extends NodesOperator {
   Iterable<EditorNode> getRange(int begin, int end) =>
       controller.getRange(begin, end);
 
-  void updateCursor(BasicCursor cursor, {bool notify = true}) =>
-      controller.updateCursor(cursor, notify: notify);
-
   @override
   BasicCursor<NodePosition> get selectAllCursor => controller.selectAllCursor;
 
@@ -89,7 +86,8 @@ class EditorContext extends NodesOperator {
   @override
   void onPanUpdate(EditingCursor cursor) {
     final c = generateSelectingCursor(
-        cursor, controller.panStartCursor, (i) => controller.getNode(i));
+        cursor, controller.panBeginCursor, (i) => controller.getNode(i));
+    controller.updatePanEndCursor(cursor);
     if (c != null) controller.updateCursor(c);
   }
 
@@ -175,11 +173,13 @@ class NodeBuildParam {
 
 class ActionOperator {
   final NodesOperator operator;
-  final ValueGetter<BasicCursor> cursorGetter;
+  final ValueGetter<EditingCursor?> panEndCursorGetter;
 
-  BasicCursor get cursor => cursorGetter.call();
+  BasicCursor get cursor => operator.cursor;
 
-  ActionOperator(this.operator, this.cursorGetter);
+  EditingCursor? get panEndCursor => panEndCursorGetter.call();
+
+  ActionOperator(this.operator, this.panEndCursorGetter);
 }
 
 class TableCellNodeContext extends NodesOperator {

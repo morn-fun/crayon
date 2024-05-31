@@ -32,7 +32,7 @@ class UnderlineAction extends ContextAction<UnderlineIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   UnderlineAction(this.ac);
 
@@ -48,7 +48,7 @@ class BoldAction extends ContextAction<BoldIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   BoldAction(this.ac);
 
@@ -64,7 +64,7 @@ class ItalicAction extends ContextAction<ItalicIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   ItalicAction(this.ac);
 
@@ -80,7 +80,7 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   LineThroughAction(this.ac);
 

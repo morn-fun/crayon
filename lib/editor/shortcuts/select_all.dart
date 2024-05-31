@@ -15,7 +15,7 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   SelectAllAction(this.ac);
 

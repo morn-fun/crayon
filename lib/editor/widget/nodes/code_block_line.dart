@@ -11,7 +11,6 @@ import '../../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
-import '../../cursor/basic.dart';
 import '../../cursor/code_block.dart';
 import '../../exception/editor_node.dart';
 import '../editing_cursor.dart';
@@ -169,6 +168,14 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
               valueListenable: selectingCursorNotifier,
               builder: (ctx, v, c) {
                 if (v == null) return Container();
+                if (v.start == v.end) {
+                  Offset offset = painter.getOffsetFromTextOffset(v.start);
+                  return Container(
+                      height: painter.height,
+                      width: v.start == 0 ? 4 : 2,
+                      margin: EdgeInsets.only(left: offset.dx),
+                      color: Colors.blue.withOpacity(0.5));
+                }
                 return Stack(
                     children: painter.buildSelectedAreas(v.start, v.end));
               }),
@@ -218,33 +225,36 @@ class _CodeBlockLineState extends State<CodeBlockLine> {
     final type = data.type;
     late CodeBlockPosition p;
     final cursor = data.cursor;
-    if (cursor is EditingCursor) {
-      if (cursor.position is! CodeBlockPosition) return;
-      p = cursor.position as CodeBlockPosition;
-    } else if (cursor is SelectingNodeCursor) {
-      if (cursor.end is! CodeBlockPosition) return;
-      p = cursor.end as CodeBlockPosition;
-    } else {
-      return;
-    }
+    if (cursor.position is! CodeBlockPosition) return;
+    p = cursor.position as CodeBlockPosition;
     switch (type) {
       case ArrowType.wordLast:
+      case ArrowType.selectionWordLast:
         final offset = p.offset;
         if (offset == 0) throw ArrowLeftBeginException(p);
         var wordRange = painter.getWordBoundary(TextPosition(offset: offset));
         if (wordRange.start == offset) {
           wordRange = painter.getWordBoundary(TextPosition(offset: offset - 1));
         }
-        controller.onEditingPosition(wordRange.start);
+        if (type == ArrowType.selectionWordLast) {
+          controller.onPanUpdatePosition(wordRange.start);
+        } else {
+          controller.onEditingPosition(wordRange.start);
+        }
         break;
       case ArrowType.wordNext:
+      case ArrowType.selectionWordNext:
         final offset = p.offset;
         if (offset == code.length) throw ArrowRightEndException(p);
         var wordRange = painter.getWordBoundary(TextPosition(offset: offset));
         if (wordRange.end == offset) {
           wordRange = painter.getWordBoundary(TextPosition(offset: offset + 1));
         }
-        controller.onEditingPosition(wordRange.end);
+        if (type == ArrowType.selectionWordNext) {
+          controller.onPanUpdatePosition(wordRange.end);
+        } else {
+          controller.onEditingPosition(wordRange.end);
+        }
         break;
       case ArrowType.lineBegin:
         final offset = p.offset;

@@ -1,3 +1,4 @@
+import 'package:crayon/editor/core/listener_collection.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart' hide TableCell;
 
@@ -45,7 +46,7 @@ TableCellNodeContext buildTableCellNodeContext(NodesOperator ctx,
     CellPosition p, TableNode node, BasicCursor cursor, int index) {
   final cell = node.getCell(p);
   final childListener =
-      ctx.listeners.getListener(cell.id)!;
+      ctx.listeners.getListener(cell.id) ?? ListenerCollection();
   return TableCellNodeContext(
       cell: cell,
       cursor: cursor,
@@ -83,10 +84,10 @@ BasicCursor buildTableCellCursor(
     var right = begin.isLowerThan(end) ? end : begin;
     final leftNode = cell.getNode(left.index);
     final rightNode = cell.getNode(right.index);
-    if(leftNode is! RichTextNode) {
+    if (leftNode is! RichTextNode) {
       left = EditingCursor(left.index, leftNode.beginPosition);
     }
-    if(rightNode is! RichTextNode){
+    if (rightNode is! RichTextNode) {
       right = EditingCursor(right.index, rightNode.endPosition);
     }
     return SelectingNodesCursor(left, right);

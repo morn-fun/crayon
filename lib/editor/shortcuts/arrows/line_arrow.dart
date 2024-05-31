@@ -16,7 +16,7 @@ class ArrowLineBeginAction extends ContextAction<ArrowLineBeginIntent> {
   void invoke(ArrowLineBeginIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowOnLine(ac.operator, ac.cursor, ArrowType.lineBegin);
+      arrowOnLine(ac.operator, ac.operator.cursor, ArrowType.lineBegin);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
@@ -32,7 +32,7 @@ class ArrowLineEndAction extends ContextAction<ArrowLineEndIntent> {
   void invoke(ArrowLineEndIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowOnLine(ac.operator, ac.cursor, ArrowType.lineEnd);
+      arrowOnLine(ac.operator, ac.operator.cursor, ArrowType.lineEnd);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
@@ -45,10 +45,11 @@ void arrowOnLine(NodesOperator operator, BasicCursor cursor, ArrowType type) {
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
-    newCursor = cursor.leftCursor;
+    newCursor =
+        (type == ArrowType.lineBegin) ? cursor.leftCursor : cursor.endCursor;
     t = ArrowType.current;
   } else if (cursor is SelectingNodesCursor) {
-    newCursor = cursor.left;
+    newCursor = (type == ArrowType.lineBegin) ? cursor.left : cursor.right;
     t = ArrowType.current;
   }
   if (newCursor == null) {

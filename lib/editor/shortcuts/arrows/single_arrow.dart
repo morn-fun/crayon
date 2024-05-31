@@ -7,64 +7,64 @@ import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
-class LeftArrowAction extends ContextAction<LeftArrowIntent> {
+class ArrowLeftAction extends ContextAction<ArrowLeftIntent> {
   final ActionOperator ac;
 
-  LeftArrowAction(this.ac);
+  ArrowLeftAction(this.ac);
 
   @override
-  void invoke(LeftArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowLeftIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.left);
+      onArrow(ac.operator, ac.operator.cursor, ArrowType.left);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class RightArrowAction extends ContextAction<RightArrowIntent> {
+class ArrowRightAction extends ContextAction<ArrowRightIntent> {
   final ActionOperator ac;
 
-  RightArrowAction(this.ac);
+  ArrowRightAction(this.ac);
 
   @override
-  void invoke(RightArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowRightIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.right);
+      onArrow(ac.operator, ac.operator.cursor, ArrowType.right);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class UpArrowAction extends ContextAction<UpArrowIntent> {
+class ArrowUpAction extends ContextAction<ArrowUpIntent> {
   final ActionOperator ac;
 
-  UpArrowAction(this.ac);
+  ArrowUpAction(this.ac);
 
   @override
-  void invoke(UpArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowUpIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.up);
+      onArrow(ac.operator, ac.operator.cursor, ArrowType.up);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class DownArrowAction extends ContextAction<DownArrowIntent> {
+class ArrowDownAction extends ContextAction<ArrowDownIntent> {
   final ActionOperator ac;
 
-  DownArrowAction(this.ac);
+  ArrowDownAction(this.ac);
 
   @override
-  void invoke(DownArrowIntent intent, [BuildContext? context]) {
+  void invoke(ArrowDownIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      onArrow(ac.operator, ac.cursor, ArrowType.down);
+      onArrow(ac.operator, ac.operator.cursor, ArrowType.down);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
@@ -77,10 +77,14 @@ void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type) {
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
-    newCursor = cursor.rightCursor;
+    newCursor = (type == ArrowType.left || type == ArrowType.up)
+        ? cursor.leftCursor
+        : cursor.rightCursor;
     t = ArrowType.current;
   } else if (cursor is SelectingNodesCursor) {
-    newCursor = cursor.right;
+    newCursor = (type == ArrowType.left || type == ArrowType.up)
+        ? cursor.left
+        : cursor.right;
     t = ArrowType.current;
   }
   if (newCursor == null) {

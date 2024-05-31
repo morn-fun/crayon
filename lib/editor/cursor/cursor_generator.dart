@@ -21,7 +21,7 @@ BasicCursor? generateSelectingCursor(
   return newCursor;
 }
 
-BasicCursor<NodePosition>? getSelectingNodesCursor(
+SelectingNodesCursor<NodePosition>? getSelectingNodesCursor(
     NodeGetter nodeGetter,
     int oldIndex,
     int newIndex,
@@ -31,7 +31,7 @@ BasicCursor<NodePosition>? getSelectingNodesCursor(
   final node = nodeGetter.call(newIndex);
   bool isOldNodeInLower = newIndex > oldIndex;
 
-  BasicCursor newCursor;
+  SelectingNodesCursor newCursor;
   if (oldNode is RichTextNode && node is RichTextNode) {
     newCursor = SelectingNodesCursor(EditingCursor(oldIndex, oldPosition),
         EditingCursor(newIndex, newPosition));

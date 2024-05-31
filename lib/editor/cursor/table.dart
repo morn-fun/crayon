@@ -40,7 +40,9 @@ class TablePosition extends NodePosition {
       throw NodePositionDifferentException(runtimeType, other.runtimeType);
     }
     if (row < other.row) return true;
+    if (row > other.row) return false;
     if (column < other.column) return true;
+    if (column > other.column) return false;
     return cursor.isLowerThan(other.cursor);
   }
 

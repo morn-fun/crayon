@@ -23,7 +23,7 @@ NodeWithCursor newlineWhileSelecting(
     if (!cell.wholeSelected(cursor)) {
       final context = buildTableCellNodeContext(
           data.operator, left.cellPosition, node, cursor, data.index);
-      NewlineAction(ActionOperator(context, () => cursor))
+      NewlineAction(ActionOperator(context, () => null))
           .invoke(NewlineIntent());
     }
   }

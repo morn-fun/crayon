@@ -21,7 +21,7 @@ class DeleteAction extends ContextAction<DeleteIntent> {
 
   NodesOperator get operator => ac.operator;
 
-  BasicCursor get cursor => ac.cursor;
+  BasicCursor get cursor => operator.cursor;
 
   DeleteAction(this.ac);
 

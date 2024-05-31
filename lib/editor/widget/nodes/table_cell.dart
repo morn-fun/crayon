@@ -11,6 +11,8 @@ import '../../node/table/table.dart';
 import '../../node/table/table_cell.dart' as tc;
 import '../../shortcuts/arrows/arrows.dart';
 import '../../shortcuts/arrows/line_arrow.dart';
+import '../../shortcuts/arrows/selection_arrow.dart';
+import '../../shortcuts/arrows/selection_word_arrow.dart';
 import '../../shortcuts/arrows/single_arrow.dart';
 import '../../shortcuts/arrows/word_arrow.dart';
 
@@ -127,12 +129,104 @@ class _RichTableCellState extends State<RichTableCell> {
               operator, newCellPosition, node, newCursor, widgetIndex);
           onArrow(newOpt, newCursor, ArrowType.current);
         }
-      case ArrowType.wordLast:
-        if (cursor == null) return;
+
+      case ArrowType.selectionLeft:
+      case ArrowType.selectionUp:
+      case ArrowType.selectionRight:
+      case ArrowType.selectionDown:
+        if (cursor == null) {
+          throw NodeUnsupportedException(
+              node.runtimeType, 'onArrowAccept $type without cursor', d);
+        }
         final opt = buildTableCellNodeContext(
             operator, cellPosition, node, cursor, widgetIndex);
         try {
-          wordArrowOnLast(opt, cursor);
+          onArrowSelection(opt, cursor, type);
+        } on ArrowLeftBeginException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.column == 0) throw ArrowLeftBeginException(this);
+          final newCellPosition = cellPosition.lastInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        } on ArrowUpTopException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.row == 0) {
+            throw ArrowUpTopException(this, d.extras ?? Offset.zero);
+          }
+          final newCellPosition = cellPosition.lastInVertical(node, e.offset);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        } on ArrowRightEndException catch (e) {
+          logger.i(
+              'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.column == node.columnCount - 1) {
+            throw ArrowRightEndException(this);
+          }
+          final newCellPosition = cellPosition.nextInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        } on ArrowDownBottomException catch (e) {
+          logger.i('onArrowAccept of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.row == node.rowCount - 1) {
+            throw ArrowDownBottomException(this, d.extras ?? Offset.zero);
+          }
+          final newCellPosition = cellPosition.nextInVertical(node, e.offset);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        }
+        break;
+      case ArrowType.selectionWordLast:
+      case ArrowType.selectionWordNext:
+        if (cursor == null) {
+          throw NodeUnsupportedException(
+              node.runtimeType, 'onArrowAccept $type without cursor', d);
+        }
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          onArrowWordSelection(opt, cursor, type);
+        } on ArrowLeftBeginException catch (e) {
+          logger.i(
+              'Table $type onArrowWordSelection of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.column == 0) throw ArrowLeftBeginException(this);
+          final newCellPosition = cellPosition.lastInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).endCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowWordSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        } on ArrowRightEndException catch (e) {
+          logger.i(
+              'Table $type onArrowWordSelection of ${node.runtimeType} error: ${e.message}');
+          if (cellPosition.column == node.columnCount - 1) {
+            throw ArrowRightEndException(this);
+          }
+          final newCellPosition = cellPosition.nextInHorizontal(node);
+          final newCursor = node.getCell(newCellPosition).beginCursor;
+          final newOpt = buildTableCellNodeContext(
+              operator, newCellPosition, node, newCursor, widgetIndex);
+          onArrowWordSelection(newOpt, newCursor, ArrowType.selectionCurrent);
+        }
+        break;
+      case ArrowType.wordLast:
+      case ArrowType.wordNext:
+        if (cursor == null) {
+          throw NodeUnsupportedException(
+              node.runtimeType, 'onArrowAccept $type without cursor', d);
+        }
+        final opt = buildTableCellNodeContext(
+            operator, cellPosition, node, cursor, widgetIndex);
+        try {
+          onArrowWord(opt, cursor, type);
         } on ArrowLeftBeginException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -141,14 +235,6 @@ class _RichTableCellState extends State<RichTableCell> {
           final newOpt = buildTableCellNodeContext(
               operator, newCellPosition, node, newCursor, widgetIndex);
           onArrow(newOpt, newCursor, ArrowType.current);
-        }
-        break;
-      case ArrowType.wordNext:
-        if (cursor == null) return;
-        final opt = buildTableCellNodeContext(
-            operator, cellPosition, node, cursor, widgetIndex);
-        try {
-          wordArrowOnNext(opt, cursor);
         } on ArrowRightEndException catch (e) {
           logger.i(
               'Table $type onArrowAccept of ${node.runtimeType} error: ${e.message}');
@@ -211,6 +297,11 @@ class _RichTableCellState extends State<RichTableCell> {
   @override
   Widget build(BuildContext context) {
     bool wholeSelected = cell.wholeSelected(cursor);
+    late EditingCursor lastCursor;
+    final c = cursor;
+    if (c is EditingCursor) lastCursor = c;
+    if (c is SelectingNodeCursor) lastCursor = c.beginCursor;
+    if (c is SelectingNodesCursor) lastCursor = c.begin;
     return Padding(
       padding: EdgeInsets.all(8),
       child: Column(
@@ -227,7 +318,7 @@ class _RichTableCellState extends State<RichTableCell> {
                   index: i,
                   cursor: wholeSelected
                       ? null
-                      : cursor?.getSingleNodeCursor(i, innerNode),
+                      : cursor?.getSingleNodeCursor(i, innerNode, lastCursor),
                 ),
                 context),
           );

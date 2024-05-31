@@ -1,3 +1,4 @@
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
@@ -7,86 +8,95 @@ import '../../../editor/extension/node_context.dart';
 import '../../exception/editor_node.dart';
 import 'arrows.dart';
 
-class ArrowLeftSelectionAction extends ContextAction<ArrowLeftSelectionIntent> {
+class ArrowSelectionLeftAction extends ContextAction<ArrowSelectionLeftIntent> {
   final ActionOperator ac;
 
-  ArrowLeftSelectionAction(this.ac);
+  ArrowSelectionLeftAction(this.ac);
 
   @override
-  void invoke(ArrowLeftSelectionIntent intent, [BuildContext? context]) {
+  void invoke(ArrowSelectionLeftIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionLeft);
+      onArrowSelection(ac.operator, ac.cursor, ArrowType.selectionLeft);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class ArrowRightSelectionAction
-    extends ContextAction<ArrowRightSelectionIntent> {
+class ArrowSelectionRightAction
+    extends ContextAction<ArrowSelectionRightIntent> {
   final ActionOperator ac;
 
-  ArrowRightSelectionAction(this.ac);
+  ArrowSelectionRightAction(this.ac);
 
   @override
-  void invoke(ArrowRightSelectionIntent intent, [BuildContext? context]) {
+  void invoke(ArrowSelectionRightIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionRight);
+      onArrowSelection(ac.operator, ac.cursor, ArrowType.selectionRight);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class ArrowUpSelectionAction extends ContextAction<ArrowUpSelectionIntent> {
+class ArrowSelectionUpAction extends ContextAction<ArrowSelectionUpIntent> {
   final ActionOperator ac;
 
-  ArrowUpSelectionAction(this.ac);
+  ArrowSelectionUpAction(this.ac);
 
   @override
-  void invoke(ArrowUpSelectionIntent intent, [BuildContext? context]) {
+  void invoke(ArrowSelectionUpIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionUp);
+      onArrowSelection(ac.operator, ac.cursor, ArrowType.selectionUp);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-class ArrowDownSelectionAction extends ContextAction<ArrowDownSelectionIntent> {
+class ArrowSelectionDownAction extends ContextAction<ArrowSelectionDownIntent> {
   final ActionOperator ac;
 
-  ArrowDownSelectionAction(this.ac);
+  ArrowSelectionDownAction(this.ac);
 
   @override
-  void invoke(ArrowDownSelectionIntent intent, [BuildContext? context]) {
+  void invoke(ArrowSelectionDownIntent intent, [BuildContext? context]) {
     logger.i('$runtimeType is invoking!');
     try {
-      arrowSelection(ac.operator, ac.cursor, ArrowType.selectionDown);
+      onArrowSelection(ac.operator, ac.cursor, ArrowType.selectionDown);
     } catch (e) {
       logger.i('$runtimeType error:$e');
     }
   }
 }
 
-void arrowSelection(
+void onArrowSelection(
     NodesOperator operator, BasicCursor cursor, ArrowType type) {
   EditingCursor? newCursor;
-
   ArrowType t = type;
   if (cursor is EditingCursor) {
     newCursor = cursor;
   } else if (cursor is SelectingNodeCursor) {
     newCursor = cursor.endCursor;
   } else if (cursor is SelectingNodesCursor) {
+    final endNode = operator.getNode(cursor.endIndex);
     newCursor = cursor.end;
+    if (t == ArrowType.selectionLeft || t == ArrowType.selectionUp) {
+      if (endNode is! RichTextNode) {
+        newCursor = EditingCursor(cursor.endIndex, endNode.beginPosition);
+      }
+    } else {
+      if (endNode is! RichTextNode) {
+        newCursor = EditingCursor(cursor.endIndex, endNode.endPosition);
+      }
+    }
   }
   if (newCursor == null) {
     throw NodeUnsupportedException(
-        operator.runtimeType, 'arrowSelection $type without cursor', cursor);
+        operator.runtimeType, 'onArrowSelection $type without cursor', cursor);
   }
   final index = newCursor.index;
   try {
