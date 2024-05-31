@@ -253,9 +253,8 @@ class HoverGestureState implements GestureState {
 class PanGestureState implements GestureState {
   @override
   final Offset globalOffset;
-  final Offset beginOffset;
 
-  PanGestureState(this.globalOffset, this.beginOffset);
+  PanGestureState(this.globalOffset);
 }
 
 class CursorOffset {

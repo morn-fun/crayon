@@ -42,7 +42,6 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   double minExtent = 0;
   bool isDealingWithOffset = false;
   bool isInPanGesture = false;
-  bool needTapDownWhilePanGesture = false;
   Offset panOffset = Offset.zero;
   Offset panStartOffset = Offset.zero;
   final tag = 'AutoScrollEditorList';
@@ -174,6 +173,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         // logger.i('onPanStart:$d');
         panOffset = d.globalPosition;
         panStartOffset = d.globalPosition;
+        controller.notifyGesture(TapGestureState(d.globalPosition));
       },
       onPanEnd: (d) {
         isInPanGesture = false;
@@ -184,19 +184,15 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         // logger.i('onPanDown:$d');
         panOffset = d.globalPosition;
         panStartOffset = d.globalPosition;
-        needTapDownWhilePanGesture = true;
       },
       onPanUpdate: (d) {
         // logger.i('onPanUpdate:$d');
-        if (needTapDownWhilePanGesture) {
-          controller.notifyGesture(TapGestureState(d.globalPosition));
-          needTapDownWhilePanGesture = false;
-        }
+
         panOffset = panOffset.translate(d.delta.dx, d.delta.dy);
         Throttle.execute(
           () {
             controller
-                .notifyGesture(PanGestureState(panOffset, panStartOffset));
+                .notifyGesture(PanGestureState(panOffset));
             scrollList(d.globalPosition, d.delta);
             editorContext.removeEntry();
           },
@@ -208,7 +204,6 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         // logger.i('onPanCancel');
         panOffset = Offset.zero;
         panStartOffset = Offset.zero;
-        needTapDownWhilePanGesture = false;
         isInPanGesture = false;
       },
       child: MouseRegion(

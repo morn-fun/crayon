@@ -190,19 +190,21 @@ class _RichTableState extends State<RichTable> {
   }
 
   bool onPan(PanGestureState o, CellPosition cp) {
-    final box = tableBox!;
-    final heights = List.of(heightsNotifier.value);
-    final widths = List.of(node.widths);
-    final lastCellPosition =
-        box.getCellPosition(o.beginOffset, heights, widths);
-    logger.i('last:$lastCellPosition,  current:$cp,  global:${o.globalOffset}');
-    final cell = node.getCell(cp);
-    if (lastCellPosition != null) {
-      if (lastCellPosition.sameCell(cp)) {
-        localListeners.notifyGestures(o);
-        return true;
+    final box = tableBox;
+    if(box == null) return false;
+    var c = nodeCursor;
+    if(c is SelectingNodeCursor){
+      final newCursor = c.as<TablePosition>();
+      if(newCursor.begin.cellPosition.sameCell(cp)){
+        return localListeners.notifyGestures(o) != null;
+      }
+    } else if(c is EditingCursor){
+      final newCursor = c.as<TablePosition>();
+      if(newCursor.position.cellPosition.sameCell(cp)){
+        return localListeners.notifyGestures(o) != null;
       }
     }
+    final cell = node.getCell(cp);
     operator.onPanUpdate(
         EditingCursor(widgetIndex, TablePosition(cp, cell.endCursor)));
     return true;

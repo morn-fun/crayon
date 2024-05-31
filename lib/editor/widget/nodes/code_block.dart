@@ -122,17 +122,7 @@ class _CodeBlockState extends State<CodeBlock> {
       localListeners.notifyGesture(notifyId, s);
       return true;
     } else if (s is PanGestureState) {
-      final currentOffsetContains = box.containsOffset(s.globalOffset);
-      if (!currentOffsetContains) return false;
-      final beginOffsetContains = box.containsOffset(s.beginOffset);
-      if (beginOffsetContains) {
-        localListeners.notifyGesture(notifyId, s);
-        return true;
-      } else {
-        final beginHigherThanCurrent = s.beginOffset.dy < s.globalOffset.dy;
-        operator.onPanUpdate(EditingCursor(widgetIndex,
-            beginHigherThanCurrent ? node.endPosition : node.beginPosition));
-      }
+      localListeners.notifyGesture(notifyId, s);
     }
     return false;
   }

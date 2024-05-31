@@ -143,7 +143,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           final globalOffset = box.localToGlobal(Offset.zero);
           final newTapOffset = tapOffset.move(globalOffset);
           if (isSelecting) {
-            operator.onPanUpdate(EditingCursor(nodeIndex, p));
+            listeners.notifyGestures(PanGestureState(newTapOffset));
           } else {
             listeners.notifyGestures(TapGestureState(newTapOffset));
           }
@@ -162,6 +162,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         newPosition = node.nextPosition(p);
         break;
       case ArrowType.up:
+      case ArrowType.selectionUp:
+        isSelecting = type == ArrowType.selectionUp;
         final box = renderBox;
         if (box == null) return;
         final rect =
@@ -178,9 +180,15 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        listeners.notifyGestures(TapGestureState(newTapOffset));
+        if (isSelecting) {
+          listeners.notifyGestures(PanGestureState(newTapOffset));
+        } else {
+          listeners.notifyGestures(TapGestureState(newTapOffset));
+        }
         break;
       case ArrowType.down:
+      case ArrowType.selectionDown:
+        isSelecting = type == ArrowType.selectionDown;
         final box = renderBox;
         if (box == null) return;
         final rect =
@@ -198,7 +206,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
         final globalOffset = box.localToGlobal(Offset.zero);
         final newTapOffset = tapOffset.move(globalOffset);
-        listeners.notifyGestures(TapGestureState(newTapOffset));
+        if (isSelecting) {
+          listeners.notifyGestures(PanGestureState(newTapOffset));
+        } else {
+          listeners.notifyGestures(TapGestureState(newTapOffset));
+        }
         break;
       case ArrowType.wordLast:
         if (p == node.beginPosition) throw ArrowLeftBeginException(p);
