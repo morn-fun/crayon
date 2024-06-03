@@ -49,7 +49,7 @@ class _LanguageSelectMenuState extends State<LanguageSelectMenu> {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             body: Card(
-              elevation: 10,
+              elevation: 2,
               shape: BeveledRectangleBorder(
                 borderRadius: BorderRadius.circular(6.0),
               ),

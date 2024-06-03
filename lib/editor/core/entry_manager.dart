@@ -55,16 +55,8 @@ class EntryManager {
 
   void showLinkMenu(OverlayState state, LinkMenuInfo linkMenuInfo,
           NodesOperator operator) =>
-      _showMenu(
-          state,
-          MenuType.link,
-          operator.runtimeType,
-          OverlayEntry(
-              builder: (_) => CompositedTransformFollower(
-                    child: LinkMenu(operator, linkMenuInfo, this),
-                    showWhenUnlinked: false,
-                    link: linkMenuInfo.link,
-                  )));
+      _showMenu(state, MenuType.link, operator.runtimeType,
+          OverlayEntry(builder: (_) => LinkMenu(operator, linkMenuInfo, this)));
 
   void _showMenu(OverlayState state, MenuType type, Type operatorType,
       OverlayEntry entry) {
@@ -87,41 +79,37 @@ class EntryManager {
 
 class MenuInfo {
   final Offset offset;
+  final Offset globalOffset;
   final String nodeId;
-  final double lineHeight;
   final LayerLink layerLink;
 
-  MenuInfo(this.offset, this.nodeId, this.lineHeight, this.layerLink);
+  MenuInfo(this.offset, this.globalOffset, this.nodeId, this.layerLink);
 
   MenuInfo.zero()
       : offset = Offset.zero,
-        lineHeight = 0,
+        globalOffset = Offset.zero,
         nodeId = '',
         layerLink = LayerLink();
 
   @override
   String toString() {
-    return 'MenuInfo{offset: $offset, nodeId: $nodeId, lineHeight: $lineHeight}';
+    return 'MenuInfo{offset: $offset, globalOffset: $globalOffset, nodeId: $nodeId, layerLink: $layerLink}';
   }
 }
 
 enum MenuType { optional, codeLanguage, link, text }
 
 class LinkMenuInfo {
-  final MenuInfo menuInfo;
-  final UrlInfo? urlInfo;
+  final UrlInfo urlInfo;
+  final Offset offset;
+  final String nodeId;
   final SelectingNodeCursor<RichTextNodePosition> cursor;
-  final Set<String> hoveredNodeIds;
 
-  LayerLink get link => menuInfo.layerLink;
-
-  bool get hovered => hoveredNodeIds.contains(menuInfo.nodeId);
-
-  LinkMenuInfo(this.menuInfo, this.cursor, this.urlInfo, this.hoveredNodeIds);
+  LinkMenuInfo(this.cursor, this.offset, this.nodeId, this.urlInfo);
 
   @override
   String toString() {
-    return 'LinkMenuInfo{menuInfo: $menuInfo, urlInfo: $urlInfo, cursor: $cursor, hoveredNodeIds: $hoveredNodeIds}';
+    return 'LinkMenuInfo{urlInfo: $urlInfo, offset: $offset, nodeId: $nodeId, cursor: $cursor}';
   }
 }
 

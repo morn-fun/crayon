@@ -8,6 +8,7 @@ import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/rich_text.dart';
+import '../../exception/menu.dart';
 import '../../node/basic.dart';
 import '../../node/code_block/code_block.dart';
 import '../../node/rich_text/head.dart';
@@ -59,7 +60,9 @@ class _OptionalMenuState extends State<OptionalMenu> {
     cursor = operator.cursor as EditingCursor;
     node = operator.getNode(cursor.index) as RichTextNode;
     nodeId = node.id;
-    if(operator is TableCellNodeContext) list.removeWhere((e) => e.text == '表格');
+    if (operator is TableCellNodeContext) {
+      list.removeWhere((e) => e.text == '表格');
+    }
     listeners.addCursorChangedListener(_onCursorChanged);
     listeners.addNodeChangedListener(nodeId, _onNodeChanged);
     listeners.addOptionalMenuListener(_onOptionalMenuSelected);
@@ -80,7 +83,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
       hideMenu();
       return;
     }
-    if(cursor.position is! RichTextNodePosition){
+    if (cursor.position is! RichTextNodePosition) {
       hideMenu();
       return;
     }
@@ -95,8 +98,8 @@ class _OptionalMenuState extends State<OptionalMenu> {
   }
 
   void _onNodeChanged(EditorNode node) {
-    if(node.id != nodeId) hideMenu();
-    if(node is! RichTextNode) {
+    if (node.id != nodeId) hideMenu();
+    if (node is! RichTextNode) {
       hideMenu();
       return;
     }
@@ -154,11 +157,26 @@ class _OptionalMenuState extends State<OptionalMenu> {
     final node = operator.getNode(c.index);
     if (node.id != nodeId) return;
     if (node is! RichTextNode) return;
-    if (current.generator == null) return;
-    final newNode = current.generator!
-        .call(node.rearPartNode(c.position as RichTextNodePosition));
-    operator.update(Update(
-        c.index, newNode, EditingCursor(c.index, newNode.beginPosition)));
+    final generator = current.generator;
+    if (generator == null) return;
+    final rearNode = node.rearPartNode(c.position as RichTextNodePosition);
+    try {
+      final newNode = generator.call(rearNode);
+      operator.update(Update(
+          c.index, newNode, EditingCursor(c.index, newNode.beginPosition)));
+    } on TryingToCreateLinkException {
+      final frontNode = node.frontPartNode(c.position as RichTextNodePosition);
+
+      manager.showLinkMenu(
+          Overlay.of(context),
+          LinkMenuInfo(
+              SelectingNodeCursor(c.index, node.beginPosition,
+                  c.position as RichTextNodePosition),
+              offset.offset,
+              nodeId,
+              UrlInfo('', frontNode.text)),
+          operator);
+    }
   }
 
   @override
@@ -176,7 +194,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
           children: [
             Positioned(
                 child: Card(
-                  elevation: 10,
+                  elevation: 2,
                   shape: BeveledRectangleBorder(
                     borderRadius: BorderRadius.circular(6.0),
                   ),
@@ -253,7 +271,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
   }
 
   _CoordinateInfo _correctCoordinate(Size screenSize, Offset offset) {
-    const widgetSize = Size(220, 600);
+    final widgetSize = Size(220, 32.0 * max(list.length, 1));
     const minHeight = 300;
     const minWidth = 200;
     double distanceY = this.offset.height;
@@ -304,15 +322,20 @@ final defaultMenus = [
       (n) => OrderedNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('无序列表', Icons.list_rounded, _textColor,
       (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('代码块', Icons.code, _codeColor,
-      (n) => CodeBlockNode.from([], id: n.id, depth: n.depth)),
+  MenuItemInfo.normal(
+      '代码块',
+      Icons.code,
+      _codeColor,
+      (n) => CodeBlockNode.from(n.spans.map((e) => e.text).toList(),
+          id: n.id, depth: n.depth)),
   MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
-      (n) => QuoteNode.from([], id: n.id, depth: n.depth)),
+      (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
-  MenuItemInfo.normal('链接', Icons.question_mark_rounded, _linkColor, null),
+  MenuItemInfo.normal('链接', Icons.add_link_rounded, _linkColor,
+      (n) => throw TryingToCreateLinkException()),
   MenuItemInfo.readable('常用'),
   MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
-      (n) => TodoNode.from([], id: n.id, depth: n.depth)),
+      (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('表格', Icons.table_chart_rounded, _textColor,
       (n) => TableNode.from([], [], id: n.id, depth: n.depth)),
 ];

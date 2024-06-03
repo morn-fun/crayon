@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../node/rich_text/rich_text.dart';
-import '../../../editor/cursor/basic.dart';
 import '../node/rich_text/rich_text_span.dart';
 
 extension PainterExtension on TextPainter {
@@ -91,6 +90,3 @@ extension PainterExtension on TextPainter {
     return getPositionForOffset(localPosition);
   }
 }
-
-typedef OnLinkWidgetEnter = void Function(
-    Offset offset, RichTextSpan span, SelectingNodeCursor cursor);

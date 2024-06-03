@@ -65,7 +65,7 @@ class _TextMenuState extends State<TextMenu> {
   }
 
   void onNodeChanged(EditorNode node) {
-    if(this.node?.id != node.id) return;
+    if (this.node?.id != node.id) return;
     this.node = node;
     WidgetsBinding.instance.addPostFrameCallback((t) {
       if (!mounted) return;
@@ -124,8 +124,8 @@ class _TextMenuState extends State<TextMenu> {
 
   @override
   Widget build(BuildContext context) {
-    double dy = info.lineHeight + info.offset.dy;
-    double dx = info.offset.dx / 2;
+    double dy = info.offset.dy;
+    double dx = info.offset.dx;
     final c = cursor;
     return Stack(
       children: [
@@ -133,7 +133,7 @@ class _TextMenuState extends State<TextMenu> {
           top: dy,
           left: dx,
           child: Card(
-            elevation: 10,
+            elevation: 2,
             shape: BeveledRectangleBorder(
               borderRadius: BorderRadius.circular(6.0),
             ),
@@ -186,10 +186,12 @@ class _TextMenuState extends State<TextMenu> {
                           onStyleEvent(operator, RichTextTag.link, cursor,
                               attributes: {});
                         } else {
+                          final alias =
+                              node?.getFromPosition(c.left, c.right).text ?? '';
                           manager.showLinkMenu(
                               Overlay.of(context),
-                              LinkMenuInfo(
-                                  info, c.as<RichTextNodePosition>(), null, {}),
+                              LinkMenuInfo(c.as<RichTextNodePosition>(),
+                                  info.globalOffset, info.nodeId, UrlInfo('', alias)),
                               operator);
                         }
                       },

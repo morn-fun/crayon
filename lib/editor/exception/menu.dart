@@ -11,3 +11,5 @@ class TypingRequiredOptionalMenuException implements MenuException {
   String get message =>
       '${nodeWithCursor.node.runtimeType}, operator:${operator.runtimeType} required optional menu';
 }
+
+class TryingToCreateLinkException implements MenuException {}

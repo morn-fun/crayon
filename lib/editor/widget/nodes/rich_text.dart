@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import '../../../../editor/extension/render_box.dart';
+import '../../command/modification.dart';
 import '../../core/context.dart';
 import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
@@ -11,8 +12,11 @@ import '../../extension/offset.dart';
 import '../../extension/painter.dart';
 import '../../core/logger.dart';
 import '../../cursor/rich_text.dart';
+import '../../node/basic.dart';
 import '../../node/rich_text/rich_text.dart';
+import '../../node/rich_text/rich_text_span.dart';
 import '../../shortcuts/arrows/arrows.dart';
+import '../../shortcuts/styles.dart';
 import '../editing_cursor.dart';
 import '../editor/shared_node_context_widget.dart';
 import '../menu/link.dart';
@@ -292,13 +296,23 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (entryManager.showingType != null) return true;
     bool isTextEmpty = node.getFromPosition(left, right).isEmpty;
     if (isTextEmpty) return true;
-    final h =
-        painter.getFullHeightForCaret(buildTextPosition(offset), Rect.zero) ??
-            fontSize;
-    final box = renderBox;
-    if (box == null) return true;
-    entryManager.showTextMenu(Overlay.of(context),
-        MenuInfo(box.globalToLocal(offset), nodeId, h, layerLink), operator);
+    final textBoxList = painter.getBoxesForSelection(TextSelection(
+        baseOffset: node.getOffset(left), extentOffset: node.getOffset(right)));
+    if (textBoxList.isEmpty) return true;
+    final first = textBoxList.first.toRect().bottomLeft;
+    final last = textBoxList.last.toRect().bottomRight;
+    final x = (first.dx + last.dx) / 2;
+    final screenSize = MediaQuery.of(context).size;
+    final y = max(max(0.0, first.dy), min(screenSize.height, last.dy));
+    final localOffset = Offset(x, y);
+    entryManager.showTextMenu(
+        Overlay.of(context),
+        MenuInfo(
+            localOffset,
+            renderBox?.localToGlobal(localOffset) ?? offset,
+            nodeId,
+            layerLink),
+        operator);
     return true;
   }
 
@@ -452,36 +466,35 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                   ValueListenableBuilder(
                       valueListenable: nodeChangedNotifier,
                       builder: (ctx, v, c) {
-                        final Set<String> hoveredNodeIds = {};
+                        final entryManager = editorContext?.entryManager;
                         return LinkHover(
-                            node: v,
-                            nodeIndex: nodeIndex,
-                            painter: painter,
-                            onEnter: (o, s, p) {
-                              hoveredNodeIds.add(nodeId);
-                              final url = s.attributes['url'] ?? '';
-                              final alias = s.attributes['alias'] ?? '';
-                              final h = painter.getFullHeightForCaret(
-                                      buildTextPosition(o), Rect.zero) ??
-                                  fontSize;
-                              final entryManager = editorContext?.entryManager;
-                              if (entryManager == null) return;
-                              if (entryManager.showingType == MenuType.link) {
-                                return;
-                              }
-                              entryManager.showLinkMenu(
-                                  Overlay.of(context),
-                                  LinkMenuInfo(
-                                      MenuInfo(o, nodeId, h, layerLink),
-                                      p.as<RichTextNodePosition>(),
-                                      UrlInfo(url, alias),
-                                      hoveredNodeIds),
-                                  operator);
-                            },
-                            onExit: (e) => hoveredNodeIds.remove(nodeId),
-                            onTap: (s) {
-                              logger.i('$tag,  tapped:${s.text}');
-                            });
+                          node: v,
+                          painter: painter,
+                          enableToShow: () => entryManager?.showingType == null,
+                          onEdit: (s) {
+                            if (entryManager == null) return;
+                            if (entryManager.showingType == MenuType.link) {
+                              return;
+                            }
+                            entryManager.showLinkMenu(
+                                Overlay.of(context), s, operator);
+                          },
+                          onTap: (s) {
+                            logger.i('$tag,  tapped:${s.text}');
+                          },
+                          layerLink: layerLink,
+                          widgetIndex: nodeIndex,
+                          onCancel: (s) {
+                            onStyleEvent(
+                                operator, RichTextTag.link, operator.cursor,
+                                attributes: {});
+                            final r = node.onSelect(SelectingData(
+                                s, EventType.link, operator,
+                                extras: StyleExtra(true, {})));
+                            operator.execute(
+                                ModifyNode(NodeWithCursor(r.node, r.cursor)));
+                          },
+                        );
                       }),
                 ],
               ),

@@ -183,7 +183,8 @@ class _RichTableState extends State<RichTable> {
         right.cellPosition, heights, widths)) {
       entryManager.showTextMenu(
           Overlay.of(context),
-          MenuInfo(box.globalToLocal(s.globalOffset), nodeId, 20, layerLink),
+          MenuInfo(box.globalToLocal(s.globalOffset), s.globalOffset, nodeId,
+              layerLink),
           operator);
     }
     return true;

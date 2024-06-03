@@ -210,6 +210,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         onHover: (d) {
           if (isInPanGesture) return;
           if (controller.cursor is EditingCursor) return;
+          if(editorContext.entryManager.showingType != null) return;
           controller.notifyGesture(HoverGestureState(d.position));
         },
         child: NotificationListener<ScrollNotification>(
