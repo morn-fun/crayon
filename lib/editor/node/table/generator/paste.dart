@@ -2,18 +2,18 @@ import '../../../core/context.dart';
 import '../../../cursor/basic.dart';
 import '../../../cursor/table.dart';
 import '../../../exception/editor_node.dart';
-import '../../../shortcuts/newline.dart';
+import '../../../shortcuts/copy_paste.dart';
 import '../../basic.dart';
 import '../table.dart';
 import 'common.dart';
 
-NodeWithCursor newlineWhileEditing(
+NodeWithCursor pasteWhileEditing(
     EditingData<TablePosition> data, TableNode node) {
   return operateWhileEditing(
-      data, node, (c) => NewlineAction(c).invoke(NewlineIntent()));
+      data, node, (c) => PasteAction(c).invoke(PasteIntent()));
 }
 
-NodeWithCursor newlineWhileSelecting(
+NodeWithCursor pasteWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
@@ -22,8 +22,8 @@ NodeWithCursor newlineWhileSelecting(
     BasicCursor cursor = buildTableCellCursor(cell, left.cursor, right.cursor);
     final context = buildTableCellNodeContext(
         data.operator, left.cellPosition, node, cursor, data.index);
-    NewlineAction(ActionOperator(context)).invoke(NewlineIntent());
+    PasteAction(ActionOperator(context)).invoke(PasteIntent());
   }
   throw NodeUnsupportedException(
-      node.runtimeType, 'newlineWhileSelecting', data.cursor);
+      node.runtimeType, 'pasteWhileSelecting', data.cursor);
 }

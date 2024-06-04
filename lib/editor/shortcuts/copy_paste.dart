@@ -1,3 +1,4 @@
+import 'package:crayon/editor/node/table/table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -85,6 +86,7 @@ class PasteAction extends ContextAction<PasteIntent> {
     final List<EditorNode> nodes = [];
     if (text.startsWith(_specialEdge) && text.endsWith(_specialEdge)) {
       for (var n in _copiedNodes) {
+        if (n is TableNode && operator is TableCellNodeContext) continue;
         nodes.add(n.newNode(id: randomNodeId));
       }
     } else {

@@ -565,7 +565,7 @@ void main() {
     final n1 = node.newNode(id: 'xxx') as TableNode;
     assert(n1.id == 'xxx');
     assert(n1.id != node.id);
-    assert(listEquals(n1.table, node.table));
+    assert(!listEquals(n1.table, node.table));
 
     final n2 = node.newNode(depth: 2) as TableNode;
     assert(n2.depth == 2);
@@ -578,7 +578,7 @@ void main() {
     assert(n3.id != node.id);
     assert(n3.depth == 10);
     assert(n3.id == 'yyy');
-    assert(listEquals(n3.table, node.table));
+    assert(!listEquals(n3.table, node.table));
   });
 
   test('text', () {
@@ -1102,6 +1102,35 @@ void main() {
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
   });
 
+  test('onEdit-paste', () {
+    var node = basicNode(), ctx = buildEditorContext([node]);
+    expect(
+        () => node.onEdit(EditingData(
+            EditingCursor(0, node.beginPosition), EventType.paste, ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
+
+  test('onSelect-paste', () {
+    var node = basicNode(), ctx = buildEditorContext([node]);
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(0, node.beginPosition, node.endPosition),
+            EventType.paste,
+            ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+
+    expect(
+        () => node.onSelect(SelectingData(
+            SelectingNodeCursor(
+                0,
+                node.beginPosition,
+                node.beginPosition.copy(
+                    cursor: to(EditingCursor(2, RichTextNodePosition.zero())))),
+            EventType.paste,
+            ctx)),
+        throwsA(const TypeMatcher<NodeUnsupportedException>()));
+  });
+
   test('others', () {
     var node = basicNode(), ctx = buildEditorContext([node]);
     final cellContext = buildTableCellNodeContext(
@@ -1122,7 +1151,7 @@ void main() {
         EditingCursor(0, CodeBlockPosition.zero()),
         EditingCursor(2, CodeBlockPosition.zero())) as SelectingNodesCursor;
     assert(cellCursor.left == CodeBlockPosition.zero(atEdge: true).toCursor(0));
-    assert(cellCursor.right ==
-        CodeBlockPosition(0, 3, atEdge: true).toCursor(2));
+    assert(
+        cellCursor.right == CodeBlockPosition(0, 3, atEdge: true).toCursor(2));
   });
 }

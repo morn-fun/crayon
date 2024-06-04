@@ -25,7 +25,7 @@ NodeWithCursor increaseDepthWhileSelecting(
   final right = data.right;
   int lastDepth = data.extras is int ? data.extras : 0;
   int depth = node.depth;
-  if (left == node.beginPosition && right == node.endPosition) {
+  if (left.sameCell(node.beginPosition) && right.sameCell(node.endPosition)) {
     if (lastDepth < depth) {
       throw NodeUnsupportedException(
           node.runtimeType,
@@ -39,7 +39,7 @@ NodeWithCursor increaseDepthWhileSelecting(
         node.getCell(left.cellPosition), left.cursor, right.cursor);
     final context = buildTableCellNodeContext(
         data.operator, left.cellPosition, node, cursor, data.index);
-    TabAction(ActionOperator(context, () => null)).invoke(TabIntent());
+    TabAction(ActionOperator(context)).invoke(TabIntent());
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'increaseDepthWhileSelecting', data.cursor);
@@ -49,7 +49,7 @@ NodeWithCursor decreaseDepthWhileSelecting(
     SelectingData<TablePosition> data, TableNode node) {
   final left = data.left;
   final right = data.right;
-  if (left == node.beginPosition && right == node.endPosition) {
+  if (left.sameCell(node.beginPosition) && right.sameCell(node.endPosition)) {
     throw DepthNeedDecreaseMoreException(node.runtimeType, node.depth);
   }
   if (left.sameCell(right)) {
@@ -57,8 +57,7 @@ NodeWithCursor decreaseDepthWhileSelecting(
         node.getCell(left.cellPosition), left.cursor, right.cursor);
     final context = buildTableCellNodeContext(
         data.operator, left.cellPosition, node, cursor, data.index);
-    ShiftTabAction(ActionOperator(context, () => null))
-        .invoke(ShiftTabIntent());
+    ShiftTabAction(ActionOperator(context)).invoke(ShiftTabIntent());
   }
   throw NodeUnsupportedException(
       node.runtimeType, 'decreaseDepthWhileSelecting', data.cursor);

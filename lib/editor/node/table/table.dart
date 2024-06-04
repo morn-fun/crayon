@@ -17,6 +17,7 @@ import 'generator/common.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
 import 'generator/newline.dart';
+import 'generator/paste.dart';
 import 'generator/select_all.dart';
 import 'generator/styles.dart';
 import 'generator/typing.dart';
@@ -31,7 +32,7 @@ class TableNode extends EditorNode {
   TableNode from(List<TableCellList> table, List<double> widths,
           {String? id, int? depth, double? initWidth}) =>
       TableNode.from(
-        table,
+        id == null ? table : table.map((e) => e.newIdCellList()).toList(),
         widths,
         id: id ?? this.id,
         depth: depth ?? this.depth,
@@ -377,7 +378,7 @@ final _editingGenerator = <String, _NodeGeneratorWhileEditing>{
   EventType.newline.name: (d, n) => newlineWhileEditing(d, n),
   EventType.selectAll.name: (d, n) => selectAllWhileEditing(d, n),
   EventType.typing.name: (d, n) => typingWhileEditing(d, n),
-  // EventType.paste.name: (d, n) => pasteWhileEditing(d, n),
+  EventType.paste.name: (d, n) => pasteWhileEditing(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileEditing(d, n),
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileEditing(d, n),
 };
@@ -386,7 +387,7 @@ final _selectingGenerator = <String, _NodeGeneratorWhileSelecting>{
   EventType.delete.name: (d, n) => deleteWhileSelecting(d, n),
   EventType.newline.name: (d, n) => newlineWhileSelecting(d, n),
   EventType.selectAll.name: (d, n) => selectAllWhileSelecting(d, n),
-  // EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
+  EventType.paste.name: (d, n) => pasteWhileSelecting(d, n),
   EventType.increaseDepth.name: (d, n) => increaseDepthWhileSelecting(d, n),
   EventType.decreaseDepth.name: (d, n) => decreaseDepthWhileSelecting(d, n),
   ...Map.fromEntries(RichTextTag.values.map((e) => MapEntry(

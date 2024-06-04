@@ -92,4 +92,12 @@ class TableCell {
       {'type': '$runtimeType', 'nodes': nodes.map((e) => e.toJson()).toList()};
 
   String get text => nodes.map((e) => e.text).join('\n');
+
+  TableCell newIdCell(){
+    List<EditorNode> nodes = [];
+    for (var node in this.nodes) {
+      nodes.add(node.newNode(id: randomNodeId));
+    }
+    return TableCell(nodes);
+  }
 }

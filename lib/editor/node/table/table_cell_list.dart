@@ -47,4 +47,12 @@ class TableCellList {
           int begin, int end, ValueCopier<List<TableCell>> copier,
           {int initNum = 3}) =>
       TableCellList(cells.updateMore(begin, end, copier), initNum: initNum);
+
+  TableCellList newIdCellList() {
+    List<TableCell> cells = [];
+    for (var cell in this.cells) {
+      cells.add(cell.newIdCell());
+    }
+    return TableCellList(cells);
+  }
 }

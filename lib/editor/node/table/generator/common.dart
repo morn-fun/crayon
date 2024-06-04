@@ -20,7 +20,7 @@ NodeWithCursor operateWhileEditing<T extends Intent>(
   final opt = data.operator;
   final context = buildTableCellNodeContext(
       opt, p.cellPosition, node, p.cursor, data.index);
-  onAction.call(ActionOperator(context, () => p.cursor));
+  onAction.call(ActionOperator(context));
   throw NodeUnsupportedException(node.runtimeType, 'operateWhileEditing', null);
 }
 

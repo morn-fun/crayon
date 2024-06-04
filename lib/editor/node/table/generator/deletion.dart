@@ -22,7 +22,7 @@ NodeWithCursor deleteWhileSelecting(
   final right = data.right;
   final emptyTextNode = RichTextNode.from([]);
   final nodeBegin = node.beginPosition, nodeEnd = node.endPosition;
-  if (left == nodeBegin && right == nodeEnd) {
+  if (left.sameCell(nodeBegin) && right.sameCell(nodeEnd)) {
     return NodeWithCursor(
         emptyTextNode, emptyTextNode.beginPosition.toCursor(data.index));
   }
@@ -40,7 +40,7 @@ NodeWithCursor deleteWhileSelecting(
     }
     final newOpt = buildTableCellNodeContext(
         opt, left.cellPosition, node, cursor, data.index);
-    DeleteAction(ActionOperator(newOpt, () => null)).invoke(DeleteIntent());
+    DeleteAction(ActionOperator(newOpt)).invoke(DeleteIntent());
     throw NodeUnsupportedException(
         node.runtimeType, 'operateWhileEditing', null);
   }

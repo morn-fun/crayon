@@ -87,7 +87,6 @@ class EditorContext extends NodesOperator {
   void onPanUpdate(EditingCursor cursor) {
     final c = generateSelectingCursor(
         cursor, controller.panBeginCursor, (i) => controller.getNode(i));
-    controller.updatePanEndCursor(cursor);
     if (c != null) controller.updateCursor(c);
   }
 
@@ -173,13 +172,10 @@ class NodeBuildParam {
 
 class ActionOperator {
   final NodesOperator operator;
-  final ValueGetter<EditingCursor?> panEndCursorGetter;
 
   BasicCursor get cursor => operator.cursor;
 
-  EditingCursor? get panEndCursor => panEndCursorGetter.call();
-
-  ActionOperator(this.operator, this.panEndCursorGetter);
+  ActionOperator(this.operator);
 }
 
 class TableCellNodeContext extends NodesOperator {

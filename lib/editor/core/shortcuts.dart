@@ -151,11 +151,8 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
   OptionalMenuEnterIntent: (c) => OptionalMenuEnterAction(c),
 };
 
-Map<Type, Action<Intent>> getActions(EditorContext context) =>
-    shortcutActions.map((key, value) => MapEntry(
-        key,
-        value.call(
-            ActionOperator(context, () => context.controller.panEndCursor))));
+Map<Type, Action<Intent>> getActions(EditorContext context) => shortcutActions
+    .map((key, value) => MapEntry(key, value.call(ActionOperator(context))));
 
 typedef RichEditorControllerAction = Action<Intent> Function(
     ActionOperator context);

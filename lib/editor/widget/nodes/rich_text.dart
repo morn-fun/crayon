@@ -67,7 +67,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
 
   int get nodeIndex => widget.param.index;
 
-  double get fontSize => widget.fontSize * 1.5;
+  double get fontSize => widget.fontSize;
 
   String get nodeId => node.id;
 
@@ -403,7 +403,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                             TextPosition(offset: node.getOffset(v));
                         final h = painter.getFullHeightForCaret(
                                 textPosition, Rect.zero) ??
-                            fontSize;
+                            fontSize * 1.5;
                         return Positioned(
                           left: offset.dx,
                           top: offset.dy,
@@ -426,13 +426,19 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                         final begin = node.getOffset(left);
                         final end = node.getOffset(right);
                         if (begin == end) {
+                          final h = painter.getFullHeightForCaret(
+                                  TextPosition(offset: begin), Rect.zero) ??
+                              fontSize * 1.5;
                           Offset offset =
                               painter.getOffsetFromTextOffset(begin);
-                          return Container(
-                              height: fontSize,
-                              width: begin == 0 ? 4 : 2,
-                              margin: EdgeInsets.only(left: offset.dx),
-                              color: Colors.blue.withOpacity(0.5));
+                          return Positioned(
+                            left: offset.dx,
+                            top: offset.dy,
+                            child: Container(
+                                height: h,
+                                width: 2,
+                                color: Colors.blue.withOpacity(0.5)),
+                          );
                         }
                         return Stack(
                             children: painter.buildSelectedAreas(begin, end));
