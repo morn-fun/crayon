@@ -22,4 +22,9 @@ void main() {
       print(box.toRect());
     }
   });
+
+  test('length', (){
+    print(Characters('aaaaaa').length);
+    print(Characters('啊啊啊啊啊啊').length);
+  });
 }

@@ -1,4 +1,4 @@
-import 'package:crayon/editor/cursor/rich_text.dart';
+import '../../../editor/cursor/rich_text.dart';
 import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';

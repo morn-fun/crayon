@@ -141,10 +141,12 @@ void onStyleEvent(NodesOperator operator, RichTextTag tag, BasicCursor cursor,
           } else {
             newNode = node;
           }
-          for (var s in newNode.spans) {
-            if (!s.tags.contains(type.name)) {
-              containsTag = false;
-              break;
+          if(!newNode.isEmpty){
+            for (var s in newNode.spans) {
+              if (!s.tags.contains(type.name)) {
+                containsTag = false;
+                break;
+              }
             }
           }
         }

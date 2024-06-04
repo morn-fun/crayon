@@ -88,7 +88,7 @@ extension CursorExtension on BasicCursor {
     int i = 0;
     while (i < list.length && basicSets.isNotEmpty) {
       final node = list[i];
-      if (node is RichTextNode) {
+      if (node is RichTextNode && !node.isEmpty) {
         int j = 0;
         while (j < node.spans.length && basicSets.isNotEmpty) {
           final span = node.spans[j];

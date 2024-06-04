@@ -8,7 +8,6 @@ import '../../core/entry_manager.dart';
 import '../../core/listener_collection.dart';
 import '../../cursor/basic.dart';
 import '../../exception/editor_node.dart';
-import '../../extension/offset.dart';
 import '../../extension/painter.dart';
 import '../../core/logger.dart';
 import '../../cursor/rich_text.dart';
@@ -124,26 +123,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         if (extra is Offset) {
           final box = renderBox;
           if (box == null) return;
-          final rect =
-              Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
-          final textPosition = TextPosition(offset: node.getOffset(p));
-          final h =
-              painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
-          final offset = painter.getOffsetFromTextOffset(node.getOffset(p));
-          Offset? tapOffset;
-          if (p == node.endPosition) {
-            tapOffset = Offset(extra.dx, offset.dy + h / 2);
-          } else if (p == node.beginPosition) {
-            tapOffset = Offset(extra.dx, offset.dy + h / 2);
-          }
-          if (tapOffset == null) return;
-          final globalOffset = box.localToGlobal(Offset.zero);
-          final newTapOffset = tapOffset.move(globalOffset);
-          if (isSelection) {
-            listeners.notifyGestures(PanGestureState(newTapOffset));
-          } else {
-            listeners.notifyGestures(TapGestureState(newTapOffset));
-          }
+          final lineRange =
+              painter.getLineBoundary(TextPosition(offset: node.getOffset(p)));
+          final startOff = painter.getOffsetFromTextOffset(lineRange.start),
+              endOff = painter.getOffsetFromTextOffset(lineRange.end);
+          Offset tapOffset = Offset(extra.dx, (startOff.dy + endOff.dy) / 2);
+          final position = painter.getPositionForOffset(tapOffset);
+          newPosition = node.getPositionByOffset(position.offset);
         } else {
           newPosition = p;
         }
@@ -166,22 +152,17 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         final rect =
             Rect.fromPoints(Offset.zero, box.globalToLocal(Offset.zero));
         final textPosition = TextPosition(offset: node.getOffset(p));
-        final offset =
-            painter.getOffsetFromTextOffset(node.getOffset(p), rect: rect);
+        final offset = painter.getOffsetFromTextOffset(node.getOffset(p));
         final lineRange = painter.getLineBoundary(textPosition);
         final h = painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
         if (lineRange.start == 0 || lineRange == TextRange.empty) {
           throw ArrowUpTopException(p, offset);
         }
-        final newOffset = painter.getOffsetFromTextOffset(lineRange.start);
-        final tapOffset = Offset(offset.dx, newOffset.dy - h / 2);
-        final globalOffset = box.localToGlobal(Offset.zero);
-        final newTapOffset = tapOffset.move(globalOffset);
-        if (isSelection) {
-          listeners.notifyGestures(PanGestureState(newTapOffset));
-        } else {
-          listeners.notifyGestures(TapGestureState(newTapOffset));
-        }
+        final startOff = painter.getOffsetFromTextOffset(lineRange.start),
+            endOff = painter.getOffsetFromTextOffset(lineRange.end);
+        final tapOffset = Offset(offset.dx, (startOff.dy + endOff.dy) / 2 - h);
+        final position = painter.getPositionForOffset(tapOffset);
+        newPosition = node.getPositionByOffset(position.offset);
         break;
       case ArrowType.down:
       case ArrowType.selectionDown:
@@ -199,15 +180,11 @@ class _RichTextWidgetState extends State<RichTextWidget> {
           throw ArrowDownBottomException(p, offset);
         }
         final h = painter.getFullHeightForCaret(textPosition, rect) ?? fontSize;
-        final newOffset = painter.getOffsetFromTextOffset(lineRange.end);
-        final tapOffset = Offset(offset.dx, newOffset.dy + h / 2);
-        final globalOffset = box.localToGlobal(Offset.zero);
-        final newTapOffset = tapOffset.move(globalOffset);
-        if (isSelection) {
-          listeners.notifyGestures(PanGestureState(newTapOffset));
-        } else {
-          listeners.notifyGestures(TapGestureState(newTapOffset));
-        }
+        final startOff = painter.getOffsetFromTextOffset(lineRange.start),
+            endOff = painter.getOffsetFromTextOffset(lineRange.end);
+        final tapOffset = Offset(offset.dx, (startOff.dy + endOff.dy) / 2 + h);
+        final position = painter.getPositionForOffset(tapOffset);
+        newPosition = node.getPositionByOffset(position.offset);
         break;
       case ArrowType.wordLast:
       case ArrowType.selectionWordLast:
@@ -307,11 +284,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final localOffset = Offset(x, y);
     entryManager.showTextMenu(
         Overlay.of(context),
-        MenuInfo(
-            localOffset,
-            renderBox?.localToGlobal(localOffset) ?? offset,
-            nodeId,
-            layerLink),
+        MenuInfo(localOffset, renderBox?.localToGlobal(localOffset) ?? offset,
+            nodeId, layerLink),
         operator);
     return true;
   }

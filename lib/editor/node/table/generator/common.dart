@@ -1,7 +1,7 @@
-import 'package:crayon/editor/core/listener_collection.dart';
-import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart' hide TableCell;
 
+import '../../../../editor/node/rich_text/rich_text.dart';
+import '../../../../editor/core/listener_collection.dart';
 import '../../../command/modification.dart';
 import '../../../core/context.dart';
 import '../../../core/copier.dart';

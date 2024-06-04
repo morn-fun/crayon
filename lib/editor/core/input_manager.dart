@@ -1,9 +1,8 @@
-import 'dart:io';
-
-import 'package:crayon/editor/extension/node_context.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../../../editor/extension/node_context.dart';
 import '../command/basic.dart';
 import '../command/modification.dart';
 import '../command/replacement.dart';
@@ -92,8 +91,8 @@ class InputManager with TextInputClient, DeltaTextInputClient {
     final composing = _localValue.composing;
 
     ///FIXME:in MacOS, there is an inconsistent result here
-    final specialJudgement =
-        Platform.isMacOS && composing == TextRange(start: 0, end: 0);
+    final specialJudgement = defaultTargetPlatform == TargetPlatform.macOS &&
+        composing == TextRange(start: 0, end: 0);
     if (composing == TextRange.empty || specialJudgement) {
       controller.updateStatus(ControllerStatus.idle);
       restartInput();

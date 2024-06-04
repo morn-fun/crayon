@@ -1,6 +1,6 @@
-import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
 
+import '../../../editor/node/rich_text/rich_text.dart';
 import '../../core/context.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';

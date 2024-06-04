@@ -1,5 +1,4 @@
-import 'package:crayon/editor/cursor/basic.dart';
-
+import '../../../../editor/cursor/basic.dart';
 import '../../../cursor/rich_text.dart';
 import '../../../shortcuts/styles.dart';
 import '../../basic.dart';

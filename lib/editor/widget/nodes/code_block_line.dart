@@ -1,13 +1,13 @@
 import 'dart:math';
 
-import 'package:crayon/editor/shortcuts/arrows/arrows.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/atelier-heath-dark.dart';
 import 'package:flutter_highlight/themes/atelier-heath-light.dart';
 import 'package:highlight/highlight.dart' show Node, highlight;
 
-import '../../../../editor/extension/render_box.dart';
-import '../../../../editor/extension/painter.dart';
+import '../../../editor/shortcuts/arrows/arrows.dart';
+import '../../../editor/extension/render_box.dart';
+import '../../../editor/extension/painter.dart';
 import '../../core/editor_controller.dart';
 import '../../core/listener_collection.dart';
 import '../../core/logger.dart';

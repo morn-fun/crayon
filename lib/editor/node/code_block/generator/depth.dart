@@ -1,7 +1,5 @@
 import 'dart:math';
-
-import 'package:crayon/editor/cursor/basic.dart';
-
+import '../../../../editor/cursor/basic.dart';
 import '../../../cursor/code_block.dart';
 import '../../../exception/editor_node.dart';
 import '../../basic.dart';

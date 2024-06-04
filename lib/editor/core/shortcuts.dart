@@ -1,11 +1,9 @@
-import 'dart:io';
-
-import 'package:crayon/editor/shortcuts/arrows/selection_arrow.dart';
-import 'package:crayon/editor/shortcuts/arrows/selection_word_arrow.dart';
-import 'package:crayon/editor/shortcuts/arrows/word_arrow.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import '../../../editor/shortcuts/arrows/selection_arrow.dart';
+import '../../../editor/shortcuts/arrows/selection_word_arrow.dart';
+import '../../../editor/shortcuts/arrows/word_arrow.dart';
 import '../shortcuts/arrows/line_arrow.dart';
 import '../shortcuts/optional_menu.dart';
 import 'context.dart';
@@ -28,7 +26,7 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
   const SingleActivator(LogicalKeyboardKey.arrowUp): const ArrowUpIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowDown): const ArrowDownIntent(),
 
-  if (Platform.isMacOS) ...{
+  if (defaultTargetPlatform == TargetPlatform.macOS) ...{
     LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.arrowLeft):
         const ArrowLineBeginIntent(),
     LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.arrowRight):
@@ -52,7 +50,7 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
     LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyV):
         const PasteIntent(),
   },
-  if (!Platform.isMacOS) ...{
+  if (defaultTargetPlatform != TargetPlatform.macOS) ...{
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
         const ArrowLineBeginIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowRight):
@@ -155,7 +153,9 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
 
 Map<Type, Action<Intent>> getActions(EditorContext context) =>
     shortcutActions.map((key, value) => MapEntry(
-        key, value.call(ActionOperator(context, () => context.controller.panEndCursor))));
+        key,
+        value.call(
+            ActionOperator(context, () => context.controller.panEndCursor))));
 
 typedef RichEditorControllerAction = Action<Intent> Function(
     ActionOperator context);

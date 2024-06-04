@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:crayon/editor/node/rich_text/rich_text.dart';
+import '../../../editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
