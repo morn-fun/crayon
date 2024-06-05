@@ -7,6 +7,7 @@ import '../../../cursor/rich_text.dart';
 import '../../../exception/editor_node.dart';
 import '../../../exception/menu.dart';
 import '../../basic.dart';
+import '../../divider/divider.dart';
 import '../head.dart';
 import '../ordered.dart';
 import '../quote.dart';
@@ -51,8 +52,8 @@ void checkNeedChangeNodeTyp(
   if (generator != null) {
     final newNode = generator.call(node.rearPartNode(position));
     if (node.runtimeType.toString() == newNode.runtimeType.toString()) return;
-    throw TypingToChangeNodeException(newNode,
-        NodeWithCursor(newNode, newNode.beginPosition.toCursor(index)));
+    throw TypingToChangeNodeException(
+        node, NodeWithCursor(newNode, newNode.beginPosition.toCursor(index)));
   }
 }
 
@@ -65,9 +66,9 @@ void checkNeedShowSelectingMenu(RichTextNode node,
   }
 }
 
-typedef RichTextNodeGenerator = RichTextNode Function(RichTextNode node);
+typedef EditorNodeGenerator = EditorNode Function(RichTextNode node);
 
-final Map<String, RichTextNodeGenerator> string2generator = {
+final Map<String, EditorNodeGenerator> string2generator = {
   '-': (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth),
   '#': (n) => H1Node.from(n.spans, id: n.id, depth: n.depth),
   '##': (n) => H2Node.from(n.spans, id: n.id, depth: n.depth),
@@ -75,4 +76,5 @@ final Map<String, RichTextNodeGenerator> string2generator = {
   '>': (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth),
   '[ ]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth),
   '[x]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth, done: true),
+  '---': (n) => DividerNode.from(id: n.id, depth: n.depth),
 };

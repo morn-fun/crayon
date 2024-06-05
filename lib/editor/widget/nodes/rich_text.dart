@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import '../../../../editor/extension/render_box.dart';
+import '../../../editor/extension/render_box.dart';
 import '../../command/modification.dart';
 import '../../core/context.dart';
 import '../../core/entry_manager.dart';
@@ -121,8 +121,6 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         isSelection = type == ArrowType.selectionCurrent;
         final extra = data.extras;
         if (extra is Offset) {
-          final box = renderBox;
-          if (box == null) return;
           final lineRange =
               painter.getLineBoundary(TextPosition(offset: node.getOffset(p)));
           final startOff = painter.getOffsetFromTextOffset(lineRange.start),

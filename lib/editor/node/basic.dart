@@ -16,11 +16,11 @@ abstract class EditorNode {
 
   Widget build(NodesOperator operator, NodeBuildParam param, BuildContext c);
 
-  /// if the [end] position is same to [beginPosition], you should return a empty RichTextNode
-  EditorNode frontPartNode(NodePosition end, {String? newId});
+  EditorNode frontPartNode(NodePosition end, {String? newId}) =>
+      getFromPosition(beginPosition, end, newId: newId);
 
-  /// if the [begin] position is same to [endPosition], you should return a empty RichTextNode
-  EditorNode rearPartNode(NodePosition begin, {String? newId});
+  EditorNode rearPartNode(NodePosition begin, {String? newId}) =>
+      getFromPosition(begin, endPosition, newId: newId);
 
   EditorNode getFromPosition(NodePosition begin, NodePosition end,
       {String? newId});

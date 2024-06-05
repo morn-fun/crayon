@@ -11,6 +11,7 @@ import '../../cursor/rich_text.dart';
 import '../../exception/menu.dart';
 import '../../node/basic.dart';
 import '../../node/code_block/code_block.dart';
+import '../../node/divider/divider.dart';
 import '../../node/rich_text/head.dart';
 import '../../node/rich_text/ordered.dart';
 import '../../node/rich_text/quote.dart';
@@ -330,13 +331,14 @@ final defaultMenus = [
           id: n.id, depth: n.depth)),
   MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
       (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('分割线', Icons.question_mark_rounded, Colors.red, null),
+  MenuItemInfo.normal('分割线', Icons.horizontal_rule_rounded, _dividerColor,
+      (n) => DividerNode.from(id: n.id, depth: n.depth)),
   MenuItemInfo.normal('链接', Icons.add_link_rounded, _linkColor,
       (n) => throw TryingToCreateLinkException()),
   MenuItemInfo.readable('常用'),
   MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
       (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('表格', Icons.table_chart_rounded, _textColor,
+  MenuItemInfo.normal('表格', Icons.table_chart_rounded, _tableColor,
       (n) => TableNode.from([], [], id: n.id, depth: n.depth)),
 ];
 
@@ -344,6 +346,8 @@ const _textColor = Colors.brown;
 const _codeColor = Colors.cyan;
 const _linkColor = Colors.blue;
 const _quoteColor = Colors.yellow;
+const _tableColor = Colors.blueAccent;
+const _dividerColor = Colors.orange;
 
 class MenuItemInfo {
   final String text;

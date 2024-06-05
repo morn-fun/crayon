@@ -49,14 +49,6 @@ class CodeBlockNode extends EditorNode {
       CodeBlock(operator, this, param);
 
   @override
-  EditorNode frontPartNode(covariant CodeBlockPosition end, {String? newId}) =>
-      getFromPosition(beginPosition, end, newId: newId);
-
-  @override
-  EditorNode rearPartNode(covariant CodeBlockPosition begin, {String? newId}) =>
-      getFromPosition(begin, endPosition, newId: newId);
-
-  @override
   EditorNode getFromPosition(
       covariant CodeBlockPosition begin, covariant CodeBlockPosition end,
       {String? newId}) {

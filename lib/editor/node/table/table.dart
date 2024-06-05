@@ -236,14 +236,6 @@ class TableNode extends EditorNode {
       CellPosition(rowCount - 1, columnCount - 1), lastCell.endCursor);
 
   @override
-  EditorNode frontPartNode(covariant TablePosition end, {String? newId}) =>
-      getFromPosition(beginPosition, end, newId: newId);
-
-  @override
-  EditorNode rearPartNode(covariant TablePosition begin, {String? newId}) =>
-      getFromPosition(begin, endPosition, newId: newId);
-
-  @override
   EditorNode getFromPosition(
       covariant TablePosition begin, covariant TablePosition end,
       {String? newId}) {
