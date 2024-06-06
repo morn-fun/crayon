@@ -236,6 +236,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     if (newPosition == null) return;
     if (isSelection) {
       operator.onPanUpdate(EditingCursor(nodeIndex, newPosition));
+      notifyEditingOffset(newPosition);
       return;
     }
     operator.onCursor(EditingCursor(nodeIndex, newPosition));
@@ -254,6 +255,8 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final textPosition = painter.getPositionForOffset(localPosition);
     final richPosition = node.getPositionByOffset(textPosition.offset);
     operator.onPanUpdate(EditingCursor(nodeIndex, richPosition));
+    operator.onCursorOffset(
+        EditingOffset(global, getCurrentCursorHeight(richPosition), nodeId));
     return true;
   }
 
@@ -340,17 +343,13 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   void notifyEditingOffset(RichTextNodePosition? position) {
     final box = renderBox;
     if (box == null) return;
-    if (position != null && y != null) {
-      operator.onEditingOffset(EditingOffset(getOffsetByPosition(position, box),
-          getCurrentCursorHeight(position), nodeId));
+    if (position != null) {
+      final textOffset = painter.getOffsetFromTextOffset(position.offset);
+      final localOffset = box.localToGlobal(Offset.zero);
+      final newOffset = localOffset + textOffset;
+      operator.onCursorOffset(
+          EditingOffset(newOffset, getCurrentCursorHeight(position), nodeId));
     }
-  }
-
-  Offset getOffsetByPosition(RichTextNodePosition position, RenderBox box) {
-    final offset = painter.getOffsetFromTextOffset(position.offset);
-    final newOffset =
-        Offset(offset.dx + box.localToGlobal(Offset.zero).dx, offset.dy + y!);
-    return newOffset;
   }
 
   double getCurrentCursorHeight(RichTextNodePosition offset) {
@@ -507,7 +506,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final richPosition = node.getPositionByOffset(off);
     // logger.i('_updatePosition, globalOffset:$globalOffset, off:$off');
     operator.onCursor(EditingCursor(nodeIndex, richPosition));
-    operator.onEditingOffset(EditingOffset(
+    operator.onCursorOffset(EditingOffset(
         globalOffset, getCurrentCursorHeight(richPosition), nodeId));
     return true;
   }

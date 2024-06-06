@@ -201,7 +201,7 @@ class NodeNotFoundException implements EditorNodeException {
 
   NodeNotFoundException(this.id);
 
-  String get message => 'the node:$id not found';
+  String get message => '$runtimeType the node:$id not found';
 }
 
 class EmptyNodeToSelectAllException implements EditorNodeException {

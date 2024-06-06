@@ -39,7 +39,8 @@ class ArrowLineEndAction extends ContextAction<ArrowLineEndIntent> {
   }
 }
 
-void arrowOnLine(NodesOperator operator, BasicCursor cursor, ArrowType type) {
+void arrowOnLine(NodesOperator operator, BasicCursor cursor, ArrowType type,
+    {bool retried = false}) {
   EditingCursor? newCursor;
   ArrowType t = type;
   if (cursor is EditingCursor) {
@@ -57,6 +58,13 @@ void arrowOnLine(NodesOperator operator, BasicCursor cursor, ArrowType type) {
         operator.runtimeType, 'arrowOnLine $type without cursor', cursor);
   }
   final index = newCursor.index;
-  operator.onArrowAccept(
-      AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
+  try {
+    operator.onArrowAccept(
+        AcceptArrowData(operator.getNode(index).id, t, newCursor, t));
+  } on NodeNotFoundException {
+    if (retried) return;
+    operator.scrollTo(newCursor.index)?.then((v) {
+      arrowOnLine(operator, cursor, type, retried: true);
+    });
+  }
 }

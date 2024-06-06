@@ -74,7 +74,8 @@ class ArrowSelectionDownAction extends ContextAction<ArrowSelectionDownIntent> {
 }
 
 void onArrowSelection(
-    NodesOperator operator, BasicCursor cursor, ArrowType type) {
+    NodesOperator operator, BasicCursor cursor, ArrowType type,
+    {bool retried = false}) {
   EditingCursor? newCursor;
   ArrowType t = type;
   if (cursor is EditingCursor) {
@@ -136,5 +137,11 @@ void onArrowSelection(
     operator.onArrowAccept(AcceptArrowData(node.id, ArrowType.selectionCurrent,
         node.beginPosition.toCursor(index), t,
         extras: e.offset));
+  } on NodeNotFoundException catch (e) {
+    logger.e('$type onArrowWord error ${e.message}');
+    if (retried) return;
+    operator.listeners.scrollTo(newCursor.index)?.then((v) {
+      onArrowSelection(operator, cursor, type, retried: true);
+    });
   }
 }

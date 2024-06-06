@@ -43,7 +43,8 @@ class ArrowSelectionWordNextAction
 }
 
 void onArrowWordSelection(
-    NodesOperator operator, BasicCursor cursor, ArrowType type) {
+    NodesOperator operator, BasicCursor cursor, ArrowType type,
+    {bool retried = false}) {
   ArrowType t = type;
   EditingCursor? newCursor;
   if (cursor is EditingCursor) {
@@ -89,5 +90,11 @@ void onArrowWordSelection(
         ArrowType.selectionCurrent,
         operator.getNode(nextIndex).beginPosition.toCursor(nextIndex),
         t));
+  } on NodeNotFoundException catch (e) {
+    logger.e('$type onArrowWord error ${e.message}');
+    if (retried) return;
+    operator.listeners.scrollTo(newCursor.index)?.then((v) {
+      onArrowWordSelection(operator, cursor, type, retried: true);
+    });
   }
 }

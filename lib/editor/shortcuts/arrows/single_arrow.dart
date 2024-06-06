@@ -71,7 +71,8 @@ class ArrowDownAction extends ContextAction<ArrowDownIntent> {
   }
 }
 
-void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type) {
+void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type,
+    {bool retried = false}) {
   ArrowType t = type;
   EditingCursor? newCursor;
   if (cursor is EditingCursor) {
@@ -131,6 +132,9 @@ void onArrow(NodesOperator operator, BasicCursor cursor, ArrowType type) {
         extras: e.offset));
   } on NodeNotFoundException catch (e) {
     logger.e('$type error ${e.message}');
-    operator.onCursor(newCursor);
+    if (retried) return;
+    operator.listeners.scrollTo(newCursor.index)?.then((v) {
+      onArrow(operator, cursor, type, retried: true);
+    });
   }
 }

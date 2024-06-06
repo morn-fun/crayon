@@ -1135,7 +1135,7 @@ void main() {
     var node = basicNode(), ctx = buildEditorContext([node]);
     final cellContext = buildTableCellNodeContext(
         ctx, CellPosition(0, 0), node, NoneCursor(), 0);
-    cellContext.onEditingOffset(EditingOffset(Offset.zero, 18, ''));
+    cellContext.onCursorOffset(EditingOffset(Offset.zero, 18, ''));
     cellContext.onNode(RichTextNode.from([]), 0);
     cellContext.onPanUpdate(EditingCursor(0, RichTextNodePosition.zero()));
 

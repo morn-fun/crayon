@@ -39,7 +39,8 @@ class ArrowWordNextAction extends ContextAction<ArrowWordNextIntent> {
   }
 }
 
-void onArrowWord(NodesOperator operator, BasicCursor cursor, ArrowType type) {
+void onArrowWord(NodesOperator operator, BasicCursor cursor, ArrowType type,
+    {bool retried = false}) {
   EditingCursor? newCursor;
   ArrowType t = type;
   if (cursor is EditingCursor) {
@@ -78,6 +79,9 @@ void onArrowWord(NodesOperator operator, BasicCursor cursor, ArrowType type) {
         t));
   } on NodeNotFoundException catch (e) {
     logger.e('$type onArrowWord error ${e.message}');
-    operator.onCursor(newCursor);
+    if (retried) return;
+    operator.listeners.scrollTo(newCursor.index)?.then((v) {
+      onArrowWord(operator, cursor, type, retried: true);
+    });
   }
 }

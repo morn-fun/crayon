@@ -64,7 +64,7 @@ TableCellNodeContext buildTableCellNodeContext(NodesOperator ctx,
       },
       onBasicCursor: (newCursor) =>
           ctx.onCursor(_cursorToCursor(newCursor, p, index)),
-      editingOffset: (v) => ctx.onEditingOffset(v),
+      editingOffset: (v) => ctx.onCursorOffset(v),
       onNodeUpdate: (v) {
         ctx.execute(ModifyNodeWithoutChangeCursor(
             index,

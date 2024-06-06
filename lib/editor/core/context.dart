@@ -91,10 +91,12 @@ class EditorContext extends NodesOperator {
   }
 
   @override
-  void onEditingOffset(EditingOffset o) {
+  void onCursorOffset(EditingOffset o) {
     final c = cursor;
-    if (c is EditingCursor) {
+    if (c is SingleNodeCursor) {
       controller.setCursorOffset(CursorOffset(c.index, o));
+    } else if (c is SelectingNodesCursor) {
+      controller.setCursorOffset(CursorOffset(c.endIndex, o));
     }
     final editingOff = o;
     final offset = editingOff.offset;
@@ -144,7 +146,7 @@ abstract class NodesOperator {
 
   void onNode(EditorNode node, int index);
 
-  void onEditingOffset(EditingOffset o);
+  void onCursorOffset(EditingOffset o);
 
   UpdateControllerOperation? update(Update data, {bool record = true});
 
@@ -153,6 +155,8 @@ abstract class NodesOperator {
   BasicCursor get selectAllCursor;
 
   ListenerCollection get listeners;
+
+  Future? scrollTo(int index) => listeners.scrollTo(index);
 
   NodesOperator newOperator(List<EditorNode> nodes, BasicCursor cursor);
 }
@@ -246,7 +250,7 @@ class TableCellNodeContext extends NodesOperator {
   void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
 
   @override
-  void onEditingOffset(EditingOffset o) => editingOffset.call(o);
+  void onCursorOffset(EditingOffset o) => editingOffset.call(o);
 
   @override
   void onPanUpdate(EditingCursor cursor) => onPan(cursor);

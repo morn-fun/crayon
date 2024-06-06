@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../cursor/basic.dart';
@@ -18,6 +19,7 @@ class ListenerCollection {
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _menuListeners = {};
   final Map<String, Set<ListenerCollection>> _id2Listeners = {};
+  AsyncValueSetter<int>? _cursorScrollCallback;
 
   ListenerCollection({
     Set<ValueChanged<BasicCursor>>? cursorListeners,
@@ -60,6 +62,7 @@ class ListenerCollection {
     _nodeListeners.clear();
     _arrowDelegates.clear();
     _menuListeners.clear();
+    _cursorScrollCallback = null;
   }
 
   void addCursorChangedListener(ValueChanged<BasicCursor> listener) =>
@@ -131,6 +134,9 @@ class ListenerCollection {
     }
   }
 
+  void setCursorScrollCallbacks(AsyncValueSetter<int>? callback) =>
+      _cursorScrollCallback = callback;
+
   void onArrowAccept(AcceptArrowData data) {
     final id = data.id;
     final set = _arrowDelegates[id] ?? {};
@@ -155,7 +161,7 @@ class ListenerCollection {
       final v = _gestureListeners[k];
       for (var c in Set.of(v ?? {})) {
         final accepted = c.call(state);
-        if(accepted) return k;
+        if (accepted) return k;
       }
     }
     return null;
@@ -167,7 +173,7 @@ class ListenerCollection {
     final set = Set.of(_gestureListeners[id] ?? {});
     for (var c in set) {
       final v = c.call(state);
-      if(v) return v;
+      if (v) return v;
     }
     return false;
   }
@@ -192,6 +198,8 @@ class ListenerCollection {
       c.call(type);
     }
   }
+
+  Future? scrollTo(int index) => _cursorScrollCallback?.call(index);
 
   ListenerCollection? getListener(String id) {
     final set = _id2Listeners[id];

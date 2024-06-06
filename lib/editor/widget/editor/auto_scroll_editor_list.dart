@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 import '../../../editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../editor/extension/cursor.dart';
 import '../../command/replacement.dart';
@@ -29,79 +29,80 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
 
   ListenerCollection get listeners => controller.listeners;
 
-  final itemScrollController = ItemScrollController();
-  final scrollOffsetController = ScrollOffsetController();
-  final scrollOffsetListener = ScrollOffsetListener.create();
-  late StreamSubscription<double> scrollOffsetSubscription;
+  final tag = 'AutoScrollEditorList';
+  final scrollController = ScrollController();
   final key = GlobalKey();
   final aliveIndexMap = <int, Set<String>>{};
 
   CursorOffset lastEditingCursorOffset = CursorOffset.zero();
   double listOffsetY = 0;
-  double maxExtent = 0;
-  double minExtent = 0;
-  bool isDealingWithOffset = false;
   bool isInPanGesture = false;
-  Offset panOffset = Offset.zero;
+  Offset panUpdateOffset = Offset.zero;
   Offset panStartOffset = Offset.zero;
-  final tag = 'AutoScrollEditorList';
   late BasicCursor cursor = editorContext.cursor;
   DateTime? doubleTappedTime;
-
 
   @override
   void initState() {
     super.initState();
-    scrollOffsetSubscription = scrollOffsetListener.changes.listen((event) {
-      listOffsetY += event;
-      // logger.i('y:$listOffsetY, max:$maxExtent, min:$minExtent, event:$event');
+    scrollController.addListener(() {
+      listOffsetY = scrollController.offset;
     });
     controller.addCursorOffsetListeners(onCursorOffsetChanged);
     listeners.addCursorChangedListener(onCursorChanged);
+    listeners.setCursorScrollCallbacks((i) async {
+      await scrollTo(i, lastEditingCursorOffset.index);
+    });
   }
 
   @override
   void dispose() {
+    scrollController.dispose();
     listeners.removeCursorChangedListener(onCursorChanged);
     controller.removeCursorOffsetListeners(onCursorOffsetChanged);
-    scrollOffsetSubscription.cancel();
+    listeners.setCursorScrollCallbacks(null);
     super.dispose();
   }
 
   void onCursorOffsetChanged(CursorOffset v) {
-    if (isDealingWithOffset) return;
     if (lastEditingCursorOffset == v) return;
-    final cursor = controller.cursor;
-    if (cursor is! EditingCursor) return;
-    logger
-        .i('onCursorOffsetChanged last:$lastEditingCursorOffset,  current:$v');
     lastEditingCursorOffset = v;
     final box = renderBox;
     if (box == null) return;
-    isDealingWithOffset = true;
+    bool indexAlive = isIndexAlive(v.index);
+    final y = v.offset.offset.dy;
     final size = box.size;
-    final offset = box.localToGlobal(Offset.zero);
-    final top = offset.dy;
-    final bottom = size.height + top;
-    final globalY = v.y;
-    if (globalY + 18 > bottom) {
-      logger.i(
-          'onCursorOffsetChanged down, v:$v, globalY:$globalY, top:$top, bottom:$bottom');
-      scrollOffsetController.animateScroll(
-
-          ///TODO:what is 18?
-          offset: (globalY - bottom) + 18,
-          duration: Duration(milliseconds: 1),
-          curve: Curves.linear);
-    } else if (globalY < top) {
-      logger.i(
-          'onCursorOffsetChanged up, v:$v, globalY:$globalY, top:$top, bottom:$bottom');
-      scrollOffsetController.animateScroll(
-          offset: -(top - globalY),
-          duration: Duration(milliseconds: 1),
-          curve: Curves.linear);
+    final boxY = box.localToGlobal(Offset.zero).dy;
+    double maxExtent = scrollController.position.maxScrollExtent;
+    double minExtent = scrollController.position.minScrollExtent;
+    if ((maxExtent - minExtent).abs() == 0) {
+      if (y > size.height) {
+        scrollController.animateTo(y - size.height,
+            duration: Duration(milliseconds: 50), curve: Curves.linear);
+      }
+      return;
     }
-    isDealingWithOffset = false;
+    if (v.index == 0) {
+      scrollController.animateTo(minExtent,
+          duration: Duration(milliseconds: 1), curve: Curves.linear);
+      return;
+    } else if (v.index == controller.nodes.length - 1) {
+      scrollController.animateTo(maxExtent,
+          duration: Duration(milliseconds: 1), curve: Curves.linear);
+      return;
+    }
+    if (indexAlive) {
+      if (y > size.height) {
+        scrollController.animateTo(
+            min(maxExtent,
+                listOffsetY + y - size.height - boxY + v.offset.height),
+            duration: Duration(milliseconds: 1),
+            curve: Curves.linear);
+      } else if (y < boxY) {
+        scrollController.animateTo(listOffsetY + y - boxY,
+            duration: Duration(milliseconds: 1), curve: Curves.linear);
+      }
+    }
   }
 
   void onCursorChanged(BasicCursor cursor) {
@@ -109,20 +110,52 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     refresh();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
-      // logger.i(
-      //     'onCursorChanged alive :${aliveIndexMap.length},  dealing:$isDealingWithOffset,  last:$lastEditingCursorOffset   ,cursor:$cursor');
-      if (cursor is! EditingCursor) return;
-      if (isDealingWithOffset) return;
-      final index = cursor.index;
+      int? index;
+      logger.i(
+          'onCursorChanged alive :${aliveIndexMap.length},  last:$lastEditingCursorOffset   ,cursor:$cursor');
+      if (cursor is SingleNodeCursor) {
+        index = cursor.index;
+      } else if (cursor is SelectingNodesCursor) {
+        index = cursor.endIndex;
+      }
+      if (index == null) return;
       final lastIndex = lastEditingCursorOffset.index;
       if (index == lastIndex) return;
       final box = renderBox;
       if (box == null) return;
       if (!mounted) return;
-      bool contains = isIndexAlive(cursor.index);
-      if (contains) return;
-      logger.i('onCursorChanged index:$index, lastIndex:$lastIndex  $cursor');
-      itemScrollController.jumpTo(index: cursor.index, alignment: 0);
+      bool indexAlive = isIndexAlive(index);
+      logger.i(
+          'onCursorChanged index:$index, lastIndex:$lastIndex , indexAlive:$indexAlive,  $cursor');
+      if (index == 0) {
+        scrollController.animateTo(scrollController.position.minScrollExtent,
+            duration: Duration(milliseconds: 1), curve: Curves.linear);
+        return;
+      } else if (index == controller.nodes.length - 1) {
+        scrollController.animateTo(scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 1), curve: Curves.linear);
+        return;
+      }
+      scrollTo(index, lastIndex);
+    });
+  }
+
+  Future scrollTo(int index, int lastIndex) async {
+    bool indexAlive = isIndexAlive(index);
+    if (indexAlive) return;
+    final box = renderBox;
+    if (box == null) return;
+    await Future.doWhile(() async {
+      while (!indexAlive) {
+        indexAlive = isIndexAlive(index);
+        bool scrollUp = lastIndex > index;
+        final height = box.size.height;
+        await scrollController.animateTo(
+            scrollUp ? (listOffsetY - height) : (listOffsetY + height),
+            duration: Duration(milliseconds: 50),
+            curve: Curves.linear);
+      }
+      return false;
     });
   }
 
@@ -139,29 +172,31 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   Widget build(BuildContext context) {
     final nodes = controller.nodes;
     return GestureDetector(
-      key: key,
       behavior: HitTestBehavior.deferToChild,
       onTapDown: (d) {
         logger.i('onTapDown:$d,  doubleTappedTime:$doubleTappedTime');
         editorContext.restartInput();
+
         ///FIXME: it's a temporary solution
         bool isTripleTap = false;
-        if(doubleTappedTime != null){
-          final diffMillSecond = DateTime.now().difference(doubleTappedTime!).inMilliseconds;
+        if (doubleTappedTime != null) {
+          final diffMillSecond =
+              DateTime.now().difference(doubleTappedTime!).inMilliseconds;
           isTripleTap = diffMillSecond < 700;
           logger.i('diffMillSecond:$diffMillSecond');
         }
-        if(isTripleTap){
+        if (isTripleTap) {
           controller.notifyGesture(TripleTapGestureState(d.globalPosition));
         } else {
-          final id = controller.notifyGesture(TapGestureState(d.globalPosition));
+          final id =
+              controller.notifyGesture(TapGestureState(d.globalPosition));
           if (id == null) {
             editorContext.execute(AddRichTextNode(RichTextNode.from([])));
           }
         }
         editorContext.removeEntry();
       },
-      onDoubleTapDown: (d){
+      onDoubleTapDown: (d) {
         logger.i('onDoubleTapDown:$d');
         doubleTappedTime = DateTime.now();
         editorContext.restartInput();
@@ -171,7 +206,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       onPanStart: (d) {
         isInPanGesture = true;
         // logger.i('onPanStart:$d');
-        panOffset = d.globalPosition;
+        panUpdateOffset = d.globalPosition;
         panStartOffset = d.globalPosition;
         controller.notifyGesture(TapGestureState(d.globalPosition));
       },
@@ -182,17 +217,16 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       },
       onPanDown: (d) {
         // logger.i('onPanDown:$d');
-        panOffset = d.globalPosition;
+        panUpdateOffset = d.globalPosition;
         panStartOffset = d.globalPosition;
       },
       onPanUpdate: (d) {
         // logger.i('onPanUpdate:$d');
 
-        panOffset = panOffset.translate(d.delta.dx, d.delta.dy);
+        panUpdateOffset = panUpdateOffset.translate(d.delta.dx, d.delta.dy);
         Throttle.execute(
           () {
-            controller
-                .notifyGesture(PanGestureState(panOffset));
+            controller.notifyGesture(PanGestureState(panUpdateOffset));
             scrollList(d.globalPosition, d.delta);
             editorContext.removeEntry();
           },
@@ -202,7 +236,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       },
       onPanCancel: () {
         // logger.i('onPanCancel');
-        panOffset = Offset.zero;
+        panUpdateOffset = Offset.zero;
         panStartOffset = Offset.zero;
         isInPanGesture = false;
       },
@@ -210,49 +244,41 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         onHover: (d) {
           if (isInPanGesture) return;
           if (controller.cursor is EditingCursor) return;
-          if(editorContext.entryManager.showingType != null) return;
+          if (editorContext.entryManager.showingType != null) return;
           controller.notifyGesture(HoverGestureState(d.position));
         },
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification notification) {
-            maxExtent = notification.metrics.maxScrollExtent;
-            minExtent = notification.metrics.minScrollExtent;
-            return false;
-          },
-          child: ScrollablePositionedList.builder(
-              padding: EdgeInsets.all(12),
-              itemScrollController: itemScrollController,
-              scrollOffsetListener: scrollOffsetListener,
-              scrollOffsetController: scrollOffsetController,
-              initialAlignment: 0,
-              itemBuilder: (ctx, index) {
-                final current = nodes[index];
-                return Container(
-                  key: ValueKey('${current.id}-${current.runtimeType}'),
-                  padding: EdgeInsets.only(left: current.depth * 12, right: 4),
-                  child: StatefulLifecycleWidget(
-                    onInit: () {
-                      addIndex(index, current.id);
-                      // logger.i(
-                      //     'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
-                    },
-                    onDispose: () {
-                      removeIndex(index, current.id);
-                      // logger.i(
-                      //     'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
-                    },
-                    child: current.build(
-                        editorContext,
-                        NodeBuildParam(
-                          index: index,
-                          cursor: cursor.getSingleNodeCursor(index, current, controller.panBeginCursor),
-                        ),
-                        context),
-                  ),
-                );
-              },
-              itemCount: nodes.length),
-        ),
+        child: ListView.builder(
+            key: key,
+            controller: scrollController,
+            padding: EdgeInsets.all(12),
+            itemBuilder: (ctx, index) {
+              final current = nodes[index];
+              return Container(
+                key: ValueKey('${current.id}-${current.runtimeType}'),
+                padding: EdgeInsets.only(left: current.depth * 12, right: 4),
+                child: StatefulLifecycleWidget(
+                  onInit: () {
+                    addIndex(index, current.id);
+                    // logger.i(
+                    //     'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                  },
+                  onDispose: () {
+                    removeIndex(index, current.id);
+                    // logger.i(
+                    //     'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
+                  },
+                  child: current.build(
+                      editorContext,
+                      NodeBuildParam(
+                        index: index,
+                        cursor: cursor.getSingleNodeCursor(
+                            index, current, controller.panBeginCursor),
+                      ),
+                      context),
+                ),
+              );
+            },
+            itemCount: nodes.length),
       ),
     );
   }
@@ -288,24 +314,24 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     final bottom = listPosition.dy + listSize.height;
     final upRange = _VerticalRange(top, top + detectedRange);
     final bottomRange = _VerticalRange(bottom - detectedRange, bottom);
+    double maxExtent = scrollController.position.maxScrollExtent;
+    double minExtent = scrollController.position.minScrollExtent;
     if (upRange.isInRange(globalPosition.dy) &&
         pixel > minExtent &&
         delta.dy < 0) {
-      animateTo(-moveDistance);
+      animateTo(-moveDistance + listOffsetY);
     }
 
     if (bottomRange.isInRange(globalPosition.dy) &&
         pixel < maxExtent &&
         delta.dy > 0) {
-      animateTo(moveDistance);
+      animateTo(moveDistance + listOffsetY);
     }
   }
 
   void animateTo(double offset) {
-    scrollOffsetController.animateScroll(
-        offset: offset,
-        duration: Duration(milliseconds: 1),
-        curve: Curves.linear);
+    scrollController.animateTo(offset,
+        duration: Duration(milliseconds: 1), curve: Curves.linear);
   }
 }
 

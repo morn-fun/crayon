@@ -35,7 +35,7 @@ class TestNodeContext extends NodesOperator {
   List<EditorNode> get nodes => throw UnimplementedError();
 
   @override
-  void onEditingOffset(EditingOffset o) {
+  void onCursorOffset(EditingOffset o) {
     // TODO: implement onCursorOffset
   }
 

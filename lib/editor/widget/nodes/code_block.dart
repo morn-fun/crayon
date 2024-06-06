@@ -295,16 +295,20 @@ class _CodeBlockState extends State<CodeBlock> {
                               controller: CodeNodeController(
                                   onEditingOffsetChanged: (o) {
                                     lastEditOffset = o.offset;
-                                    operator.onEditingOffset(o);
+                                    operator.onCursorOffset(o);
                                   },
-                                  onPanUpdatePosition: (o) =>
-                                      operator.onPanUpdate(EditingCursor(
-                                          widgetIndex,
-                                          CodeBlockPosition(index, o))),
+                                  onPanUpdatePosition: (o) {
+                                    operator.onPanUpdate(EditingCursor(
+                                        widgetIndex,
+                                        CodeBlockPosition(index, o)));
+                                    notifyCursorOffset(index);
+                                  },
                                   listeners: localListeners,
-                                  onEditingPosition: (o) => operator.onCursor(
-                                      EditingCursor(widgetIndex,
-                                          CodeBlockPosition(index, o))),
+                                  onEditingPosition: (o) {
+                                    operator.onCursor(EditingCursor(widgetIndex,
+                                        CodeBlockPosition(index, o)));
+                                    notifyCursorOffset(index);
+                                  },
                                   onLineSelected: (range) => operator.onCursor(
                                       SelectingNodeCursor(
                                           widgetIndex,
@@ -367,6 +371,16 @@ class _CodeBlockState extends State<CodeBlock> {
         ],
       ),
     );
+  }
+
+  void notifyCursorOffset(int index) {
+    final box = renderBox;
+    if (box == null) return;
+    final offset = box.localToGlobal(Offset.zero);
+    operator.onCursorOffset(EditingOffset(
+        Offset(0, offset.dy + margin.top + padding.top + index * lineHeight),
+        lineHeight,
+        nodeId));
   }
 
   void toHover() {
