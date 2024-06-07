@@ -11,6 +11,7 @@ import '../core/logger.dart';
 import '../cursor/basic.dart';
 import '../exception/editor_node.dart';
 import '../node/basic.dart';
+import '../node/divider/divider.dart';
 import '../node/rich_text/head.dart';
 import '../node/rich_text/ordered.dart';
 import '../node/rich_text/rich_text.dart';
@@ -35,10 +36,10 @@ class CopyAction extends ContextAction<CopyIntent> {
   CopyAction(this.ac);
 
   @override
-  void invoke(CopyIntent intent, [BuildContext? context]) async {
+  Future<String> invoke(CopyIntent intent, [BuildContext? context]) async {
     logger.i('$runtimeType is invoking!');
     final cursor = this.cursor;
-    if (cursor is EditingCursor) return;
+    if (cursor is EditingCursor) return '';
     if (cursor is SelectingNodeCursor) {
       final node = operator.getNode(cursor.index);
       final newNode =
@@ -59,13 +60,15 @@ class CopyAction extends ContextAction<CopyIntent> {
       _copiedNodes.addAll(nodes);
     }
     String text = _copiedNodes.map((e) => e.text).join('\n');
-    Clipboard.setData(ClipboardData(text: '$_specialEdge$text$_specialEdge'));
+    await Clipboard.setData(
+        ClipboardData(text: '$specialEdge$text$specialEdge'));
+    return text;
   }
 }
 
 final List<EditorNode> _copiedNodes = [];
 
-const _specialEdge = '\u{200C}';
+const specialEdge = '\u{200C}';
 
 class PasteAction extends ContextAction<PasteIntent> {
   final ActionOperator ac;
@@ -77,14 +80,14 @@ class PasteAction extends ContextAction<PasteIntent> {
   PasteAction(this.ac);
 
   @override
-  void invoke(PasteIntent intent, [BuildContext? context]) async {
+  Future invoke(PasteIntent intent, [BuildContext? context]) async {
     logger.i('$runtimeType is invoking!');
-    final data = await Clipboard.getData('text/plain');
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data is! ClipboardData) return;
     final text = data.text ?? '';
     if (text.isEmpty) return;
     final List<EditorNode> nodes = [];
-    if (text.startsWith(_specialEdge) && text.endsWith(_specialEdge)) {
+    if (text.startsWith(specialEdge) && text.endsWith(specialEdge)) {
       for (var n in _copiedNodes) {
         if (n is TableNode && operator is TableCellNodeContext) continue;
         nodes.add(n.newNode(id: randomNodeId));
@@ -154,8 +157,9 @@ RegExp orderedRegExp = RegExp(r'^(\+)?\d+(\.)$');
 typedef _NodeGenerator = EditorNode Function(String v);
 
 final Map<String, _NodeGenerator> _string2generator = {
+  '---': (n) => DividerNode(),
   '-': (n) => UnorderedNode.from([RichTextSpan(text: n)]),
-  '#': (n) => H1Node.from([RichTextSpan(text: n)]),
-  '##': (n) => H2Node.from([RichTextSpan(text: n)]),
   '###': (n) => H3Node.from([RichTextSpan(text: n)]),
+  '##': (n) => H2Node.from([RichTextSpan(text: n)]),
+  '#': (n) => H1Node.from([RichTextSpan(text: n)]),
 };

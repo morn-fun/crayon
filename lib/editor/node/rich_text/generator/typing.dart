@@ -76,5 +76,5 @@ final Map<String, EditorNodeGenerator> string2generator = {
   '>': (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth),
   '[ ]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth),
   '[x]': (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth, done: true),
-  '---': (n) => DividerNode.from(id: n.id, depth: n.depth),
+  '---': (n) => DividerNode(id: n.id, depth: n.depth),
 };

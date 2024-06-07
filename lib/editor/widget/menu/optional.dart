@@ -332,7 +332,7 @@ final defaultMenus = [
   MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
       (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth)),
   MenuItemInfo.normal('分割线', Icons.horizontal_rule_rounded, _dividerColor,
-      (n) => DividerNode.from(id: n.id, depth: n.depth)),
+      (n) => DividerNode(id: n.id, depth: n.depth)),
   MenuItemInfo.normal('链接', Icons.add_link_rounded, _linkColor,
       (n) => throw TryingToCreateLinkException()),
   MenuItemInfo.readable('常用'),

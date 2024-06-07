@@ -9,7 +9,7 @@ import '../basic.dart';
 import '../rich_text/rich_text.dart';
 
 class DividerNode extends EditorNode {
-  DividerNode.from({super.depth, super.id});
+  DividerNode({super.depth, super.id});
 
   @override
   DividerPosition get beginPosition => dividerPosition;
@@ -25,7 +25,7 @@ class DividerNode extends EditorNode {
   EditorNode getFromPosition(
           covariant DividerPosition begin, covariant DividerPosition end,
           {String? newId}) =>
-      DividerNode.from(id: newId ?? id);
+      DividerNode(id: newId ?? id);
 
   @override
   List<EditorNode> getInlineNodesFromPosition(
@@ -39,7 +39,7 @@ class DividerNode extends EditorNode {
 
   @override
   EditorNode newNode({String? id, int? depth}) =>
-      DividerNode.from(depth: depth ?? this.depth, id: id ?? this.id);
+      DividerNode(depth: depth ?? this.depth, id: id ?? this.id);
 
   @override
   NodeWithCursor onEdit(EditingData data) {
@@ -78,7 +78,6 @@ class DividerNode extends EditorNode {
 
   NodeWithCursor onPaste(dynamic extra) {
     List<EditorNode> newNodes = extra is List<EditorNode> ? extra : [];
-    if (newNodes.isEmpty) newNodes = [RichTextNode.from([])];
     if (newNodes.isEmpty) {
       throw NodeUnsupportedException(
           runtimeType, 'onPaste without extra', extra);

@@ -31,48 +31,49 @@ typedef TableCellGenerator = TableCell Function(int row, int column);
 
 typedef NodeGenerator = EditorNode Function(int row, int column, int index);
 
-void main() {
-  List<TableCellList> buildCellList(int row, int column, int nodeNum,
-      TableCellGenerator? cellGenerator, NodeGenerator? nodeGenerator) {
-    List<TableCellList> list = [];
-    for (var i = 0; i < row; ++i) {
-      List<TableCell> cells = [];
-      for (var j = 0; j < column; ++j) {
-        final cell = cellGenerator?.call(i, j) ??
-            TableCell(List.generate(
-                nodeNum,
-                (index) =>
-                    nodeGenerator?.call(i, j, index) ??
-                    RichTextNode.from([RichTextSpan(text: '$i$j$index')])));
-        cells.add(cell);
-      }
-      TableCellList l = TableCellList(cells);
-      list.add(l);
+List<TableCellList> buildCellList(int row, int column, int nodeNum,
+    TableCellGenerator? cellGenerator, NodeGenerator? nodeGenerator) {
+  List<TableCellList> list = [];
+  for (var i = 0; i < row; ++i) {
+    List<TableCell> cells = [];
+    for (var j = 0; j < column; ++j) {
+      final cell = cellGenerator?.call(i, j) ??
+          TableCell(List.generate(
+              nodeNum,
+                  (index) =>
+              nodeGenerator?.call(i, j, index) ??
+                  RichTextNode.from([RichTextSpan(text: '$i$j$index')])));
+      cells.add(cell);
     }
-    return list;
+    TableCellList l = TableCellList(cells);
+    list.add(l);
   }
+  return list;
+}
 
-  TableNode basicNode(
-          {int row = 3,
-          int column = 4,
-          int nodeNum = 5,
-          TableCellGenerator? cellGenerator,
-          NodeGenerator? nodeGenerator}) =>
-      TableNode.from(
-          buildCellList(row, column, nodeNum, cellGenerator, nodeGenerator),
-          List.generate(column, (i) => 200.0));
+TableNode basicTableNode(
+    {int row = 3,
+      int column = 4,
+      int nodeNum = 5,
+      TableCellGenerator? cellGenerator,
+      NodeGenerator? nodeGenerator}) =>
+    TableNode.from(
+        buildCellList(row, column, nodeNum, cellGenerator, nodeGenerator),
+        List.generate(column, (i) => 200.0));
+
+void main() {
 
   test('newInstance', () {
-    final node = basicNode(row: 0, column: 0);
+    final node = basicTableNode(row: 0, column: 0);
     assert(node.rowCount == 1);
     assert(node.columnCount == 3);
-    final n1 = basicNode();
+    final n1 = basicTableNode();
     assert(n1.rowCount == 3);
     assert(n1.columnCount == 4);
   });
 
   test('row', () {
-    final node = basicNode();
+    final node = basicTableNode();
     for (var i = 0; i < node.rowCount; ++i) {
       final row = node.row(i);
       for (var j = 0; j < row.length; ++j) {
@@ -86,7 +87,7 @@ void main() {
   });
 
   test('column', () {
-    final node = basicNode();
+    final node = basicTableNode();
     for (var i = 0; i < node.columnCount; ++i) {
       final column = node.column(i);
       for (var j = 0; j < column.length; ++j) {
@@ -100,7 +101,7 @@ void main() {
   });
 
   test('getCell', () {
-    final node = basicNode();
+    final node = basicTableNode();
     for (var i = 0; i < node.rowCount; ++i) {
       final row = node.row(i);
       for (var j = 0; j < row.length; ++j) {
@@ -112,7 +113,7 @@ void main() {
   });
 
   test('insertRows', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.insertRows(1, [
       TableCellList(List.generate(
           4,
@@ -133,7 +134,7 @@ void main() {
   });
 
   test('insertColumns', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.insertColumns(1, [
       ColumnInfo(
           TableCellList(List.generate(
@@ -156,7 +157,7 @@ void main() {
   });
 
   test('removeRows', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.removeRows(0, 2);
     assert(n1.rowCount == 1);
     assert(n1.columnCount == 4);
@@ -173,7 +174,7 @@ void main() {
   });
 
   test('removeColumns', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.removeColumns(1, 3);
     assert(n1.columnCount == 2);
     assert(n1.widths.length == 2);
@@ -199,7 +200,7 @@ void main() {
   });
 
   test('updateCell', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.updateCell(2, 2, to(TableCell.empty(id: 'xxx')));
     assert(n1.rowCount == 3);
     assert(n1.columnCount == 4);
@@ -219,7 +220,7 @@ void main() {
   });
 
   test('updateMore', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.updateMore(CellPosition(1, 2), CellPosition(2, 1), (lists) {
       return lists
           .map((row) => row.updateMore(
@@ -272,7 +273,7 @@ void main() {
   });
 
   test('wholeContain', () {
-    final node = basicNode();
+    final node = basicTableNode();
     assert(!node.wholeContain(null));
     assert(!node.wholeContain(EditingCursor(0, RichTextNodePosition.zero())));
     assert(!node.wholeContain(SelectingNodeCursor(
@@ -296,7 +297,7 @@ void main() {
   });
 
   test('selectedRows', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final s1 = node.selectedRows(null);
     assert(s1.isEmpty);
     final s2 = node.selectedRows(EditingCursor(0, RichTextNodePosition.zero()));
@@ -323,7 +324,7 @@ void main() {
   });
 
   test('selectedColumns', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final s1 = node.selectedColumns(null);
     assert(s1.isEmpty);
     final s2 =
@@ -351,7 +352,7 @@ void main() {
   });
 
   test('getCursorInCell', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final editingCursor = EditingCursor(0, RichTextNodePosition.zero());
     final c1 = node.getCursorInCell(null, CellPosition(0, 0));
     assert(c1 == null);
@@ -401,7 +402,7 @@ void main() {
   });
 
   testWidgets('build', (tester) async {
-    final node = basicNode();
+    final node = basicTableNode();
     final ctx = buildEditorContext([node]);
     var widget = ShareEditorContextWidget(
         context: ctx,
@@ -414,7 +415,7 @@ void main() {
   });
 
   test('getFromPosition', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 =
         node.getFromPosition(node.beginPosition, node.endPosition) as TableNode;
     assert(listEquals(node.table, n1.table));
@@ -469,7 +470,7 @@ void main() {
   });
 
   test('frontPartNode', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.frontPartNode(node.endPosition) as TableNode;
     assert(listEquals(node.table, n1.table));
     assert(listEquals(node.widths, n1.widths));
@@ -480,7 +481,7 @@ void main() {
     assert(n2.text.isEmpty);
   });
   test('rearPartNode', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.rearPartNode(node.beginPosition) as TableNode;
     assert(listEquals(node.table, n1.table));
     assert(listEquals(node.widths, n1.widths));
@@ -492,7 +493,7 @@ void main() {
   });
 
   test('getInlineNodesFromPosition', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final list1 =
         node.getInlineNodesFromPosition(node.beginPosition, node.beginPosition);
     assert(list1.length == 1);
@@ -515,10 +516,10 @@ void main() {
   });
 
   test('merge', () {
-    final node = basicNode();
+    final node = basicTableNode();
     expect(() => node.merge(RichTextNode.from([])),
         throwsA(const TypeMatcher<UnableToMergeException>()));
-    final node2 = basicNode(
+    final node2 = basicTableNode(
         row: 1,
         column: 1,
         nodeNum: 1,
@@ -531,7 +532,7 @@ void main() {
     assert(cell1.first is CodeBlockNode);
     assert(cell1.first.id == 'xxx');
 
-    final node3 = basicNode(
+    final node3 = basicTableNode(
         row: 2,
         column: 5,
         nodeNum: 1,
@@ -548,7 +549,7 @@ void main() {
     assert(cell2.first is CodeBlockNode);
     assert(cell2.first.id == 'yyy');
 
-    final node4 = basicNode(
+    final node4 = basicTableNode(
         nodeGenerator: (r, c, i) => CodeBlockNode.from([], id: 'zzz'));
     final n3 = node.merge(node4) as TableNode;
     assert(n3.rowCount == 6);
@@ -561,7 +562,7 @@ void main() {
   });
 
   test('newNode', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final n1 = node.newNode(id: 'xxx') as TableNode;
     assert(n1.id == 'xxx');
     assert(n1.id != node.id);
@@ -582,13 +583,13 @@ void main() {
   });
 
   test('text', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final text = node.text;
     assert(text == node.table.map((e) => e.text).join('\n'));
   });
 
   test('toJson', () {
-    final node = basicNode();
+    final node = basicTableNode();
     final json = node.toJson();
     assert(json['type'] == '${node.runtimeType}');
     final List<Map<String, dynamic>> table = json['table'];
@@ -599,7 +600,7 @@ void main() {
   });
 
   test('onEdit-delete', () {
-    final node = basicNode(
+    final node = basicTableNode(
         row: 1,
         column: 1,
         nodeNum: 1,
@@ -623,7 +624,7 @@ void main() {
   });
 
   test('onSelect-delete', () {
-    var node = basicNode(
+    var node = basicTableNode(
         row: 1,
         column: 1,
         nodeNum: 1,
@@ -656,7 +657,7 @@ void main() {
     }
 
     try {
-      node = basicNode();
+      node = basicTableNode();
       ctx = buildEditorContext([node]);
       node.onSelect(SelectingData(
           SelectingNodeCursor(
@@ -673,7 +674,7 @@ void main() {
       assert(ctx.cursor == EditingCursor(0, n.endPosition));
     }
 
-    node = basicNode();
+    node = basicTableNode();
     ctx = buildEditorContext([node]);
     final r2 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition,
@@ -696,7 +697,7 @@ void main() {
       }
     }
 
-    node = basicNode();
+    node = basicTableNode();
     ctx = buildEditorContext([node]);
     final r3 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition,
@@ -710,7 +711,7 @@ void main() {
   });
 
   test('onEdit-depth', () {
-    var node = basicNode(
+    var node = basicTableNode(
             row: 1,
             column: 1,
             nodeNum: 1,
@@ -732,7 +733,7 @@ void main() {
       assert(innerN1.depth == 1);
     }
 
-    node = basicNode(
+    node = basicTableNode(
         row: 1,
         column: 1,
         nodeNum: 1,
@@ -756,7 +757,7 @@ void main() {
   });
 
   test('onSelect-depth', () {
-    var node = basicNode();
+    var node = basicTableNode();
     var ctx = buildEditorContext([node]);
     final r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition),
@@ -772,7 +773,7 @@ void main() {
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
 
     try {
-      node = basicNode();
+      node = basicTableNode();
       ctx = buildEditorContext([node]);
       node.onSelect(SelectingData(
           SelectingNodeCursor(
@@ -789,7 +790,7 @@ void main() {
     }
 
     try {
-      node = basicNode();
+      node = basicTableNode();
       ctx = buildEditorContext([node]);
       node.onSelect(SelectingData(
           SelectingNodeCursor(
@@ -815,7 +816,7 @@ void main() {
         throwsA(const TypeMatcher<DepthNeedDecreaseMoreException>()));
 
     try {
-      node = basicNode(
+      node = basicTableNode(
           nodeGenerator: (r, c, i) => RichTextNode.from([], depth: 1));
       ctx = buildEditorContext([node]);
       node.onSelect(SelectingData(
@@ -834,7 +835,7 @@ void main() {
     }
 
     try {
-      node = basicNode(
+      node = basicTableNode(
           nodeGenerator: (r, c, i) => RichTextNode.from([], depth: 1));
       ctx = buildEditorContext([node]);
       node.onSelect(SelectingData(
@@ -854,7 +855,7 @@ void main() {
   });
 
   test('onEdit-newline', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     try {
       node.onEdit(
           EditingData(node.beginPosition.toCursor(0), EventType.newline, ctx));
@@ -868,7 +869,7 @@ void main() {
   });
 
   test('onSelect-newline', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     try {
       node.onSelect(SelectingData(
           SelectingNodeCursor(
@@ -886,7 +887,7 @@ void main() {
       assert(firstCell.getNode(1).text == '0');
     }
 
-    node = basicNode();
+    node = basicTableNode();
     ctx = buildEditorContext([node]);
     try {
       node.onSelect(SelectingData(
@@ -907,7 +908,7 @@ void main() {
   });
 
   test('onEdit-selectAll', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     try {
       node.onEdit(EditingData(
           node.beginPosition.toCursor(0), EventType.selectAll, ctx));
@@ -922,7 +923,7 @@ void main() {
   });
 
   test('onSelect-selectAll', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     final r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(
             0,
@@ -960,7 +961,7 @@ void main() {
   });
 
   test('onEdit-style', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     expect(
         () => node.onEdit(
             EditingData(node.endPosition.toCursor(0), EventType.bold, ctx)),
@@ -968,7 +969,7 @@ void main() {
   });
 
   test('onSelect-style', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     final cursor = SelectingNodeCursor(
         0,
         node.beginPosition
@@ -1045,7 +1046,7 @@ void main() {
   });
 
   test('onEdit-typing', () {
-    var node = basicNode(
+    var node = basicTableNode(
             nodeGenerator: (r, c, i) =>
                 RichTextNode.from([RichTextSpan(text: '-$r$c$i')])),
         ctx = buildEditorContext([node]);
@@ -1089,7 +1090,7 @@ void main() {
   });
 
   test('onSelect-typing', () {
-    var node = basicNode(
+    var node = basicTableNode(
             nodeGenerator: (r, c, i) =>
                 RichTextNode.from([RichTextSpan(text: '-$r$c$i')])),
         ctx = buildEditorContext([node]);
@@ -1103,7 +1104,7 @@ void main() {
   });
 
   test('onEdit-paste', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     expect(
         () => node.onEdit(EditingData(
             EditingCursor(0, node.beginPosition), EventType.paste, ctx)),
@@ -1111,7 +1112,7 @@ void main() {
   });
 
   test('onSelect-paste', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     expect(
         () => node.onSelect(SelectingData(
             SelectingNodeCursor(0, node.beginPosition, node.endPosition),
@@ -1132,7 +1133,7 @@ void main() {
   });
 
   test('others', () {
-    var node = basicNode(), ctx = buildEditorContext([node]);
+    var node = basicTableNode(), ctx = buildEditorContext([node]);
     final cellContext = buildTableCellNodeContext(
         ctx, CellPosition(0, 0), node, NoneCursor(), 0);
     cellContext.onCursorOffset(EditingOffset(Offset.zero, 18, ''));

@@ -6,6 +6,11 @@ import 'package:crayon/editor/core/input_manager.dart';
 import 'package:crayon/editor/core/logger.dart';
 import 'package:crayon/editor/exception/command.dart';
 import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/node/divider/divider.dart';
+
+import '../node/code_block/code_block_test.dart';
+import '../node/rich_text/rich_text_test.dart';
+import '../node/table/table_test.dart';
 
 EditorContext buildEditorContext(List<EditorNode> nodes) {
   final testInvoker = CommandInvoker();
@@ -24,4 +29,14 @@ EditorContext buildEditorContext(List<EditorNode> nodes) {
   context = EditorContext(RichEditorController.fromNodes(nodes),
       testInputManager, testInvoker, EntryManager((v) {}, (v) {}));
   return context;
+}
+
+List<EditorNode> basicNodes() {
+  return [
+    basicTextNode(texts: ['a * 100']),
+    basicTableNode(),
+    DividerNode(),
+    basicCodeBlockNode(),
+    DividerNode()
+  ];
 }

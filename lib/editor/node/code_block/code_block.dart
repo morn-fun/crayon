@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 
 import '../../../editor/extension/string.dart';
-import '../../../editor/extension/unmodifiable.dart';
 import '../../core/context.dart';
 import '../../cursor/basic.dart';
 import '../../cursor/code_block.dart';
@@ -114,9 +113,7 @@ class CodeBlockNode extends EditorNode {
 
   @override
   CodeBlockNode merge(EditorNode other, {String? newId}) {
-    if (other is RichTextNode) {
-      return from(codes.addOne(other.text), id: newId);
-    } else if (other is CodeBlockNode) {
+    if (other is CodeBlockNode) {
       final oldCodes = List.of(codes);
       final newCodes = List.of(other.codes);
       final mergeCode = oldCodes.removeLast() + newCodes.removeAt(0);

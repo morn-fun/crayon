@@ -1,10 +1,19 @@
+import 'package:crayon/editor/cursor/basic.dart';
+import 'package:crayon/editor/cursor/rich_text.dart';
+import 'package:crayon/editor/node/basic.dart';
+import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../config/const_texts.dart';
+import '../config/necessary.dart';
 
 void main() {
   test('EditData-toString', () {
+    final node = RichTextNode.from([]);
+    final ctx = buildEditorContext([node]);
+    print(EditingData(EditingCursor(100, RichTextNodePosition.zero()), EventType.bold, ctx).toString());
+
     final painter = TextPainter(
         text: TextSpan(text: constTexts.join('\n')),
         textDirection: TextDirection.ltr);

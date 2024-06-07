@@ -17,12 +17,12 @@ import '../../config/const_texts.dart';
 import '../../config/necessary.dart';
 import '../../config/test_editor_node.dart';
 
-void main() {
-  CodeBlockNode basicNode({List<String>? texts}) =>
-      CodeBlockNode.from(texts ?? constTexts);
+CodeBlockNode basicCodeBlockNode({List<String>? texts}) =>
+    CodeBlockNode.from(texts ?? constTexts);
 
+void main() {
   test('edge position', () {
-    final node = basicNode();
+    final node = basicCodeBlockNode();
     assert(node.beginPosition.offset == 0);
     assert(node.beginPosition.index == 0);
     assert(node.beginPosition.atEdge == true);
@@ -32,7 +32,7 @@ void main() {
   });
 
   test('frontPartNode', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var n1 = node.frontPartNode(CodeBlockPosition(5, 0));
     assert(n1 is CodeBlockNode);
     final sublist = constTexts.sublist(0, 5).join();
@@ -41,7 +41,7 @@ void main() {
   });
 
   test('rearPartNode', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var n1 = node.rearPartNode(CodeBlockPosition(5, 0));
     assert(n1 is CodeBlockNode);
     final sublist = constTexts.sublist(5).join();
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('getFromPosition', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var n1 = node.getFromPosition(node.beginPosition, node.endPosition);
     n1 = n1 as CodeBlockNode;
     assert(n1.text == node.text);
@@ -90,7 +90,7 @@ void main() {
   });
 
   test('isAllSelected', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var isAllSelected = node.isAllSelected(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition));
     assert(isAllSelected);
@@ -109,7 +109,7 @@ void main() {
   });
 
   test('replace', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final text = '111', text2 = '222';
     var n1 = node.replace(node.beginPosition, node.endPosition, []);
     assert(n1.codes.length == 1);
@@ -148,24 +148,24 @@ void main() {
   });
 
   test('merge', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final text = '111', text2 = '222';
-    var n1 = node.merge(RichTextNode.from([RichTextSpan(text: text)]));
-    assert(n1.codes.length == node.codes.length + 1);
-    assert(n1.codes.last == text);
+
+    expect(() => node.merge(RichTextNode.from([RichTextSpan(text: text)])),
+        throwsA(const TypeMatcher<UnableToMergeException>()));
 
     expect(() => node.merge(TestEditorNode()),
         throwsA(const TypeMatcher<UnableToMergeException>()));
 
-    var n2 = node.merge(node, newId: text2);
-    assert(n2.id == text2);
-    assert(n2.codes.length == node.codes.length * 2 - 1);
+    var n1 = node.merge(node, newId: text2);
+    assert(n1.id == text2);
+    assert(n1.codes.length == node.codes.length * 2 - 1);
     assert(
-        n2.codes[node.codes.length - 1] == node.codes.last + node.codes.first);
+        n1.codes[node.codes.length - 1] == node.codes.last + node.codes.first);
   });
 
   test('newNode', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var n1 = node.newNode();
     assert(n1.id == node.id);
     assert(n1.depth == node.depth);
@@ -186,7 +186,7 @@ void main() {
   });
 
   test('newLanguage', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     assert(node.language == 'dart');
     var n1 = node.newLanguage('rust');
     assert(n1.language == 'rust');
@@ -233,35 +233,33 @@ void main() {
   });
 
   test('toJson', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final json = node.toJson();
     assert(json['type'] == '${node.runtimeType}');
     assert(json['codes'] == node.codes);
   });
 
-  testWidgets('build', (tester) async{
-    var node = basicNode();
+  testWidgets('build', (tester) async {
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
 
-    var widget = Builder(
-        builder: (c) => node
-            .build(ctx, NodeBuildParam.empty(), c));
+    var widget =
+        Builder(builder: (c) => node.build(ctx, NodeBuildParam.empty(), c));
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: widget,
     ));
-
   });
 
   test('getInlineNodesFromPosition', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     assert(node
         .getInlineNodesFromPosition(node.beginPosition, node.endPosition)
         .isEmpty);
   });
 
   test('onEdit-deletion', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
     expect(
         () => node.onEdit(
@@ -294,7 +292,7 @@ void main() {
   });
 
   test('onEdit-delete', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition),
@@ -320,7 +318,7 @@ void main() {
   });
 
   test('onEdit-newline', () {
-    var node = basicNode(texts: ['   1', '  2', ' 3']);
+    var node = basicCodeBlockNode(texts: ['   1', '  2', ' 3']);
     final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(EditingData(
         CodeBlockPosition(1, 0).toCursor(0), EventType.newline, ctx));
@@ -345,7 +343,7 @@ void main() {
   });
 
   test('onSelect-newline', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(0, node.beginPosition, node.endPosition),
@@ -358,7 +356,7 @@ void main() {
   });
 
   test('onEdit-selectAll', () {
-    var node = basicNode(texts: ['', '1', '2']);
+    var node = basicCodeBlockNode(texts: ['', '1', '2']);
     final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(
         EditingData(node.beginPosition.toCursor(0), EventType.selectAll, ctx));
@@ -374,7 +372,7 @@ void main() {
   });
 
   test('onSelect-selectAll', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
     var r1 = node.onSelect(SelectingData(
         SelectingNodeCursor(
@@ -394,7 +392,7 @@ void main() {
   });
 
   test('onEdit-increaseDepth', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
     var r1 = node.onEdit(EditingData(
         CodeBlockPosition.zero().toCursor(0), EventType.increaseDepth, ctx));
@@ -405,7 +403,7 @@ void main() {
   });
 
   test('onEdit-decreaseDepth', () {
-    var node = basicNode(texts: ['', '  ', '   ']);
+    var node = basicCodeBlockNode(texts: ['', '  ', '   ']);
     final ctx = buildEditorContext([node]);
 
     expect(
@@ -422,7 +420,7 @@ void main() {
   });
 
   test('onSelect-increaseDepth', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     final ctx = buildEditorContext([node]);
 
     expect(
@@ -474,7 +472,7 @@ void main() {
   });
 
   test('onSelect-decreaseDepth', () {
-    var node = basicNode();
+    var node = basicCodeBlockNode();
     var ctx = buildEditorContext([node]);
 
     expect(
@@ -492,7 +490,7 @@ void main() {
             ctx)),
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
 
-    node = basicNode(texts: ['', '  11', '   222', '    3333']);
+    node = basicCodeBlockNode(texts: ['', '  11', '   222', '    3333']);
     ctx = buildEditorContext([node]);
 
     var r1 = node.onSelect(SelectingData(
@@ -508,7 +506,7 @@ void main() {
   });
 
   test('onEdit-paste', () {
-    var node = basicNode(texts: ['111', '222']);
+    var node = basicCodeBlockNode(texts: ['111', '222']);
     final ctx = buildEditorContext([node]);
 
     expect(
@@ -557,7 +555,7 @@ void main() {
   });
 
   test('onEdit-paste', () {
-    var node = basicNode(texts: ['111', '222']);
+    var node = basicCodeBlockNode(texts: ['111', '222']);
     final ctx = buildEditorContext([node]);
 
     expect(
@@ -627,7 +625,7 @@ void main() {
   });
 
   test('onEdit-typing', () {
-    var node = basicNode(texts: ['111', '222']);
+    var node = basicCodeBlockNode(texts: ['111', '222']);
     final ctx = buildEditorContext([node]);
 
     expect(
@@ -645,7 +643,7 @@ void main() {
     assert(c1.position == CodeBlockPosition(0, 3));
   });
   test('onSelect-typing', () {
-    var node = basicNode(texts: ['111', '222']);
+    var node = basicCodeBlockNode(texts: ['111', '222']);
     final ctx = buildEditorContext([node]);
 
     expect(
