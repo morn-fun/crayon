@@ -3,7 +3,6 @@ import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/shortcuts/delete.dart';
-import 'package:crayon/editor/shortcuts/optional_menu.dart';
 import 'package:crayon/editor/shortcuts/redo.dart';
 import 'package:crayon/editor/shortcuts/undo.dart';
 import 'package:flutter_test/flutter_test.dart';
