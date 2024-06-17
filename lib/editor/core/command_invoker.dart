@@ -1,4 +1,3 @@
-
 import '../command/basic.dart';
 import '../exception/command.dart';
 import 'context.dart';
@@ -34,28 +33,14 @@ class CommandInvoker {
     if (_undoOperations.isEmpty) throw NoCommandException('undo');
     final command = _undoOperations.removeLast();
     logger.i('undo 【${command.runtimeType}】');
-    try {
-      _addToRedoCommands(command.update(controller));
-    } catch (e) {
-      throw PerformCommandException(command.runtimeType, '$tag, undo', e);
-    }
+    _addToRedoCommands(command.update(controller));
   }
 
   void redo(RichEditorController controller) {
     if (_redoOperations.isEmpty) throw NoCommandException('undo');
     final command = _redoOperations.removeLast();
     logger.i('redo 【${command.runtimeType}】');
-    try {
-      _addToUndoCommands(command.update(controller));
-    } catch (e) {
-      throw PerformCommandException(command.runtimeType, '$tag, redo', e);
-    }
-  }
-
-  void insertUndoCommand(UpdateControllerOperation c, bool record,
-      RichEditorController controller) {
-    final command = c.update(controller);
-    if (record) _addToUndoCommands(command);
+    _addToUndoCommands(command.update(controller));
   }
 
   void _addToUndoCommands(UpdateControllerOperation? command) {
@@ -68,9 +53,6 @@ class CommandInvoker {
 
   void _addToRedoCommands(UpdateControllerOperation? command) {
     if (command == null) return;
-    if (_redoOperations.length >= 100) {
-      _redoOperations.removeAt(0);
-    }
     _redoOperations.add(command);
   }
 

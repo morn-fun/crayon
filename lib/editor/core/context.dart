@@ -33,21 +33,9 @@ class EditorContext extends NodesOperator {
     }
   }
 
-  void undo() {
-    try {
-      invoker.undo(controller);
-    } on PerformCommandException catch (e) {
-      logger.e('undo $e');
-    }
-  }
+  void undo() => invoker.undo(controller);
 
-  void redo() {
-    try {
-      invoker.redo(controller);
-    } on PerformCommandException catch (e) {
-      logger.e('redo $e');
-    }
-  }
+  void redo() => invoker.redo(controller);
 
   @override
   BasicCursor get cursor => controller.cursor;
