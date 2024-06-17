@@ -53,8 +53,6 @@ class TabAction extends ContextAction<TabIntent> {
       } else if (cursor is SelectingNodesCursor) {
         operator.execute(IncreaseNodesDepth(cursor));
       }
-    } on DepthNotAbleToIncreaseException catch (e) {
-      logger.e('$runtimeType, ${e.message}');
     } on NodeUnsupportedException catch (e) {
       logger.e('$runtimeType, ${e.message}');
     }
@@ -78,14 +76,15 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
       if (cursor is EditingCursor) {
         final index = cursor.index;
         final node = operator.getNode(index);
-        final r = node
-            .onEdit(EditingData(cursor, EventType.decreaseDepth, operator));
+        final r =
+            node.onEdit(EditingData(cursor, EventType.decreaseDepth, operator));
         operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodeCursor) {
         final index = cursor.index;
-        final r = operator.getNode(index).onSelect(
-            SelectingData(cursor, EventType.decreaseDepth, operator));
+        final r = operator
+            .getNode(index)
+            .onSelect(SelectingData(cursor, EventType.decreaseDepth, operator));
         operator.execute(
             ReplaceNode(Replace(index, index + 1, [r.node], r.cursor)));
       } else if (cursor is SelectingNodesCursor) {
@@ -97,8 +96,8 @@ class ShiftTabAction extends ContextAction<ShiftTabIntent> {
       int index = cursor.index;
       final node = operator.getNode(index);
       final nodes = <EditorNode>[node.newNode(depth: node.depth.decrease())];
-      correctDepth(operator.nodeLength, (i) => operator.getNode(i),
-          index + 1, e.depth, nodes);
+      correctDepth(operator.nodeLength, (i) => operator.getNode(i), index + 1,
+          e.depth, nodes);
       operator.execute(ReplaceNode(
           Replace(cursor.index, cursor.index + nodes.length, nodes, cursor)));
     } on NodeUnsupportedException catch (e) {
