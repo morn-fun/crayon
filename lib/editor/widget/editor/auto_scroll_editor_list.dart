@@ -12,6 +12,8 @@ import '../../core/listener_collection.dart';
 import '../../core/logger.dart';
 import '../../cursor/basic.dart';
 import '../stateful_lifecycle_widget.dart';
+import 'node_drag_target.dart';
+import 'node_draggable.dart';
 
 class AutoScrollEditorList extends StatefulWidget {
   final EditorContext editorContext;
@@ -50,6 +52,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     });
     controller.addCursorOffsetListeners(onCursorOffsetChanged);
     listeners.addCursorChangedListener(onCursorChanged);
+    listeners.addDragListener(onDragListener);
     listeners.setCursorScrollCallbacks((i) async {
       await scrollTo(i, lastEditingCursorOffset.index);
     });
@@ -59,6 +62,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   void dispose() {
     scrollController.dispose();
     listeners.removeCursorChangedListener(onCursorChanged);
+    listeners.removeDragListener(onDragListener);
     controller.removeCursorOffsetListeners(onCursorOffsetChanged);
     listeners.setCursorScrollCallbacks(null);
     super.dispose();
@@ -110,6 +114,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     refresh();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
+      if (cursor is NoneCursor) return;
       int? index;
       logger.i(
           'onCursorChanged alive :${aliveIndexMap.length},  last:$lastEditingCursorOffset   ,cursor:$cursor');
@@ -145,8 +150,9 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     if (indexAlive) return;
     final box = renderBox;
     if (box == null) return;
+    int retryTimes = 5;
     await Future.doWhile(() async {
-      while (!indexAlive) {
+      while (!indexAlive && retryTimes > 0) {
         indexAlive = isIndexAlive(index);
         bool scrollUp = lastIndex > index;
         final height = box.size.height;
@@ -154,9 +160,27 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
             scrollUp ? (listOffsetY - height) : (listOffsetY + height),
             duration: Duration(milliseconds: 50),
             curve: Curves.linear);
+        retryTimes--;
       }
       return false;
     });
+  }
+
+  void onDragListener(DragDetail d) {
+    switch (d.type) {
+      case DragType.start:
+        isInPanGesture = true;
+        break;
+      case DragType.dragging:
+        final box = renderBox;
+        final detail = d.details;
+        if (box == null || detail == null) return;
+        scrollList(detail.globalPosition, detail.delta);
+        break;
+      case DragType.end:
+        isInPanGesture = false;
+        break;
+    }
   }
 
   RenderBox? get renderBox {
@@ -255,26 +279,49 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
               final current = nodes[index];
               return Container(
                 key: ValueKey('${current.id}-${current.runtimeType}'),
-                padding: EdgeInsets.only(left: current.depth * 12, right: 4),
-                child: StatefulLifecycleWidget(
-                  onInit: () {
-                    addIndex(index, current.id);
-                    // logger.i(
-                    //     'add $index, id:${current.id},  set: ${aliveIndexMap.keys}');
-                  },
-                  onDispose: () {
-                    removeIndex(index, current.id);
-                    // logger.i(
-                    //     'remove $index, id:${current.id},  set: ${aliveIndexMap.keys}');
-                  },
-                  child: current.build(
-                      editorContext,
-                      NodeBuildParam(
+                padding: EdgeInsets.only(left: current.depth * 6, right: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    NodeDragTarget(
+                        node: current, operator: editorContext, index: index),
+                    StatefulLifecycleWidget(
+                      onInit: () {
+                        addIndex(index, current.id);
+                      },
+                      onDispose: () {
+                        removeIndex(index, current.id);
+                      },
+                      child: NodeDraggable(
                         index: index,
-                        cursor: cursor.getSingleNodeCursor(
-                            index, current, controller.panBeginCursor),
+                        operator: editorContext,
+                        onDragUpdate: (d) {
+                          final box = renderBox;
+                          if (box == null) return;
+                          scrollList(d.globalPosition, d.delta);
+                        },
+                        onDragStart: () {
+                          isInPanGesture = true;
+                        },
+                        onDragEnd: () {
+                          isInPanGesture = false;
+                        },
+                        child: current.build(
+                            editorContext,
+                            NodeBuildParam(
+                              index: index,
+                              cursor: cursor.getSingleNodeCursor(
+                                  index, current, controller.panBeginCursor),
+                            ),
+                            context),
                       ),
-                      context),
+                    ),
+                    if (index == nodes.length - 1)
+                      NodeDragTarget(
+                          node: current,
+                          operator: editorContext,
+                          index: index + 1),
+                  ],
                 ),
               );
             },

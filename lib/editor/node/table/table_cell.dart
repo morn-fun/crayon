@@ -64,6 +64,13 @@ class TableCell {
   TableCell replaceMore(int begin, int end, Iterable<EditorNode> newNodes) =>
       copy(nodes: nodes.replaceMore(begin, end, newNodes));
 
+  TableCell moveTo(int from, int to) {
+    final newNodes = nodes.toList();
+    final fromNode = newNodes.removeAt(from);
+    newNodes.insert(from < to ? to - 1 : to, fromNode);
+    return copy(nodes: newNodes);
+  }
+
   List<EditorNode> getNodes(EditingCursor begin, EditingCursor end) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;
@@ -93,7 +100,7 @@ class TableCell {
 
   String get text => nodes.map((e) => e.text).join('\n');
 
-  TableCell newIdCell(){
+  TableCell newIdCell() {
     List<EditorNode> nodes = [];
     for (var node in this.nodes) {
       nodes.add(node.newNode(id: randomNodeId));

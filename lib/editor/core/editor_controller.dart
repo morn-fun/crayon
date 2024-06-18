@@ -169,6 +169,30 @@ class Replace extends UpdateControllerOperation {
   bool get enableThrottle => false;
 }
 
+class MoveTo extends UpdateControllerOperation {
+  final int from;
+  final int to;
+
+  MoveTo(this.from, this.to);
+
+  @override
+  UpdateControllerOperation update(RichEditorController controller) {
+    final nodes = controller._nodes;
+    final oldNode = nodes.removeAt(from);
+    final finalTo = from < to ? to - 1 : to;
+    final finalFrom = from < to ? from : from + 1;
+    nodes.insert(finalTo, oldNode);
+    final operation = MoveTo(finalTo, finalFrom);
+    controller.updateCursor(NoneCursor(), notify: false);
+    controller.notifyNodes();
+    controller.notifyCursor(NoneCursor());
+    return operation;
+  }
+
+  @override
+  bool get enableThrottle => false;
+}
+
 enum ControllerStatus {
   typing,
   idle,

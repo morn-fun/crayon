@@ -26,7 +26,7 @@ class InsertNewLineWhileSelectingNodes implements BasicCommand {
     }
     List<EditorNode> listNeedRefreshDepth =
         operator.listNeedRefreshDepth(rightCursor.index, right.depth);
-    return operator.replace(Replace(
+    return operator.onOperation(Replace(
         leftCursor.index,
         rightCursor.index + 1 + listNeedRefreshDepth.length,
         [left, right, ...listNeedRefreshDepth],

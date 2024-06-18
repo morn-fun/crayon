@@ -1,3 +1,5 @@
+import 'package:crayon/editor/cursor/basic.dart';
+
 import '../core/command_invoker.dart';
 import '../core/context.dart';
 import '../core/editor_controller.dart';
@@ -11,7 +13,7 @@ class ModifyNode implements BasicCommand {
 
   @override
   UpdateControllerOperation? run(NodesOperator operator) {
-    return operator.update(Update(
+    return operator.onOperation(Update(
         nodeWithCursor.index, nodeWithCursor.node, nodeWithCursor.cursor));
   }
 
@@ -29,11 +31,28 @@ class ModifyNodeWithoutChangeCursor implements BasicCommand {
 
   @override
   UpdateControllerOperation? run(NodesOperator operator) {
-    return operator.update(Update(index, node, operator.cursor));
+    return operator.onOperation(Update(index, node, operator.cursor));
   }
 
   @override
   String toString() {
     return 'ModifyNodeWithoutChangeCursor{index: $index, node: $node}';
+  }
+}
+
+class ModifyNodeWithNoneCursor implements BasicCommand {
+  final int index;
+  final EditorNode node;
+
+  ModifyNodeWithNoneCursor(this.index, this.node);
+
+  @override
+  UpdateControllerOperation? run(NodesOperator operator) {
+    return operator.onOperation(Update(index, node, NoneCursor()));
+  }
+
+  @override
+  String toString() {
+    return 'ModifyNodeWithNoneCursor{index: $index, node: $node}';
   }
 }

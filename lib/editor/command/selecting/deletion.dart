@@ -27,7 +27,7 @@ class DeletionWhileSelectingNodes implements BasicCommand {
       final newNode = left.merge(right);
       List<EditorNode> listNeedRefreshDepth =
           operator.listNeedRefreshDepth(rightCursor.index, newNode.depth);
-      return operator.replace(Replace(
+      return operator.onOperation(Replace(
           leftCursor.index,
           rightCursor.index + 1 + listNeedRefreshDepth.length,
           [newNode, ...listNeedRefreshDepth],
@@ -36,7 +36,7 @@ class DeletionWhileSelectingNodes implements BasicCommand {
       logger.e('$runtimeType error: $e');
       List<EditorNode> listNeedRefreshDepth =
           operator.listNeedRefreshDepth(rightCursor.index, right.depth);
-      return operator.replace(Replace(
+      return operator.onOperation(Replace(
           leftCursor.index,
           rightCursor.index + 1 + listNeedRefreshDepth.length,
           [left, right, ...listNeedRefreshDepth],

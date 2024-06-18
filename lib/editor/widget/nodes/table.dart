@@ -194,18 +194,18 @@ class _RichTableState extends State<RichTable> {
     final box = tableBox;
     if (box == null) return false;
     var c = nodeCursor;
+    final cell = node.getCell(cp);
     if (c is SelectingNodeCursor) {
       final newCursor = c.as<TablePosition>();
       if (newCursor.begin.cellPosition.sameCell(cp)) {
-        return localListeners.notifyGestures(o) != null;
+        return localListeners.notifyGesture(cell.id, o);
       }
     } else if (c is EditingCursor) {
       final newCursor = c.as<TablePosition>();
       if (newCursor.position.cellPosition.sameCell(cp)) {
-        return localListeners.notifyGestures(o) != null;
+        return localListeners.notifyGesture(cell.id, o);
       }
     }
-    final cell = node.getCell(cp);
     operator.onPanUpdate(
         EditingCursor(widgetIndex, TablePosition(cp, cell.endCursor)));
     return true;
@@ -342,7 +342,7 @@ class _RichTableState extends State<RichTable> {
   }
 
   bool containsOffset(Offset global) =>
-      renderBox?.containsOffset(global) ?? false;
+      renderBox?.containsY(global.dy) ?? false;
 
   Map<int, FixedColumnWidth> buildWidthsMap(TableNode n) {
     final Map<int, FixedColumnWidth> map = {};
@@ -394,7 +394,7 @@ class _RichTableState extends State<RichTable> {
     final table = node.table;
     final wholeContain = node.wholeContain(nodeCursor);
     final tableBorderWidth = 1.0;
-    final nodeContext = ShareEditorContextWidget.of(context)!.context;
+    final nodeContext = widget.operator;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       key: key,

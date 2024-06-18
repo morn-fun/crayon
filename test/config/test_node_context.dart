@@ -50,20 +50,9 @@ class TestNodeContext extends NodesOperator {
   }
 
   @override
-  UpdateControllerOperation? replace(Replace data, {bool record = true}) {
-    // TODO: implement replace
-    throw UnimplementedError();
-  }
-
-  @override
   // TODO: implement selectAllCursor
   BasicCursor<NodePosition> get selectAllCursor => throw UnimplementedError();
 
-  @override
-  UpdateControllerOperation? update(Update data, {bool record = true}) {
-    // TODO: implement update
-    throw UnimplementedError();
-  }
 
   @override
   void onNode(EditorNode node, int index) {
@@ -74,4 +63,10 @@ class TestNodeContext extends NodesOperator {
   NodesOperator newOperator(
           List<EditorNode> nodes, BasicCursor<NodePosition> cursor) =>
       this;
+
+  @override
+  UpdateControllerOperation? onOperation(UpdateControllerOperation operation, {bool record = true}) {
+    // TODO: implement onOperation
+    throw UnimplementedError();
+  }
 }

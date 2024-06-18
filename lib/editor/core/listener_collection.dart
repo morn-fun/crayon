@@ -19,6 +19,7 @@ class ListenerCollection {
   final Map<String, Set<ArrowDelegate>> _arrowDelegates = {};
   final Set<ValueChanged<OptionalSelectedType>> _menuListeners = {};
   final Map<String, Set<ListenerCollection>> _id2Listeners = {};
+  final Set<ValueChanged<DragDetail>> _dragListeners = {};
   AsyncValueSetter<int>? _cursorScrollCallback;
 
   ListenerCollection({
@@ -76,6 +77,12 @@ class ListenerCollection {
 
   void removeNodesChangedListener(ValueChanged<List<EditorNode>> listener) =>
       _nodesListeners.remove(listener);
+
+  void addDragListener(ValueChanged<DragDetail> listener) =>
+      _dragListeners.add(listener);
+
+  void removeDragListener(ValueChanged<DragDetail> listener) =>
+      _dragListeners.remove(listener);
 
   void addGestureListener(String id, GestureStateListener listener) {
     final set = _gestureListeners[id] ?? {};
@@ -199,6 +206,12 @@ class ListenerCollection {
     }
   }
 
+  void onDrag(DragDetail d) {
+    for (var c in Set.of(_dragListeners)) {
+      c.call(d);
+    }
+  }
+
   Future? scrollTo(int index) => _cursorScrollCallback?.call(index);
 
   ListenerCollection? getListener(String id) {
@@ -292,4 +305,13 @@ class CursorOffset {
 
   @override
   int get hashCode => index.hashCode ^ offset.hashCode;
+}
+
+enum DragType { start, dragging, end }
+
+class DragDetail {
+  final DragType type;
+  final DragUpdateDetails? details;
+
+  DragDetail(this.type, this.details);
 }

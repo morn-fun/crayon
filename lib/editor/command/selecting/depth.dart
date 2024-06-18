@@ -35,7 +35,7 @@ class IncreaseNodesDepth implements BasicCommand {
       newNodes.add(node.newNode(depth: node.depth + 1));
       l++;
     }
-    return operator.replace(Replace(leftCursor.index,
+    return operator.onOperation(Replace(leftCursor.index,
         leftCursor.index + newNodes.length, newNodes, cursor));
   }
 }
@@ -72,7 +72,7 @@ class DecreaseNodesDepth implements BasicCommand {
       correctDepth(operator.nodeLength, (i) => operator.getNode(i), r + 1,
           e.depth, newNodes);
     }
-    return operator.replace(Replace(leftCursor.index,
+    return operator.onOperation(Replace(leftCursor.index,
         leftCursor.index + newNodes.length, newNodes, cursor));
   }
 }

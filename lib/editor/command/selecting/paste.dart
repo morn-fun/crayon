@@ -30,10 +30,10 @@ class PasteWhileSelectingNodes implements BasicCommand {
             EventType.paste,
             operator,
             extras: nodes));
-        return operator.replace(Replace(
+        return operator.onOperation(Replace(
             leftCursor.index, rightCursor.index + 1, [r.node], r.cursor));
       } on PasteToCreateMoreNodesException catch (e) {
-        return operator.replace(Replace(
+        return operator.onOperation(Replace(
             leftCursor.index,
             rightCursor.index + 1,
             e.nodes,
@@ -44,7 +44,7 @@ class PasteWhileSelectingNodes implements BasicCommand {
       final newNodes = List.of(nodes);
       newNodes.insert(0, left);
       newNodes.add(right);
-      return operator.replace(Replace(
+      return operator.onOperation(Replace(
           leftCursor.index,
           rightCursor.index + 1,
           newNodes,

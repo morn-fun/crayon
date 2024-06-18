@@ -4,7 +4,6 @@ import 'package:crayon/editor/cursor/basic.dart';
 import 'package:crayon/editor/cursor/table.dart';
 import 'package:crayon/editor/node/code_block/code_block.dart';
 import 'package:crayon/editor/node/table/generator/common.dart';
-import 'package:crayon/editor/node/table/table.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

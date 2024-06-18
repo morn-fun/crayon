@@ -13,7 +13,7 @@ class ReplaceNode implements BasicCommand {
 
   @override
   UpdateControllerOperation? run(NodesOperator operator) {
-    return operator.replace(replace, record: record);
+    return operator.onOperation(replace, record: record);
   }
 
   @override
@@ -31,7 +31,7 @@ class AddRichTextNode implements BasicCommand {
   UpdateControllerOperation? run(NodesOperator operator) {
     final index = operator.nodes.length - 1;
     final last = operator.nodes.last;
-    return operator.replace(Replace(index, index + 1, [last, node],
+    return operator.onOperation(Replace(index, index + 1, [last, node],
         EditingCursor(index + 1, node.endPosition)));
   }
 

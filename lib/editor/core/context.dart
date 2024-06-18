@@ -59,12 +59,11 @@ class EditorContext extends NodesOperator {
   BasicCursor<NodePosition> get selectAllCursor => controller.selectAllCursor;
 
   @override
-  UpdateControllerOperation? update(Update data, {bool record = true}) =>
-      controller.update(data, record: record);
-
-  @override
-  UpdateControllerOperation? replace(Replace data, {bool record = true}) =>
-      controller.replace(data, record: record);
+  UpdateControllerOperation? onOperation(UpdateControllerOperation operation,
+      {bool record = true}) {
+    final opt = operation.update(controller);
+    return record ? opt : null;
+  }
 
   @override
   void onCursor(BasicCursor cursor) {
@@ -136,9 +135,8 @@ abstract class NodesOperator {
 
   void onCursorOffset(EditingOffset o);
 
-  UpdateControllerOperation? update(Update data, {bool record = true});
-
-  UpdateControllerOperation? replace(Replace data, {bool record = true});
+  UpdateControllerOperation? onOperation(UpdateControllerOperation operation,
+      {bool record = true});
 
   BasicCursor get selectAllCursor;
 
@@ -174,8 +172,7 @@ class TableCellNodeContext extends NodesOperator {
   @override
   final BasicCursor cursor;
   final TableCell cell;
-  final ValueChanged<Replace> onReplace;
-  final ValueChanged<Update> onUpdate;
+  final ValueChanged<UpdateControllerOperation> operation;
   final ValueChanged<BasicCursor> onBasicCursor;
   final ValueChanged<EditingOffset> editingOffset;
   final ValueChanged<EditingCursor> onPan;
@@ -187,8 +184,7 @@ class TableCellNodeContext extends NodesOperator {
     required this.cursor,
     required this.cell,
     required this.listeners,
-    required this.onReplace,
-    required this.onUpdate,
+    required this.operation,
     required this.onBasicCursor,
     required this.editingOffset,
     required this.onPan,
@@ -217,22 +213,10 @@ class TableCellNodeContext extends NodesOperator {
   List<EditorNode> get nodes => cell.nodes;
 
   @override
-  UpdateControllerOperation? replace(Replace data, {bool record = true}) {
-    onReplace.call(data);
-    return null;
-  }
-
-  @override
   BasicCursor<NodePosition> get selectAllCursor => cell.length == 1
       ? SelectingNodeCursor(0, cell.first.beginPosition, cell.first.endPosition)
       : SelectingNodesCursor(EditingCursor(0, cell.first.beginPosition),
           EditingCursor(cell.length - 1, cell.last.endPosition));
-
-  @override
-  UpdateControllerOperation? update(Update data, {bool record = true}) {
-    onUpdate.call(data);
-    return null;
-  }
 
   @override
   void onCursor(BasicCursor cursor) => onBasicCursor.call(cursor);
@@ -254,12 +238,28 @@ class TableCellNodeContext extends NodesOperator {
           cursor: cursor,
           cell: cell.copy(nodes: nodes),
           listeners: listeners,
-          onReplace: onReplace,
-          onUpdate: onUpdate,
+          operation: operation,
           onBasicCursor: onBasicCursor,
           editingOffset: editingOffset,
           onPan: onPan,
           onNodeUpdate: onNodeUpdate);
+
+  @override
+  UpdateControllerOperation? onOperation(UpdateControllerOperation operation,
+      {bool record = true}) {
+    this.operation.call(operation);
+    return null;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TableCellNodeContext &&
+          runtimeType == other.runtimeType &&
+          cell == other.cell;
+
+  @override
+  int get hashCode => cell.hashCode;
 }
 
 class NodeWithIndex {

@@ -163,7 +163,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     final rearNode = node.rearPartNode(c.position as RichTextNodePosition);
     try {
       final newNode = generator.call(rearNode);
-      operator.update(Update(
+      operator.onOperation(Update(
           c.index, newNode, EditingCursor(c.index, newNode.beginPosition)));
     } on TryingToCreateLinkException {
       final frontNode = node.frontPartNode(c.position as RichTextNodePosition);

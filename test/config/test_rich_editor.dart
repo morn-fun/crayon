@@ -31,6 +31,7 @@ class _TestRichEditorState extends State<TestRichEditor> {
     if (mounted) setState(() {});
   }
 
+  @override
   Widget build(BuildContext context) {
     return Shortcuts.manager(
       manager: shortcutManager,

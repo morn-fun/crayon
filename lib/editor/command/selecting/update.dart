@@ -48,7 +48,7 @@ class UpdateSelectingNodes implements BasicCommand {
               extras: extra));
         }
         nodes.add(nc.node);
-      } on NodeUnsupportedException catch(e){
+      } on NodeUnsupportedException catch (e) {
         nodes.add(node);
         logger.e('UpdateSelectingNodes error:${e.message}');
       }
@@ -59,7 +59,7 @@ class UpdateSelectingNodes implements BasicCommand {
         EditingCursor(
             right.index, _getBySingleNodePosition(rightPosition, false)));
     return operator
-        .replace(Replace(left.index, right.index + 1, nodes, newCursor));
+        .onOperation(Replace(left.index, right.index + 1, nodes, newCursor));
   }
 
   NodePosition _getBySingleNodePosition(SingleNodeCursor p, bool isLeft) {

@@ -292,7 +292,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   bool containsOffset(Offset global) =>
-      renderBox?.containsOffset(global) ?? false;
+      renderBox?.containsY(global.dy) ?? false;
 
   void updatePainter() {
     painter.text = textSpan;
@@ -369,6 +369,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         if (recordWidth != constrains.maxWidth) {
           recordWidth = constrains.maxWidth;
           painter.layout(maxWidth: recordWidth);
+          if(recordWidth == double.infinity) recordWidth = painter.width + 2;
         }
         return CompositedTransformTarget(
           link: layerLink,

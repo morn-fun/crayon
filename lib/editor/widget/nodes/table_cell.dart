@@ -15,6 +15,8 @@ import '../../shortcuts/arrows/selection_arrow.dart';
 import '../../shortcuts/arrows/selection_word_arrow.dart';
 import '../../shortcuts/arrows/single_arrow.dart';
 import '../../shortcuts/arrows/word_arrow.dart';
+import '../editor/node_drag_target.dart';
+import '../editor/node_draggable.dart';
 
 class RichTableCell extends StatefulWidget {
   final tc.TableCell cell;
@@ -297,30 +299,51 @@ class _RichTableCellState extends State<RichTableCell> {
   @override
   Widget build(BuildContext context) {
     bool wholeSelected = cell.wholeSelected(cursor);
+    final listeners = operator.listeners;
     late EditingCursor lastCursor;
     final c = cursor;
     if (c is EditingCursor) lastCursor = c;
     if (c is SelectingNodeCursor) lastCursor = c.beginCursor;
     if (c is SelectingNodesCursor) lastCursor = c.begin;
+    final opt = buildTableCellNodeContext(
+        operator, cellPosition, node, cursor ?? NoneCursor(), widgetIndex);
     return Padding(
-      padding: EdgeInsets.all(8),
+      padding: EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(cell.length, (i) {
           final innerNode = cell.getNode(i);
           return Container(
-            padding: EdgeInsets.only(left: innerNode.depth * 12, right: 4),
-            child: innerNode.build(
-                buildTableCellNodeContext(operator, cellPosition, node,
-                    cursor ?? NoneCursor(), widgetIndex),
-                NodeBuildParam(
+            padding: EdgeInsets.only(left: innerNode.depth * 4, right: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NodeDragTarget(node: innerNode, operator: opt, index: i),
+                NodeDraggable(
                   index: i,
-                  cursor: wholeSelected
-                      ? null
-                      : cursor?.getSingleNodeCursor(i, innerNode, lastCursor),
+                  operator: opt,
+                  child: innerNode.build(
+                      opt,
+                      NodeBuildParam(
+                        index: i,
+                        cursor: wholeSelected
+                            ? null
+                            : cursor?.getSingleNodeCursor(
+                                i, innerNode, lastCursor),
+                      ),
+                      context),
+                  onDragStart: () =>
+                      listeners.onDrag(DragDetail(DragType.start, null)),
+                  onDragEnd: () =>
+                      listeners.onDrag(DragDetail(DragType.end, null)),
+                  onDragUpdate: (d) =>
+                      listeners.onDrag(DragDetail(DragType.dragging, d)),
                 ),
-                context),
+                if (i == cell.length - 1)
+                  NodeDragTarget(node: innerNode, operator: opt, index: i + 1),
+              ],
+            ),
           );
         }),
       ),
