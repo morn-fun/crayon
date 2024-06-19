@@ -32,14 +32,14 @@ class CommandInvoker {
   void undo(RichEditorController controller) {
     if (_undoOperations.isEmpty) throw NoCommandException('undo');
     final command = _undoOperations.removeLast();
-    logger.i('undo 【${command.runtimeType}】');
+    logger.i('undo 【$command】');
     _addToRedoCommands(command.update(controller));
   }
 
   void redo(RichEditorController controller) {
     if (_redoOperations.isEmpty) throw NoCommandException('undo');
     final command = _redoOperations.removeLast();
-    logger.i('redo 【${command.runtimeType}】');
+    logger.i('redo 【$command}】');
     _addToUndoCommands(command.update(controller));
   }
 

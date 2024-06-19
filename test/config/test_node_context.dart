@@ -53,7 +53,6 @@ class TestNodeContext extends NodesOperator {
   // TODO: implement selectAllCursor
   BasicCursor<NodePosition> get selectAllCursor => throw UnimplementedError();
 
-
   @override
   void onNode(EditorNode node, int index) {
     // TODO: implement onNode
@@ -65,8 +64,13 @@ class TestNodeContext extends NodesOperator {
       this;
 
   @override
-  UpdateControllerOperation? onOperation(UpdateControllerOperation operation, {bool record = true}) {
+  UpdateControllerOperation? onOperation(UpdateControllerOperation operation,
+      {bool record = true}) {
     // TODO: implement onOperation
     throw UnimplementedError();
   }
+
+  @override
+  // TODO: implement parentId
+  String get parentId => '$hashCode';
 }

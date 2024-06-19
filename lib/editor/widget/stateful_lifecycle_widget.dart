@@ -22,8 +22,8 @@ class _StatefulLifecycleWidgetState extends State<StatefulLifecycleWidget> {
 
   @override
   void dispose() {
-    widget.onDispose?.call();
     super.dispose();
+    widget.onDispose?.call();
   }
 
   @override

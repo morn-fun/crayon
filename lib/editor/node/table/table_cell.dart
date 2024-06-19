@@ -71,6 +71,18 @@ class TableCell {
     return copy(nodes: newNodes);
   }
 
+  TableCell insert(int index, EditorNode node) {
+    final newNodes = nodes.toList();
+    newNodes.insert(index, node);
+    return copy(nodes: newNodes);
+  }
+
+  TableCell remove(int index) {
+    final newNodes = nodes.toList();
+    newNodes.removeAt(index);
+    return copy(nodes: newNodes);
+  }
+
   List<EditorNode> getNodes(EditingCursor begin, EditingCursor end) {
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;

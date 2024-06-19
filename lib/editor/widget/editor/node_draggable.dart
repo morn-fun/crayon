@@ -11,15 +11,19 @@ class NodeDraggable extends StatefulWidget {
   final DragUpdateCallback? onDragUpdate;
   final VoidCallback? onDragEnd;
   final VoidCallback? onDragStart;
+  final NodeDraggableSlot slot;
+  final bool draggable;
 
   const NodeDraggable({
     super.key,
     required this.index,
     required this.operator,
     required this.child,
+    required this.slot,
     this.onDragUpdate,
     this.onDragStart,
     this.onDragEnd,
+    this.draggable = true,
   });
 
   @override
@@ -57,10 +61,10 @@ class _NodeDraggableState extends State<NodeDraggable> {
         children: [
           SizedBox(
             width: 20,
-            child: hovering || dragging
-                ? Draggable<OperatorWithIndex>(
+            child: (hovering || dragging) && widget.draggable
+                ? Draggable<DraggableData>(
                     affinity: Axis.vertical,
-                    data: OperatorWithIndex(operator, index),
+                    data: DraggableData(operator, widget.slot, node),
                     onDragStarted: () {
                       operator.onCursor(NoneCursor());
                       dragging = true;

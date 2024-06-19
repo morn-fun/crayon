@@ -3,6 +3,9 @@ import '../../../../editor/core/context.dart';
 import '../../../../editor/core/listener_collection.dart';
 import '../../../../editor/cursor/basic.dart';
 import '../../../../editor/extension/cursor.dart';
+import '../../command/modification.dart';
+import '../../command/reordering.dart';
+import '../../core/editor_controller.dart';
 import '../../core/logger.dart';
 import '../../cursor/table.dart';
 import '../../exception/editor_node.dart';
@@ -305,8 +308,9 @@ class _RichTableCellState extends State<RichTableCell> {
     if (c is EditingCursor) lastCursor = c;
     if (c is SelectingNodeCursor) lastCursor = c.beginCursor;
     if (c is SelectingNodesCursor) lastCursor = c.begin;
+    final cp = cellPosition;
     final opt = buildTableCellNodeContext(
-        operator, cellPosition, node, cursor ?? NoneCursor(), widgetIndex);
+        operator, cp, node, cursor ?? NoneCursor(), widgetIndex);
     return Padding(
       padding: EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: Column(
@@ -319,10 +323,14 @@ class _RichTableCellState extends State<RichTableCell> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                NodeDragTarget(node: innerNode, operator: opt, index: i),
+                NodeDragTarget(
+                    node: innerNode,
+                    operator: opt,
+                    onAccept: (v) => onNodeAccept(v, opt, i)),
                 NodeDraggable(
                   index: i,
                   operator: opt,
+                  draggable: cell.length > 1,
                   child: innerNode.build(
                       opt,
                       NodeBuildParam(
@@ -339,14 +347,69 @@ class _RichTableCellState extends State<RichTableCell> {
                       listeners.onDrag(DragDetail(DragType.end, null)),
                   onDragUpdate: (d) =>
                       listeners.onDrag(DragDetail(DragType.dragging, d)),
+                  slot: TableCellNodeSlot(widgetIndex, cp, i,
+                      node.updateCell(cp.row, cp.column, (t) => t.remove(i))),
                 ),
                 if (i == cell.length - 1)
-                  NodeDragTarget(node: innerNode, operator: opt, index: i + 1),
+                  NodeDragTarget(
+                      node: innerNode,
+                      operator: opt,
+                      onAccept: (v) => onNodeAccept(v, opt, i + 1)),
               ],
             ),
           );
         }),
       ),
     );
+  }
+
+  void onNodeAccept(DraggableData v, NodesOperator operator, int index) {
+    final cp = cellPosition;
+    final operatorFrom = v.operator;
+    final slotFrom = v.slot;
+    final draggableNode = v.draggableNode;
+
+    ///FixME: not support to accept TableNode, there should throw an exception
+    if (draggableNode is TableNode) return;
+
+    ///in same table cell
+    if (operatorFrom == operator) {
+      logger.i('Table drag from same table cell');
+      operator.execute(ModifyNodeWithNoneCursor(widgetIndex,
+          node.updateCell(cp.row, cp.column, (t) => t.moveTo(v.index, index))));
+      return;
+    }
+
+    if (slotFrom is TableCellNodeSlot) {
+      ///in same table node, but different cell
+      if (operatorFrom.parentId == operator.parentId) {
+        logger.i('Table drag from same table node, but different cell');
+        final cpFrom = slotFrom.cellPosition;
+        final indexFrom = slotFrom.indexInCell;
+        var newTableNode = node.updateCell(cpFrom.row, cpFrom.column,
+            (t) => t.replaceMore(indexFrom, indexFrom + 1, []));
+        newTableNode = newTableNode.updateCell(
+            cp.row, cp.column, (t) => t.insert(index, draggableNode));
+        operator.execute(ModifyNodeWithNoneCursor(widgetIndex, newTableNode));
+        return;
+      }
+
+      ///different table node
+      if (operatorFrom.runtimeType == operator.runtimeType) {
+        logger.i('Table drag from different table node');
+        final nodeAfterAccept = node.updateCell(
+            cp.row, cp.column, (t) => t.insert(index, draggableNode));
+        this.operator.execute(MoveExchangeNode(MoveExchange(v.index,
+            widgetIndex, slotFrom.nodeAfterDraggable, nodeAfterAccept)));
+      }
+      return;
+    }
+
+    logger.i('Table drag from other unknown node');
+    final nodeAfterAccept = node.updateCell(
+        cp.row, cp.column, (t) => t.insert(index, draggableNode));
+    this
+        .operator
+        .execute(MoveIntoNode(MoveInto(v.index, widgetIndex, nodeAfterAccept)));
   }
 }

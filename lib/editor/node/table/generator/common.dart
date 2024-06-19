@@ -50,6 +50,7 @@ TableCellNodeContext buildTableCellNodeContext(NodesOperator ctx,
       ctx.listeners.getListener(cell.id) ?? ListenerCollection();
 
   return TableCellNodeContext(
+      parentId: node.id,
       cell: cell,
       cursor: cursor,
       operation: (v) {
@@ -63,9 +64,6 @@ TableCellNodeContext buildTableCellNodeContext(NodesOperator ctx,
               node.updateCell(
                   p.row, p.column, (t) => t.update(v.index, (n) => v.node)),
               _cursorToCursor(v.cursor, p, index))));
-        } else if (v is MoveTo) {
-          ctx.execute(ModifyNodeWithNoneCursor(index,
-              node.updateCell(p.row, p.column, (t) => t.moveTo(v.from, v.to))));
         }
       },
       onBasicCursor: (newCursor) {

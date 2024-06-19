@@ -141,6 +141,11 @@ class Update extends UpdateControllerOperation {
     controller.notifyCursor(cursor);
     return undoOperation;
   }
+
+  @override
+  String toString() {
+    return 'Update{index: $index, node: $node, cursor: $cursor}';
+  }
 }
 
 class Replace extends UpdateControllerOperation {
@@ -167,6 +172,11 @@ class Replace extends UpdateControllerOperation {
 
   @override
   bool get enableThrottle => false;
+
+  @override
+  String toString() {
+    return 'Replace{begin: $begin, end: $end, newNodes: $newNodes, cursor: $cursor}';
+  }
 }
 
 class MoveTo extends UpdateControllerOperation {
@@ -191,6 +201,103 @@ class MoveTo extends UpdateControllerOperation {
 
   @override
   bool get enableThrottle => false;
+
+  @override
+  String toString() {
+    return 'MoveTo{from: $from, to: $to}';
+  }
+}
+
+class MoveInto extends UpdateControllerOperation {
+  final int from;
+  final int to;
+  final EditorNode newToNode;
+
+  MoveInto(this.from, this.to, this.newToNode);
+
+  @override
+  UpdateControllerOperation update(RichEditorController controller) {
+    final nodes = controller._nodes;
+    final oldFromNode = nodes.removeAt(from);
+    final finalTo = from < to ? to - 1 : to;
+    final oldToNode = nodes[finalTo];
+    nodes[finalTo] = newToNode;
+    final operation = MoveOut(finalTo, from, oldFromNode, oldToNode);
+    controller.updateCursor(NoneCursor(), notify: false);
+    controller.notifyNodes();
+    controller.notifyCursor(NoneCursor());
+    return operation;
+  }
+
+  @override
+  bool get enableThrottle => false;
+
+  @override
+  String toString() {
+    return 'MoveInto{from: $from, to: $to, newToNode: $newToNode}';
+  }
+}
+
+class MoveOut extends UpdateControllerOperation {
+  final int from;
+  final int to;
+  final EditorNode outNode;
+  final EditorNode newFromNode;
+
+  MoveOut(this.from, this.to, this.outNode, this.newFromNode);
+
+  @override
+  UpdateControllerOperation update(RichEditorController controller) {
+    final nodes = controller._nodes;
+    final oldFromNode = nodes[from];
+    final finalFrom = from < to ? from : from + 1;
+    nodes[from] = newFromNode;
+    nodes.insert(to, outNode);
+    final operation = MoveInto(to, finalFrom, oldFromNode);
+    controller.updateCursor(NoneCursor(), notify: false);
+    controller.notifyNodes();
+    controller.notifyCursor(NoneCursor());
+    return operation;
+  }
+
+  @override
+  bool get enableThrottle => false;
+
+  @override
+  String toString() {
+    return 'MoveOut{from: $from, to: $to, outNode: $outNode, newFromNode: $newFromNode}';
+  }
+}
+
+class MoveExchange extends UpdateControllerOperation {
+  final int from;
+  final int to;
+  final EditorNode newFromNode;
+  final EditorNode newToNode;
+
+  MoveExchange(this.from, this.to, this.newFromNode, this.newToNode);
+
+  @override
+  UpdateControllerOperation update(RichEditorController controller) {
+    final nodes = controller._nodes;
+    final oldFromNode = nodes[from];
+    final oldToNode = nodes[to];
+    nodes[from] = newFromNode;
+    nodes[to] = newToNode;
+    final operation = MoveExchange(from, to, oldFromNode, oldToNode);
+    controller.updateCursor(NoneCursor(), notify: false);
+    controller.notifyNodes();
+    controller.notifyCursor(NoneCursor());
+    return operation;
+  }
+
+  @override
+  bool get enableThrottle => false;
+
+  @override
+  String toString() {
+    return 'MoveExchange{from: $from, to: $to, newFromNode: $newFromNode, newToNode: $newToNode}';
+  }
 }
 
 enum ControllerStatus {

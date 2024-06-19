@@ -4,6 +4,7 @@ import '../../../editor/node/rich_text/rich_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../../editor/extension/cursor.dart';
+import '../../command/reordering.dart';
 import '../../command/replacement.dart';
 import '../../core/command_invoker.dart';
 import '../../core/context.dart';
@@ -34,7 +35,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   final tag = 'AutoScrollEditorList';
   final scrollController = ScrollController();
   final key = GlobalKey();
-  final aliveIndexMap = <int, Set<String>>{};
+  final aliveIndexMap = <int, List<int>>{};
 
   CursorOffset lastEditingCursorOffset = CursorOffset.zero();
   double listOffsetY = 0;
@@ -150,17 +151,17 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     if (indexAlive) return;
     final box = renderBox;
     if (box == null) return;
-    int retryTimes = 5;
     await Future.doWhile(() async {
-      while (!indexAlive && retryTimes > 0) {
+      while (!indexAlive) {
         indexAlive = isIndexAlive(index);
         bool scrollUp = lastIndex > index;
         final height = box.size.height;
+        logger.i(
+            '$tag, scrollTo now:$index last:$lastIndex,  map:$aliveIndexMap');
         await scrollController.animateTo(
             scrollUp ? (listOffsetY - height) : (listOffsetY + height),
             duration: Duration(milliseconds: 50),
             curve: Curves.linear);
-        retryTimes--;
       }
       return false;
     });
@@ -284,16 +285,20 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     NodeDragTarget(
-                        node: current, operator: editorContext, index: index),
+                      node: current,
+                      operator: editorContext,
+                      onAccept: (v) => onNodeAccept(v, index),
+                    ),
                     StatefulLifecycleWidget(
                       onInit: () {
-                        addIndex(index, current.id);
+                        addIndex(index);
                       },
                       onDispose: () {
-                        removeIndex(index, current.id);
+                        removeIndex(index);
                       },
                       child: NodeDraggable(
                         index: index,
+                        slot: RootNodeSlot(index),
                         operator: editorContext,
                         onDragUpdate: (d) {
                           final box = renderBox;
@@ -318,9 +323,10 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                     ),
                     if (index == nodes.length - 1)
                       NodeDragTarget(
-                          node: current,
-                          operator: editorContext,
-                          index: index + 1),
+                        node: current,
+                        operator: editorContext,
+                        onAccept: (v) => onNodeAccept(v, index + 1),
+                      ),
                   ],
                 ),
               );
@@ -330,23 +336,35 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     );
   }
 
-  void addIndex(int index, String id) {
-    final set = aliveIndexMap[index] ?? {};
-    set.add(id);
-    aliveIndexMap[index] = set;
-  }
-
-  void removeIndex(int index, String id) {
-    final set = aliveIndexMap[index] ?? {};
-    set.remove(id);
-    if (set.isEmpty) {
-      aliveIndexMap.remove(index);
-    } else {
-      aliveIndexMap[index] = set;
+  void onNodeAccept(DraggableData d, int index) {
+    final slot = d.slot;
+    if (slot is TableCellNodeSlot) {
+      editorContext.execute(MoveOutNode(MoveOut(
+          slot.index, index, d.draggableNode, slot.nodeAfterDraggable)));
+    } else if (slot is RootNodeSlot) {
+      editorContext.execute(MoveNode(slot.index, index));
     }
   }
 
-  bool isIndexAlive(int index) => aliveIndexMap[index] != null;
+  void addIndex(int index) {
+    // logger.i('$tag,  addIndex:$index, length:${aliveIndexMap[index]?.length}');
+    final list = aliveIndexMap[index] ?? <int>[];
+    list.add(0);
+    aliveIndexMap[index] = list;
+  }
+
+  void removeIndex(int index) {
+    final list = aliveIndexMap[index] ?? <int>[];
+    if (list.isEmpty) {
+      aliveIndexMap.remove(index);
+    } else {
+      list.removeLast();
+      aliveIndexMap[index] = list;
+    }
+    // logger.i('$tag,  removeIndex:$index, length:${aliveIndexMap[index]?.length}');
+  }
+
+  bool isIndexAlive(int index) => aliveIndexMap[index]?.isNotEmpty ?? false;
 
   void scrollList(Offset globalPosition, Offset delta) {
     const moveDistance = 20.0;

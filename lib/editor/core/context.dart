@@ -114,6 +114,9 @@ class EditorContext extends NodesOperator {
       this;
 
   void removeEntry() => entryManager.removeEntry();
+
+  @override
+  String get parentId => '$hashCode';
 }
 
 abstract class NodesOperator {
@@ -145,6 +148,8 @@ abstract class NodesOperator {
   Future? scrollTo(int index) => listeners.scrollTo(index);
 
   NodesOperator newOperator(List<EditorNode> nodes, BasicCursor cursor);
+
+  String get parentId;
 }
 
 class NodeBuildParam {
@@ -179,6 +184,8 @@ class TableCellNodeContext extends NodesOperator {
   final ValueChanged<NodeWithIndex> onNodeUpdate;
   @override
   final ListenerCollection listeners;
+  @override
+  final String parentId;
 
   TableCellNodeContext({
     required this.cursor,
@@ -189,6 +196,7 @@ class TableCellNodeContext extends NodesOperator {
     required this.editingOffset,
     required this.onPan,
     required this.onNodeUpdate,
+    required this.parentId,
   });
 
   final tag = 'TableCellNodeContext';
@@ -242,7 +250,8 @@ class TableCellNodeContext extends NodesOperator {
           onBasicCursor: onBasicCursor,
           editingOffset: editingOffset,
           onPan: onPan,
-          onNodeUpdate: onNodeUpdate);
+          onNodeUpdate: onNodeUpdate,
+          parentId: parentId);
 
   @override
   UpdateControllerOperation? onOperation(UpdateControllerOperation operation,
