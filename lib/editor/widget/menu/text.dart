@@ -142,15 +142,15 @@ class _TextMenuState extends State<TextMenu> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.text_fields, size: 24),
-                  SizedBox(
-                    width: 20,
-                    height: 24,
-                    child: Center(
-                        child:
-                            Icon(Icons.keyboard_arrow_down_rounded, size: 14)),
-                  ),
-                  verticalDivider(),
+                  // Icon(Icons.text_fields, size: 24),
+                  // SizedBox(
+                  //   width: 20,
+                  //   height: 24,
+                  //   child: Center(
+                  //       child:
+                  //           Icon(Icons.keyboard_arrow_down_rounded, size: 14)),
+                  // ),
+                  // verticalDivider(),
                   TextMenuItem(
                     iconData: Icons.format_bold,
                     onTap: () =>
@@ -190,8 +190,11 @@ class _TextMenuState extends State<TextMenu> {
                               node?.getFromPosition(c.left, c.right).text ?? '';
                           manager.showLinkMenu(
                               Overlay.of(context),
-                              LinkMenuInfo(c.as<RichTextNodePosition>(),
-                                  info.globalOffset, info.nodeId, UrlInfo('', alias)),
+                              LinkMenuInfo(
+                                  c.as<RichTextNodePosition>(),
+                                  info.globalOffset,
+                                  info.nodeId,
+                                  UrlInfo('', alias)),
                               operator);
                         }
                       },

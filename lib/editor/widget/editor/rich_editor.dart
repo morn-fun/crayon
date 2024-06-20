@@ -65,7 +65,9 @@ class _RichEditorPageState extends State<RichEditor> {
     focusNode.requestFocus();
     focusNode.addListener(_onFocusChanged);
     controller.addStatusChangedListener((value) {
-      entryManager.removeEntry();
+      if (entryManager.showingType != MenuType.optional) {
+        entryManager.removeEntry();
+      }
       switch (value) {
         case ControllerStatus.typing:
           shortcutManager.shortcuts = {};

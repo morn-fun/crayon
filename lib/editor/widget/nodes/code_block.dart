@@ -106,7 +106,7 @@ class _CodeBlockState extends State<CodeBlock> {
   bool onGesture(GestureState s) {
     final box = renderBox;
     if (box == null) return false;
-    bool contains = box.containsOffset(s.globalOffset);
+    bool contains = box.containsY(s.globalOffset.dy);
     if (!contains) return false;
     final localY =
         box.globalToLocal(s.globalOffset).dy - margin.top - padding.top;
@@ -124,7 +124,7 @@ class _CodeBlockState extends State<CodeBlock> {
     } else if (s is PanGestureState) {
       localListeners.notifyGesture(notifyId, s);
     }
-    return false;
+    return true;
   }
 
   void onArrowAccept(AcceptArrowData data) {

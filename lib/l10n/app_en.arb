@@ -1,0 +1,16 @@
+{
+  "basic": "Basic",
+  "text": "Text",
+  "h1": "Heading 1",
+  "h2": "Heading 2",
+  "h3": "Heading 3",
+  "orderedList": "Ordered List",
+  "unorderedList": "Unordered List",
+  "codeBlock": "Code Block",
+  "quote": "Quote",
+  "horizontalLine": "Horizontal Line",
+  "link": "Link",
+  "commonlyUsed": "Commonly Used",
+  "taskList": "Task List",
+  "table": "Table"
+}

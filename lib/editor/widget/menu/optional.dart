@@ -19,6 +19,7 @@ import '../../node/rich_text/rich_text.dart';
 import '../../node/rich_text/task.dart';
 import '../../node/rich_text/unordered.dart';
 import '../../node/table/table.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 ///TODO:auto scroll with arrow
 class OptionalMenu extends StatefulWidget {
@@ -49,8 +50,11 @@ class _OptionalMenuState extends State<OptionalMenu> {
   final ValueNotifier<int> currentIndex = ValueNotifier(1);
 
   bool isCheckingText = false;
+  bool isCountingDown = false;
 
-  final list = List.of(defaultMenus);
+  late List<MenuItemInfo> constList = getDefaultMenus(context);
+
+  late List<MenuItemInfo> list = List.of(constList);
 
   late String nodeId;
   late EditingCursor cursor;
@@ -62,24 +66,30 @@ class _OptionalMenuState extends State<OptionalMenu> {
     node = operator.getNode(cursor.index) as RichTextNode;
     nodeId = node.id;
     if (operator is TableCellNodeContext) {
-      list.removeWhere((e) => e.text == '表格');
+      list.removeWhere((e) => e.text == AppLocalizations.of(context)?.table);
     }
-    listeners.addCursorChangedListener(_onCursorChanged);
-    listeners.addNodeChangedListener(nodeId, _onNodeChanged);
-    listeners.addOptionalMenuListener(_onOptionalMenuSelected);
+    listeners.addCursorChangedListener(onCursorChanged);
+    listeners.addNodeChangedListener(nodeId, onNodeChanged);
+    listeners.addOptionalMenuListener(onOptionalMenuSelected);
     super.initState();
   }
 
   @override
   void dispose() {
-    listeners.removeCursorChangedListener(_onCursorChanged);
-    listeners.removeNodeChangedListener(nodeId, _onNodeChanged);
-    listeners.removeOptionalMenuListener(_onOptionalMenuSelected);
+    listeners.removeCursorChangedListener(onCursorChanged);
+    listeners.removeNodeChangedListener(nodeId, onNodeChanged);
+    listeners.removeOptionalMenuListener(onOptionalMenuSelected);
     currentIndex.dispose();
+    constList.clear();
+    list.clear();
     super.dispose();
   }
 
-  void _onCursorChanged(BasicCursor cursor) {
+  void refresh() {
+    if (mounted) setState(() {});
+  }
+
+  void onCursorChanged(BasicCursor cursor) {
     if (cursor is! EditingCursor) {
       hideMenu();
       return;
@@ -98,7 +108,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     if (mounted) manager.removeEntry();
   }
 
-  void _onNodeChanged(EditorNode node) {
+  void onNodeChanged(EditorNode node) {
     if (node.id != nodeId) hideMenu();
     if (node is! RichTextNode) {
       hideMenu();
@@ -119,10 +129,32 @@ class _OptionalMenuState extends State<OptionalMenu> {
       hideMenu();
       return;
     }
+    final filterText = text.replaceFirst('/', '');
+    List<MenuItemInfo> newList = [];
+    for (var menu in constList) {
+      if (menu.text.contains(filterText)) newList.add(menu);
+    }
+    if (newList.isNotEmpty) {
+      list = newList;
+      refresh();
+    } else {
+      list.clear();
+      refresh();
+      countdownToHideMenu();
+    }
     isCheckingText = false;
   }
 
-  void _onOptionalMenuSelected(OptionalSelectedType type) {
+  void countdownToHideMenu() {
+    if (isCountingDown) return;
+    isCountingDown = true;
+    Future.delayed(Duration(seconds: 3), () {
+      isCountingDown = false;
+      if (list.isEmpty) hideMenu();
+    });
+  }
+
+  void onOptionalMenuSelected(OptionalSelectedType type) {
     int v = currentIndex.value;
     switch (type) {
       case OptionalSelectedType.last:
@@ -146,12 +178,12 @@ class _OptionalMenuState extends State<OptionalMenu> {
       case OptionalSelectedType.current:
         final current = list[v];
         if (!current.interactive) return;
-        _onItemSelected(current);
+        onItemSelected(current);
         break;
     }
   }
 
-  void _onItemSelected(MenuItemInfo current) {
+  void onItemSelected(MenuItemInfo current) {
     hideMenu();
     final c = operator.cursor;
     if (c is! EditingCursor) return;
@@ -202,11 +234,18 @@ class _OptionalMenuState extends State<OptionalMenu> {
                   child: Container(
                     height: info.size.height,
                     width: info.size.width,
+                    margin: EdgeInsets.symmetric(vertical: 12),
                     child: ValueListenableBuilder(
                         valueListenable: currentIndex,
                         builder: (context, v, c) {
+                          if (list.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text('☕️...'),
+                            );
+                          }
                           return ListView.builder(
-                            padding: EdgeInsets.all(8),
+                            padding: EdgeInsets.symmetric(horizontal: 8),
                             itemCount: list.length,
                             itemBuilder: (ctx, index) {
                               final isCurrent = v == index;
@@ -244,7 +283,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
         currentIndex.value = index;
       },
       child: GestureDetector(
-        onTap: () => _onItemSelected(current),
+        onTap: () => onItemSelected(current),
         child: Container(
           padding: EdgeInsets.all(4),
           decoration: BoxDecoration(
@@ -310,37 +349,43 @@ class _CoordinateInfo {
 
 enum OptionalSelectedType { last, next, current }
 
-final defaultMenus = [
-  MenuItemInfo.readable('基础'),
-  MenuItemInfo.normal('文本', Icons.text_fields_rounded, _textColor, (n) => n),
-  MenuItemInfo.normal('一级标题', Icons.title_rounded, _textColor,
-      (n) => H1Node.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('二级标题', Icons.title_rounded, _textColor,
-      (n) => H2Node.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('三级标题', Icons.title_rounded, _textColor,
-      (n) => H3Node.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('有序列表', Icons.format_list_numbered_rounded, _textColor,
-      (n) => OrderedNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('无序列表', Icons.list_rounded, _textColor,
-      (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal(
-      '代码块',
-      Icons.code,
-      _codeColor,
-      (n) => CodeBlockNode.from(n.spans.map((e) => e.text).toList(),
-          id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('引用', Icons.format_quote_rounded, _quoteColor,
-      (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('分割线', Icons.horizontal_rule_rounded, _dividerColor,
-      (n) => DividerNode(id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('链接', Icons.add_link_rounded, _linkColor,
-      (n) => throw TryingToCreateLinkException()),
-  MenuItemInfo.readable('常用'),
-  MenuItemInfo.normal('任务列表', Icons.task_rounded, _textColor,
-      (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth)),
-  MenuItemInfo.normal('表格', Icons.table_chart_rounded, _tableColor,
-      (n) => TableNode.from([], [], id: n.id, depth: n.depth)),
-];
+List<MenuItemInfo> getDefaultMenus(BuildContext context) {
+  if (!context.mounted) return [];
+  final app = AppLocalizations.of(context);
+  if (app == null) return [];
+  return [
+    MenuItemInfo.readable(app.basic),
+    MenuItemInfo.normal(
+        app.text, Icons.text_fields_rounded, _textColor, (n) => n),
+    MenuItemInfo.normal(app.h1, Icons.title_rounded, _textColor,
+        (n) => H1Node.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.h2, Icons.title_rounded, _textColor,
+        (n) => H2Node.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.h3, Icons.title_rounded, _textColor,
+        (n) => H3Node.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.orderedList, Icons.format_list_numbered_rounded,
+        _textColor, (n) => OrderedNode.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.unorderedList, Icons.list_rounded, _textColor,
+        (n) => UnorderedNode.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(
+        app.codeBlock,
+        Icons.code,
+        _codeColor,
+        (n) => CodeBlockNode.from(n.spans.map((e) => e.text).toList(),
+            id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.quote, Icons.format_quote_rounded, _quoteColor,
+        (n) => QuoteNode.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.horizontalLine, Icons.horizontal_rule_rounded,
+        _dividerColor, (n) => DividerNode(id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.link, Icons.add_link_rounded, _linkColor,
+        (n) => throw TryingToCreateLinkException()),
+    MenuItemInfo.readable(app.commonlyUsed),
+    MenuItemInfo.normal(app.taskList, Icons.task_rounded, _textColor,
+        (n) => TodoNode.from(n.spans, id: n.id, depth: n.depth)),
+    MenuItemInfo.normal(app.table, Icons.table_chart_rounded, _tableColor,
+        (n) => TableNode.from([], [], id: n.id, depth: n.depth)),
+  ];
+}
 
 const _textColor = Colors.brown;
 const _codeColor = Colors.cyan;

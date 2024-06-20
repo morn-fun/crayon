@@ -1,0 +1,16 @@
+{
+  "basic": "기초",
+  "text": "텍스트",
+  "h1": "제목 1",
+  "h2": "제목 2",
+  "h3": "제목 3",
+  "orderedList": "순서가 있는 목록",
+  "unorderedList": "순서가 없는 목록",
+  "codeBlock": "코드 블록",
+  "quote": "인용",
+  "horizontalLine": "수평선",
+  "link": "링크",
+  "commonlyUsed": "일반적으로 사용되는",
+  "taskList": "작업 목록",
+  "table": "표"
+}

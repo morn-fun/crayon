@@ -1,0 +1,16 @@
+{
+  "basic": "基础",
+  "text": "文本",
+  "h1": "一级标题",
+  "h2": "二级标题",
+  "h3": "三级标题",
+  "orderedList": "有序列表",
+  "unorderedList": "无序列表",
+  "codeBlock": "代码块",
+  "quote": "引用",
+  "horizontalLine": "分割线",
+  "link": "链接",
+  "commonlyUsed": "常用",
+  "taskList": "任务列表",
+  "table": "表格"
+}

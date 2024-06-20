@@ -1,0 +1,16 @@
+{
+  "basic": "基本",
+  "text": "テキスト",
+  "h1": "見出し1",
+  "h2": "見出し2",
+  "h3": "見出し3",
+  "orderedList": "番号付きリスト",
+  "unorderedList": "箇条書きリスト",
+  "codeBlock": "コードブロック",
+  "quote": "引用",
+  "horizontalLine": "水平線",
+  "link": "リンク",
+  "commonlyUsed": "よく使われる",
+  "taskList": "タスクリスト",
+  "table": "テーブル"
+}
