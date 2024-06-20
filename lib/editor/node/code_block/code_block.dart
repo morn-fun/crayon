@@ -191,7 +191,10 @@ class CodeBlockNode extends EditorNode {
   }
 
   @override
-  String get text => codes.join('\n');
+  String get text => '''
+  ```
+  ${codes.join('\n')}
+  ```''';
 
   @override
   Map<String, dynamic> toJson() => {'type': '$runtimeType', 'codes': codes};
