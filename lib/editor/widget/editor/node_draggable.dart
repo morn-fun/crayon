@@ -56,64 +56,63 @@ class _NodeDraggableState extends State<NodeDraggable> {
         hovering = false;
         refresh();
       },
-      child: LayoutBuilder(
-        builder: (context, constrains) {
-          final maxWidth = constrains.maxWidth - 20;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 20,
-                child: (hovering || dragging) && widget.draggable
-                    ? Draggable<DraggableData>(
-                        affinity: Axis.vertical,
-                        data: DraggableData(operator, widget.slot, node),
-                        onDragStarted: () {
-                          operator.onCursor(NoneCursor());
-                          dragging = true;
-                          refresh();
-                          widget.onDragStart?.call();
-                        },
-                        onDragEnd: (v) => endDragging(),
-                        onDragUpdate: (v) => widget.onDragUpdate?.call(v),
-                        onDraggableCanceled: (v, o) => endDragging(),
-                        onDragCompleted: () => endDragging(),
-                        feedback: Material(
-                            child: MouseRegion(
-                          cursor: SystemMouseCursors.grabbing,
-                          child: Container(
-                            width: maxWidth,
-                            foregroundDecoration:
-                                BoxDecoration(color: Colors.white.withOpacity(0.5)),
-                            child: node.build(
-                                operator,
-                                NodeBuildParam(index: index, cursor: null),
-                                context),
-                          ),
-                        )),
-                        childWhenDragging: Container(),
-                        child: MouseRegion(
-                          child: Padding(
-                            child: Icon(Icons.drag_indicator_rounded),
-                            padding: EdgeInsets.only(top: 4),
-                          ),
-                          cursor: SystemMouseCursors.grab,
+      child: LayoutBuilder(builder: (context, constrains) {
+        final maxWidth = constrains.maxWidth - 20;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 20,
+              child: (hovering || dragging) && widget.draggable
+                  ? Draggable<DraggableData>(
+                      affinity: Axis.vertical,
+                      data: DraggableData(operator, widget.slot, node),
+                      onDragStarted: () {
+                        operator.onCursor(NoneCursor());
+                        dragging = true;
+                        refresh();
+                        widget.onDragStart?.call();
+                      },
+                      onDragEnd: (v) => endDragging(),
+                      onDragUpdate: (v) => widget.onDragUpdate?.call(v),
+                      onDraggableCanceled: (v, o) => endDragging(),
+                      onDragCompleted: () => endDragging(),
+                      feedback: Material(
+                          child: MouseRegion(
+                        cursor: SystemMouseCursors.grabbing,
+                        child: Container(
+                          width: maxWidth,
+                          foregroundDecoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.5)),
+                          child: node.build(
+                              operator,
+                              NodeBuildParam(index: index, cursor: null),
+                              context),
                         ),
-                      )
+                      )),
+                      childWhenDragging: Container(),
+                      child: MouseRegion(
+                        child: Padding(
+                          child: Icon(Icons.drag_indicator_rounded),
+                          padding: EdgeInsets.only(top: 4),
+                        ),
+                        cursor: SystemMouseCursors.grab,
+                      ),
+                    )
+                  : null,
+            ),
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.only(right: 20),
+                foregroundDecoration: dragging
+                    ? BoxDecoration(color: Colors.white.withOpacity(0.5))
                     : null,
+                child: IgnorePointer(ignoring: dragging, child: child),
               ),
-              Expanded(
-                child: Container(
-                  foregroundDecoration: dragging
-                      ? BoxDecoration(color: Colors.white.withOpacity(0.5))
-                      : null,
-                  child: IgnorePointer(ignoring: dragging, child: child),
-                ),
-              )
-            ],
-          );
-        }
-      ),
+            )
+          ],
+        );
+      }),
     );
   }
 

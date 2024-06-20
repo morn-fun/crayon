@@ -13,7 +13,6 @@ import '../../exception/editor_node.dart';
 import '../../widget/nodes/table.dart';
 import '../basic.dart';
 import '../rich_text/rich_text_span.dart';
-import 'generator/common.dart';
 import 'generator/deletion.dart';
 import 'generator/depth.dart';
 import 'generator/newline.dart';
@@ -250,19 +249,9 @@ class TableNode extends EditorNode {
     final leftColumn = min(left.column, right.column);
     final rightColumn = max(left.column, right.column);
     if (left.sameCell(right)) {
-      final newWidths = [widths[leftColumn]];
       final cell = getCell(left.cellPosition);
-      BasicCursor cursor =
-          buildTableCellCursor(cell, left.cursor, right.cursor);
-      if (cell.wholeSelected(cursor)) {
-        return from([
-          TableCellList([cell])
-        ], newWidths, id: newId);
-      } else {
-        return from([
-          TableCellList([TableCell(cell.getNodes(left.cursor, right.cursor))])
-        ], newWidths, id: newId);
-      }
+      throw GetFromPositionReturnMoreNodesException(
+          runtimeType, cell.getNodes(left.cursor, right.cursor));
     } else {
       final newWidths = widths.sublist(leftColumn, rightColumn + 1);
       final List<TableCellList> newTable = [];
@@ -278,17 +267,21 @@ class TableNode extends EditorNode {
   @override
   List<EditorNode> getInlineNodesFromPosition(
       covariant TablePosition begin, covariant TablePosition end) {
-    final node = getFromPosition(begin, end);
-    if (node is TableNode) {
-      List<EditorNode> nodes = [];
-      for (var cellList in node.table) {
-        for (var cell in cellList.cells) {
-          nodes.addAll(cell.nodes);
+    try {
+      final node = getFromPosition(begin, end);
+      if (node is TableNode) {
+        List<EditorNode> nodes = [];
+        for (var cellList in node.table) {
+          for (var cell in cellList.cells) {
+            nodes.addAll(cell.nodes);
+          }
         }
+        return nodes;
+      } else {
+        return [node];
       }
-      return nodes;
-    } else {
-      return [node];
+    } on GetFromPositionReturnMoreNodesException catch (e) {
+      return e.nodes;
     }
   }
 

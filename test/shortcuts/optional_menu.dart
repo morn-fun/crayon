@@ -6,14 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../config/necessary.dart';
 
-void main(){
-  test('optional_menu', (){
+void main() {
+  test('optional_menu', () {
     TestWidgetsFlutterBinding.ensureInitialized();
     var ctx = buildEditorContext([
       RichTextNode.from([RichTextSpan(text: 'a' * 10)]),
     ]);
-    OptionalMenuUpArrowAction(ActionOperator(ctx)).invoke(OptionalMenuUpArrowIntent());
-    OptionalMenuDownArrowAction(ActionOperator(ctx)).invoke(OptionalMenuDownArrowIntent());
-    OptionalMenuEnterAction(ActionOperator(ctx)).invoke(OptionalMenuEnterIntent());
+    OptionalMenuUpArrowAction(ActionOperator(ctx))
+        .invoke(OptionalMenuUpArrowIntent());
+    OptionalMenuDownArrowAction(ActionOperator(ctx))
+        .invoke(OptionalMenuDownArrowIntent());
+    OptionalMenuEnterAction(ActionOperator(ctx))
+        .invoke(OptionalMenuEnterIntent());
   });
 }

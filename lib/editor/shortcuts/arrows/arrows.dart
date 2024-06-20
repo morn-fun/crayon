@@ -82,7 +82,6 @@ class ArrowSelectionWordNextIntent extends Intent {
   const ArrowSelectionWordNextIntent();
 }
 
-
 class ArrowWordLastIntent extends Intent {
   const ArrowWordLastIntent();
 }

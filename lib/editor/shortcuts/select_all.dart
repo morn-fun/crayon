@@ -41,8 +41,8 @@ class SelectAllAction extends ContextAction<SelectAllIntent> {
         operator.onCursor(operator.selectAllCursor);
       } else {
         try {
-          final r = node.onSelect(
-              SelectingData(cursor, EventType.selectAll, operator));
+          final r = node
+              .onSelect(SelectingData(cursor, EventType.selectAll, operator));
           operator.onCursor(r.cursor);
         } on NodeUnsupportedException catch (e) {
           logger.e('$runtimeType, ${e.message}');

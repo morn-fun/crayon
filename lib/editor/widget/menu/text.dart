@@ -202,6 +202,7 @@ class _TextMenuState extends State<TextMenu> {
                     ),
                   TextMenuItem(
                     iconData: Icons.code,
+                    padding: EdgeInsets.symmetric(horizontal: 6),
                     onTap: () =>
                         onStyleEvent(operator, RichTextTag.code, cursor),
                     contains: tagSets.contains(RichTextTag.code.name),
@@ -228,18 +229,20 @@ class TextMenuItem extends StatelessWidget {
   final IconData iconData;
   final VoidCallback onTap;
   final bool contains;
+  final EdgeInsetsGeometry padding;
 
   const TextMenuItem({
     super.key,
     required this.iconData,
     required this.onTap,
     this.contains = false,
+    this.padding = const EdgeInsets.only(left: 6),
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 6),
+      padding: padding,
       child: InkWell(
           customBorder: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),

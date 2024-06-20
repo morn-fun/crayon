@@ -35,6 +35,7 @@ class InsertNodes implements BasicCommand {
       newCursor = EditingCursor(
           index + copyNodes.length - 1, copyNodes.last.endPosition);
     }
-    return operator.onOperation(Replace(index, index + 1, copyNodes, newCursor));
+    return operator
+        .onOperation(Replace(index, index + 1, copyNodes, newCursor));
   }
 }

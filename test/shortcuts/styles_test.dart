@@ -25,7 +25,6 @@ void main() {
     assert(n1.spans.length == 1);
     assert(!n1.spans.first.tags.contains(RichTextTag.italic.name));
 
-
     ctx = buildEditorContext([
       RichTextNode.from([RichTextSpan(text: 'a' * 10)]),
       RichTextNode.from([RichTextSpan(text: 'b' * 10)]),
@@ -61,7 +60,6 @@ void main() {
     n1 = ctx.nodes.first as RichTextNode;
     assert(n1.spans.length == 1);
     assert(!n1.spans.first.tags.contains(RichTextTag.bold.name));
-
 
     ctx = buildEditorContext([
       RichTextNode.from([RichTextSpan(text: 'a' * 10)]),
@@ -99,7 +97,6 @@ void main() {
     assert(n1.spans.length == 1);
     assert(!n1.spans.first.tags.contains(RichTextTag.underline.name));
 
-
     ctx = buildEditorContext([
       RichTextNode.from([RichTextSpan(text: 'a' * 10)]),
       RichTextNode.from([RichTextSpan(text: 'b' * 10)]),
@@ -135,7 +132,6 @@ void main() {
     n1 = ctx.nodes.first as RichTextNode;
     assert(n1.spans.length == 1);
     assert(!n1.spans.first.tags.contains(RichTextTag.lineThrough.name));
-
 
     ctx = buildEditorContext([
       RichTextNode.from([RichTextSpan(text: 'a' * 10)]),

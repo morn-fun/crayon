@@ -42,11 +42,10 @@ void main() {
   test('map', () {
     final map = {
       if (true) ...{
-        'a':'a',
-        'b':'b',
-        'c':'c',
+        'a': 'a',
+        'b': 'b',
+        'c': 'c',
       },
-
     };
 
     print(map);

@@ -375,8 +375,9 @@ class _RichTableCellState extends State<RichTableCell> {
     ///in same table cell
     if (operatorFrom == operator) {
       logger.i('Table drag from same table cell');
-      operator.execute(ModifyNodeWithNoneCursor(widgetIndex,
-          node.updateCell(cp.row, cp.column, (t) => t.moveTo(v.index, index))));
+      final slot = v.slot as TableCellNodeSlot;
+      this.operator.execute(ModifyNodeWithNoneCursor(widgetIndex,
+          node.updateCell(cp.row, cp.column, (t) => t.moveTo(slot.indexInCell, index))));
       return;
     }
 
@@ -390,7 +391,7 @@ class _RichTableCellState extends State<RichTableCell> {
             (t) => t.replaceMore(indexFrom, indexFrom + 1, []));
         newTableNode = newTableNode.updateCell(
             cp.row, cp.column, (t) => t.insert(index, draggableNode));
-        operator.execute(ModifyNodeWithNoneCursor(widgetIndex, newTableNode));
+        this.operator.execute(ModifyNodeWithNoneCursor(widgetIndex, newTableNode));
         return;
       }
 

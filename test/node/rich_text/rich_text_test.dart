@@ -18,7 +18,6 @@ import '../../config/test_editor_node.dart';
 
 typedef SpanGenerator = RichTextSpan Function(String text, int offset);
 
-
 RichTextNode basicTextNode({
   List<String>? texts,
   SpanGenerator? generator,
@@ -36,7 +35,6 @@ RichTextNode basicTextNode({
 }
 
 void main() {
-
   test('frontPartNode', () {
     final newNode = basicTextNode();
     final node1 = newNode.frontPartNode(RichTextNodePosition(4, 5));

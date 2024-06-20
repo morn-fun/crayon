@@ -179,13 +179,20 @@ class _RichTableState extends State<RichTable> {
     widths.insert(0, 0);
     final box = tableBox;
     if (box == null) return false;
-    if (box.containsOffsetInTable(s.globalOffset, left.cellPosition,
-        right.cellPosition, heights, widths)) {
-      entryManager.showTextMenu(
-          Overlay.of(context),
-          MenuInfo(box.globalToLocal(s.globalOffset), s.globalOffset, nodeId,
-              layerLink),
-          operator);
+    final lcp = left.cellPosition, rcp = right.cellPosition;
+    if (box.containsOffsetInTable(s.globalOffset, lcp, rcp, heights, widths)) {
+      bool showTextMenu = true;
+      if (lcp.sameCell(rcp)) {
+        final cell = node.getCell(lcp);
+        if (cell.length == 1 && cell.first.text.isEmpty) showTextMenu = false;
+      }
+      if (showTextMenu) {
+        entryManager.showTextMenu(
+            Overlay.of(context),
+            MenuInfo(box.globalToLocal(s.globalOffset), s.globalOffset, nodeId,
+                layerLink),
+            operator);
+      }
     }
     return true;
   }

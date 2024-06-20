@@ -42,7 +42,6 @@ void main() {
     SelectAllAction(ActionOperator(ctx)).invoke(SelectAllIntent());
     assert(ctx.cursor is SelectingNodesCursor);
     assert(ctx.cursor == ctx.selectAllCursor);
-
   });
 
   test('select-all-selecting-nodes', () async {

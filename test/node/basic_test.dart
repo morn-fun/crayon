@@ -12,7 +12,9 @@ void main() {
   test('EditData-toString', () {
     final node = RichTextNode.from([]);
     final ctx = buildEditorContext([node]);
-    print(EditingData(EditingCursor(100, RichTextNodePosition.zero()), EventType.bold, ctx).toString());
+    print(EditingData(EditingCursor(100, RichTextNodePosition.zero()),
+            EventType.bold, ctx)
+        .toString());
 
     final painter = TextPainter(
         text: TextSpan(text: constTexts.join('\n')),

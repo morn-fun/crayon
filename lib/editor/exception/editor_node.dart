@@ -187,6 +187,15 @@ class DepthNeedDecreaseMoreException implements EditorNodeException {
       'the node:$type need decrease more same type node with depth:$depth';
 }
 
+class GetFromPositionReturnMoreNodesException implements EditorNodeException {
+  final Type type;
+  final List<EditorNode> nodes;
+
+  GetFromPositionReturnMoreNodesException(this.type, this.nodes);
+
+  String get message => 'get from position :$type, but get more nodes: $nodes';
+}
+
 class NodeNotFoundException implements EditorNodeException {
   final String id;
 

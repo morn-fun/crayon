@@ -41,11 +41,20 @@ class CopyAction extends ContextAction<CopyIntent> {
     final cursor = this.cursor;
     if (cursor is EditingCursor) return '';
     if (cursor is SelectingNodeCursor) {
-      final node = operator.getNode(cursor.index);
-      final newNode =
-          node.getFromPosition(cursor.begin, cursor.end, newId: randomNodeId);
-      _copiedNodes.clear();
-      _copiedNodes.add(newNode);
+      try {
+        final node = operator.getNode(cursor.index);
+        final newNode =
+            node.getFromPosition(cursor.begin, cursor.end, newId: randomNodeId);
+        _copiedNodes.clear();
+        _copiedNodes.add(newNode);
+      } on GetFromPositionReturnMoreNodesException catch (e) {
+        final List<EditorNode> nodes = [];
+        for (var n in e.nodes) {
+          nodes.add(n.newNode(id: randomNodeId));
+        }
+        _copiedNodes.clear();
+        _copiedNodes.addAll(nodes);
+      }
     } else if (cursor is SelectingNodesCursor) {
       final List<EditorNode> nodes = [];
       final left = cursor.left, right = cursor.right;

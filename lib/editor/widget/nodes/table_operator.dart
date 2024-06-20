@@ -63,8 +63,8 @@ class TableOperator extends StatelessWidget {
                     child: Center(
                         child: GestureDetector(
                       onTap: () => onRowDelete?.call(index),
-                      child:
-                          Icon(Icons.remove_rounded, size: iconSize, color: Colors.red),
+                      child: Icon(Icons.remove_rounded,
+                          size: iconSize, color: Colors.red),
                     )),
                   ),
                 ),
@@ -115,8 +115,8 @@ class TableOperator extends StatelessWidget {
                     child: Center(
                         child: GestureDetector(
                       onTap: () => onColumnDelete?.call(index),
-                      child:
-                          Icon(Icons.remove_rounded, size: iconSize, color: Colors.red),
+                      child: Icon(Icons.remove_rounded,
+                          size: iconSize, color: Colors.red),
                     )),
                   ),
                 ),

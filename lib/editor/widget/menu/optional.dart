@@ -26,11 +26,13 @@ class OptionalMenu extends StatefulWidget {
   final EditingOffset offset;
   final NodesOperator operator;
   final EntryManager manager;
+  final List<MenuItemInfo> menuItems;
 
   const OptionalMenu(
     this.offset,
     this.operator,
-    this.manager, {
+    this.manager,
+    this.menuItems, {
     super.key,
   });
 
@@ -52,9 +54,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
   bool isCheckingText = false;
   bool isCountingDown = false;
 
-  late List<MenuItemInfo> constList = getDefaultMenus(context);
-
-  late List<MenuItemInfo> list = List.of(constList);
+  late List<MenuItemInfo> list;
 
   late String nodeId;
   late EditingCursor cursor;
@@ -65,9 +65,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     cursor = operator.cursor as EditingCursor;
     node = operator.getNode(cursor.index) as RichTextNode;
     nodeId = node.id;
-    if (operator is TableCellNodeContext) {
-      list.removeWhere((e) => e.text == AppLocalizations.of(context)?.table);
-    }
+    list = List.of(widget.menuItems);
     listeners.addCursorChangedListener(onCursorChanged);
     listeners.addNodeChangedListener(nodeId, onNodeChanged);
     listeners.addOptionalMenuListener(onOptionalMenuSelected);
@@ -80,7 +78,6 @@ class _OptionalMenuState extends State<OptionalMenu> {
     listeners.removeNodeChangedListener(nodeId, onNodeChanged);
     listeners.removeOptionalMenuListener(onOptionalMenuSelected);
     currentIndex.dispose();
-    constList.clear();
     list.clear();
     super.dispose();
   }
@@ -131,7 +128,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     }
     final filterText = text.replaceFirst('/', '');
     List<MenuItemInfo> newList = [];
-    for (var menu in constList) {
+    for (var menu in widget.menuItems) {
       if (menu.text.contains(filterText)) newList.add(menu);
     }
     if (newList.isNotEmpty) {

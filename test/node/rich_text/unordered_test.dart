@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../config/const_texts.dart';
 import '../../config/test_node_context.dart';
 
-
 void main() {
   test('from', () {
     UnorderedNode node = UnorderedNode.from(

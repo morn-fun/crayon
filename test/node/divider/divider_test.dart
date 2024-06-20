@@ -209,23 +209,23 @@ void main() {
     final ctx = buildEditorContext([node]);
 
     expect(
-            () => node.onEdit(EditingData(
+        () => node.onEdit(EditingData(
             EditingCursor(0, DividerPosition()), EventType.bold, ctx)),
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
     expect(
-            () => node.onSelect(SelectingData(
+        () => node.onSelect(SelectingData(
             SelectingNodeCursor(0, DividerPosition(), DividerPosition()),
             EventType.bold,
             ctx)),
         throwsA(const TypeMatcher<NodeUnsupportedException>()));
   });
 
-  test('text', (){
+  test('text', () {
     final node = DividerNode();
     assert(node.text == '---');
   });
 
-  test('toJson', (){
+  test('toJson', () {
     final node = DividerNode();
     final json = node.toJson();
     assert(json['type'] == node.runtimeType.toString());

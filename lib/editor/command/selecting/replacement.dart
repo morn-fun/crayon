@@ -30,8 +30,8 @@ class ReplaceSelectingNodes implements BasicCommand {
     final newCursor = newLeftNP.cursor;
     try {
       final newNode = newLeftNP.node.merge(newRight);
-      return operator
-          .onOperation(Replace(left.index, right.index + 1, [newNode], newCursor));
+      return operator.onOperation(
+          Replace(left.index, right.index + 1, [newNode], newCursor));
     } on UnableToMergeException catch (e) {
       logger.e('$runtimeType error: $e');
       return operator.onOperation(Replace(

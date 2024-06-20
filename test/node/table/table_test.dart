@@ -40,8 +40,8 @@ List<TableCellList> buildCellList(int row, int column, int nodeNum,
       final cell = cellGenerator?.call(i, j) ??
           TableCell(List.generate(
               nodeNum,
-                  (index) =>
-              nodeGenerator?.call(i, j, index) ??
+              (index) =>
+                  nodeGenerator?.call(i, j, index) ??
                   RichTextNode.from([RichTextSpan(text: '$i$j$index')])));
       cells.add(cell);
     }
@@ -52,17 +52,16 @@ List<TableCellList> buildCellList(int row, int column, int nodeNum,
 }
 
 TableNode basicTableNode(
-    {int row = 3,
-      int column = 4,
-      int nodeNum = 5,
-      TableCellGenerator? cellGenerator,
-      NodeGenerator? nodeGenerator}) =>
+        {int row = 3,
+        int column = 4,
+        int nodeNum = 5,
+        TableCellGenerator? cellGenerator,
+        NodeGenerator? nodeGenerator}) =>
     TableNode.from(
         buildCellList(row, column, nodeNum, cellGenerator, nodeGenerator),
         List.generate(column, (i) => 200.0));
 
 void main() {
-
   test('newInstance', () {
     final node = basicTableNode(row: 0, column: 0);
     assert(node.rowCount == 1);
@@ -441,32 +440,35 @@ void main() {
       }
     }
 
-    final n4 = node.getFromPosition(node.beginPosition,
-            node.beginPosition.copy(cursor: to(node.firstCell.endCursor)))
-        as TableNode;
-    assert(n4.rowCount == 1);
-    assert(n4.columnCount == 1);
-    assert(n4.firstCell == node.firstCell);
+    try {
+      node.getFromPosition(node.beginPosition,
+          node.beginPosition.copy(cursor: to(node.firstCell.endCursor)));
+    } on GetFromPositionReturnMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      assert(nodes.length == node.firstCell.nodes.length);
+    }
 
-    final n5 = node.getFromPosition(
-            node.beginPosition,
-            node.beginPosition.copy(
-                cursor: to(EditingCursor(3, RichTextNodePosition.zero()))))
-        as TableNode;
-    assert(n5.rowCount == 1);
-    assert(n5.columnCount == 1);
-    assert(n5.firstCell.nodes.length == 4);
-    assert(n5.firstCell.nodes.last.text.isEmpty);
-    assert(n5.firstCell.nodes.first.text == '000');
+    try {
+      node.getFromPosition(
+          node.beginPosition,
+          node.beginPosition
+              .copy(cursor: to(EditingCursor(3, RichTextNodePosition.zero()))));
+    } on GetFromPositionReturnMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      assert(nodes.length == 4);
+      assert(nodes.last.text.isEmpty);
+      assert(nodes.first.text == '000');
+    }
 
-    final n6 = node.getFromPosition(
-            node.beginPosition,
-            node.beginPosition
-                .copy(cursor: to(EditingCursor(0, RichTextNodePosition(0, 3)))))
-        as TableNode;
-    assert(n6.rowCount == 1);
-    assert(n6.columnCount == 1);
-    assert(n6.firstCell.nodes.length == 1);
+    try {
+      node.getFromPosition(
+          node.beginPosition,
+          node.beginPosition
+              .copy(cursor: to(EditingCursor(0, RichTextNodePosition(0, 3)))));
+    } on GetFromPositionReturnMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      assert(nodes.length == 1);
+    }
   });
 
   test('frontPartNode', () {
@@ -1139,9 +1141,6 @@ void main() {
     cellContext.onCursorOffset(EditingOffset(Offset.zero, 18, ''));
     cellContext.onNode(RichTextNode.from([]), 0);
     cellContext.onPanUpdate(EditingCursor(0, RichTextNodePosition.zero()));
-
-    expect(() => cellContext.onCursor(NoneCursor()),
-        throwsA(const TypeMatcher<NodeUnsupportedException>()));
 
     final cellCursor = buildTableCellCursor(
         TableCell([

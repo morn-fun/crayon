@@ -4,6 +4,7 @@ import 'package:crayon/editor/cursor/code_block.dart';
 import 'package:crayon/editor/cursor/rich_text.dart';
 import 'package:crayon/editor/node/basic.dart';
 import 'package:crayon/editor/node/code_block/code_block.dart';
+import 'package:crayon/editor/node/rich_text/head.dart';
 import 'package:crayon/editor/node/rich_text/rich_text.dart';
 import 'package:crayon/editor/node/rich_text/rich_text_span.dart';
 import 'package:crayon/editor/node/table/table_cell.dart';
@@ -31,7 +32,7 @@ void main() {
     assert(c2.right.index == 2);
   });
 
-  test('clear', (){
+  test('clear', () {
     final cell = basicCell(nodes: [
       RichTextNode.from([]),
       RichTextNode.from([]),
@@ -173,6 +174,32 @@ void main() {
     assert(ce2n2.codes[1] == '555');
   });
 
+  test('moveTo', () {
+    final cell = basicCell(nodes: [
+      RichTextNode.from([RichTextSpan(text: '111')]),
+      RichTextNode.from([RichTextSpan(text: '222')]),
+      RichTextNode.from([RichTextSpan(text: '333')]),
+      CodeBlockNode.from(['444', '555']),
+    ]);
+    var ce1 = cell.moveTo(1, 4);
+    assert(ce1.nodes[1].text == '333');
+    assert(ce1.nodes.last.text == '222');
+    assert(ce1.nodes[2] is CodeBlockNode);
+  });
+
+  test('insert', () {
+    final cell = basicCell(nodes: [
+      RichTextNode.from([RichTextSpan(text: '111')]),
+      RichTextNode.from([RichTextSpan(text: '222')]),
+      RichTextNode.from([RichTextSpan(text: '333')]),
+      CodeBlockNode.from(['444', '555']),
+    ]);
+    var ce1 = cell.insert(0, H1Node.from([RichTextSpan(text: '000')]));
+    assert(ce1.nodes.first.text == '000');
+    assert(ce1.nodes.first is H1Node);
+    assert(ce1.nodes[1].text == '111');
+  });
+
   test('getNodes', () {
     final cell = basicCell(nodes: [
       RichTextNode.from([RichTextSpan(text: '111')]),
@@ -203,7 +230,7 @@ void main() {
     assert(l3n1.codes.last == '55');
   });
 
-  test('toJson', (){
+  test('toJson', () {
     final cell = basicCell(nodes: [
       RichTextNode.from([RichTextSpan(text: '111')]),
       RichTextNode.from([RichTextSpan(text: '222')]),
@@ -222,7 +249,7 @@ void main() {
     }
   });
 
-  test('text', (){
+  test('text', () {
     final cell = basicCell(nodes: [
       RichTextNode.from([RichTextSpan(text: '111')]),
       RichTextNode.from([RichTextSpan(text: '222')]),

@@ -369,7 +369,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
         if (recordWidth != constrains.maxWidth) {
           recordWidth = constrains.maxWidth;
           painter.layout(maxWidth: recordWidth);
-          if(recordWidth == double.infinity) recordWidth = painter.width + 2;
+          if (recordWidth == double.infinity) recordWidth = painter.width + 2;
         }
         return CompositedTransformTarget(
           link: layerLink,

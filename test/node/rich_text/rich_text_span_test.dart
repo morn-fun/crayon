@@ -115,6 +115,13 @@ void main() {
     assert(span.insert(3, RichTextSpan(tags: {'a'})).length == 1);
   });
 
+  test('buildStyle', () {
+    final span = RichTextSpan(
+        text: '123456', offset: 0, tags: {RichTextTag.italic.name});
+    final style = span.buildStyle();
+    assert(style.decoration != null);
+  });
+
   test('other', () {
     var span = RichTextSpan(text: '123456', offset: 0, tags: {'x'});
     final textSpan = span.buildSpan() as TextSpan;
@@ -124,8 +131,8 @@ void main() {
     assert((json['attributes'] as Map).isEmpty);
     assert(json['text'] == span.text);
     assert(!span.isLinkTag);
-    span = RichTextSpan(text: '123456', offset: 0, tags: {RichTextTag.link.name});
+    span =
+        RichTextSpan(text: '123456', offset: 0, tags: {RichTextTag.link.name});
     assert(span.isLinkTag);
-
   });
 }

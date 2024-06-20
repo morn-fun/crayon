@@ -93,6 +93,6 @@ class TableCellNodeSlot implements RootNodeSlot {
   final int indexInCell;
   final TableNode nodeAfterDraggable;
 
-  TableCellNodeSlot(this.index, this.cellPosition, this.indexInCell,
-      this.nodeAfterDraggable);
+  TableCellNodeSlot(
+      this.index, this.cellPosition, this.indexInCell, this.nodeAfterDraggable);
 }

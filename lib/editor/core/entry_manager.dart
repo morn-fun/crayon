@@ -8,6 +8,7 @@ import '../widget/menu/text.dart';
 import 'context.dart';
 import 'editor_controller.dart';
 import 'shortcuts.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EntryManager {
   OverlayEntry? _showingEntry;
@@ -38,7 +39,13 @@ class EntryManager {
   void showOptionalMenu(EditingOffset offset, OverlayState state,
           NodesOperator operator) async =>
       _showMenu(state, MenuType.optional, operator.runtimeType,
-          OverlayEntry(builder: (_) => OptionalMenu(offset, operator, this)));
+          OverlayEntry(builder: (ctx) {
+        final menus = getDefaultMenus(ctx);
+        if (operator is TableCellNodeContext) {
+          menus.removeWhere((e) => e.text == AppLocalizations.of(ctx)?.table);
+        }
+        return OptionalMenu(offset, operator, this, menus);
+      }));
 
   void showTextMenu(
           OverlayState state, MenuInfo info, NodesOperator operator) =>

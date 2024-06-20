@@ -23,7 +23,6 @@ void main() {
     assert(ctx.nodes.first.depth == 0);
   });
 
-
   test('tab-selecting-node', () {
     TestWidgetsFlutterBinding.ensureInitialized();
     var ctx = buildEditorContext([
@@ -60,7 +59,5 @@ void main() {
     assert(ctx.nodes.last.depth == 2);
     ShiftTabAction(ActionOperator(ctx)).invoke(ShiftTabIntent());
     assert(ctx.nodes.last.depth == 1);
-
   });
-
 }

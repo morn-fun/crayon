@@ -116,6 +116,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final cursor = controller.cursor;
       if (cursor is NoneCursor) return;
+      if (cursor == controller.selectAllCursor) return;
       int? index;
       logger.i(
           'onCursorChanged alive :${aliveIndexMap.length},  last:$lastEditingCursorOffset   ,cursor:$cursor');

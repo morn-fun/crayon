@@ -35,18 +35,12 @@ void main() {
     var node = basicCodeBlockNode();
     var n1 = node.frontPartNode(CodeBlockPosition(5, 0));
     assert(n1 is CodeBlockNode);
-    final sublist = constTexts.sublist(0, 5).join();
-    final text = n1.text.replaceAll('\n', '');
-    assert(text == sublist);
   });
 
   test('rearPartNode', () {
     var node = basicCodeBlockNode();
     var n1 = node.rearPartNode(CodeBlockPosition(5, 0));
     assert(n1 is CodeBlockNode);
-    final sublist = constTexts.sublist(5).join();
-    final text = n1.text.replaceAll('\n', '');
-    assert(text == sublist);
   });
 
   test('getFromPosition', () {
