@@ -32,6 +32,7 @@ Languages : [English](https://github.com/morn-fun/crayon/blob/main/README_EN.md)
 
 ## 未来计划
 
-- v0.8.0 支持图片
+- v0.7.0 支持图片
+- v0.8.0 完善从外部复制内容到编辑器，完善从编辑器复制内容到外
 - v0.9.0 核心单元测试补全，高级别bug修复
 - v1.0.0 支持移动端，发布为Dart package
