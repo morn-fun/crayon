@@ -49,6 +49,8 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
         const CopyIntent(),
     LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyV):
         const PasteIntent(),
+    LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyX):
+        const CutIntent(),
   },
   if (defaultTargetPlatform != TargetPlatform.macOS) ...{
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.arrowLeft):
@@ -73,6 +75,8 @@ final Map<ShortcutActivator, Intent> editorShortcuts = {
         const CopyIntent(),
     LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV):
         const PasteIntent(),
+    LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyX):
+        const CutIntent(),
   },
 
   LogicalKeySet(LogicalKeyboardKey.alt, LogicalKeyboardKey.arrowLeft):
@@ -146,6 +150,7 @@ Map<Type, RichEditorControllerAction> shortcutActions = {
   LineThroughIntent: (c) => LineThroughAction(c),
   CopyIntent: (c) => CopyAction(c),
   PasteIntent: (c) => PasteAction(c),
+  CutIntent: (c) => CutAction(c),
   OptionalMenuUpArrowIntent: (c) => OptionalMenuUpArrowAction(c),
   OptionalMenuDownArrowIntent: (c) => OptionalMenuDownArrowAction(c),
   OptionalMenuEnterIntent: (c) => OptionalMenuEnterAction(c),

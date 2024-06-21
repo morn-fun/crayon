@@ -17,6 +17,7 @@ import '../node/rich_text/ordered.dart';
 import '../node/rich_text/rich_text.dart';
 import '../node/rich_text/rich_text_span.dart';
 import '../node/rich_text/unordered.dart';
+import 'delete.dart';
 
 class CopyIntent extends Intent {
   const CopyIntent();
@@ -24,6 +25,10 @@ class CopyIntent extends Intent {
 
 class PasteIntent extends Intent {
   const PasteIntent();
+}
+
+class CutIntent extends Intent {
+  const CutIntent();
 }
 
 class CopyAction extends ContextAction<CopyIntent> {
@@ -157,6 +162,26 @@ class PasteAction extends ContextAction<PasteIntent> {
       }
     } else if (cursor is SelectingNodesCursor) {
       operator.execute(PasteWhileSelectingNodes(cursor, nodes));
+    }
+  }
+}
+
+class CutAction extends ContextAction<CutIntent> {
+  final ActionOperator ac;
+
+  CutAction(this.ac);
+
+  NodesOperator get operator => ac.operator;
+
+  BasicCursor get cursor => operator.cursor;
+
+  @override
+  void invoke(CutIntent intent, [BuildContext? context]) async {
+    logger.i('$runtimeType is invoking!');
+    final c = cursor;
+    if (c is SelectingNodeCursor || c is SelectingNodesCursor) {
+      await CopyAction(ac).invoke(CopyIntent());
+      DeleteAction(ac).invoke(DeleteIntent());
     }
   }
 }
