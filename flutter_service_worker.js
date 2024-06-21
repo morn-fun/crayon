@@ -26,8 +26,8 @@ const RESOURCES = {"icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
 "assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
 "assets/fonts/MaterialIcons-Regular.otf": "1292a5c4f9976b72489b07513d8577d3",
 "assets/AssetManifest.json": "2efbb41d7877d10aac9d091f58ccd7b9",
-"index.html": "a962d73859646185e028583779984a88",
-"/": "a962d73859646185e028583779984a88",
+"index.html": "776211921012d872233ff9d73411f42d",
+"/": "776211921012d872233ff9d73411f42d",
 "manifest.json": "1f1046b940be1f793d03c1829d15a53c"};
 // The application shell files that are downloaded before a service worker can
 // start.
