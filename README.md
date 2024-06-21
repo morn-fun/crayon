@@ -6,6 +6,8 @@
 
 Languages : [English](https://github.com/morn-fun/crayon/blob/main/README_EN.md) | [にほんご](https://github.com/morn-fun/crayon/blob/main/README_JA.md) | [한국어](https://github.com/morn-fun/crayon/blob/main/README_KO.md)
 
+## [☞☞☞ 在线体验](https://morn-fun.github.io/crayon/)
+
 ![screenshot](https://github.com/asjqkkkk/asjqkkkk.github.io/assets/30992818/c952af3d-a5d6-4fa7-a625-d0ea0a0451da)
 
 ## 当前支持功能
@@ -32,4 +34,4 @@ Languages : [English](https://github.com/morn-fun/crayon/blob/main/README_EN.md)
 
 - v0.8.0 支持图片
 - v0.9.0 核心单元测试补全，高级别bug修复
-- v1.0.0 支持移动端
+- v1.0.0 支持移动端，发布为Dart package

@@ -181,10 +181,13 @@ class _RichTableState extends State<RichTable> {
     if (box == null) return false;
     final lcp = left.cellPosition, rcp = right.cellPosition;
     if (box.containsOffsetInTable(s.globalOffset, lcp, rcp, heights, widths)) {
-      bool showTextMenu = true;
-      if (lcp.sameCell(rcp)) {
-        final cell = node.getCell(lcp);
-        if (cell.length == 1 && cell.first.text.isEmpty) showTextMenu = false;
+      bool showTextMenu = false;
+      final innerNodes = node.getInlineNodesFromPosition(left, right);
+      for (var n in innerNodes) {
+        if (n.text.isNotEmpty) {
+          showTextMenu = true;
+          break;
+        }
       }
       if (showTextMenu) {
         entryManager.showTextMenu(

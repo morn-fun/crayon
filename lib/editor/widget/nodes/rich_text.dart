@@ -307,7 +307,9 @@ class _RichTextWidgetState extends State<RichTextWidget> {
   }
 
   SelectingNodeCursor? selectingPosition(SingleNodeCursor? cursor) {
-    if (cursor is SelectingNodeCursor) {
+    if (cursor is SelectingNodeCursor &&
+        cursor.begin is RichTextNodePosition &&
+        cursor.end is RichTextNodePosition) {
       return cursor;
     }
     return null;

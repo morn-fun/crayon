@@ -1,4 +1,5 @@
 import 'package:crayon/editor/cursor/basic.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/context.dart';
@@ -58,6 +59,22 @@ class _NodeDraggableState extends State<NodeDraggable> {
       },
       child: LayoutBuilder(builder: (context, constrains) {
         final maxWidth = constrains.maxWidth - 20;
+        final iconColor = Theme.of(context).iconTheme.color;
+        final isWindows = defaultTargetPlatform == TargetPlatform.windows;
+        final dragType =
+            isWindows ? SystemMouseCursors.move : SystemMouseCursors.grab;
+        final draggingType =
+            isWindows ? SystemMouseCursors.move : SystemMouseCursors.grabbing;
+        final dragIcon = MouseRegion(
+          child: Padding(
+            child: Icon(
+              Icons.drag_indicator_rounded,
+              color: dragging ? iconColor?.withOpacity(0.6) : iconColor,
+            ),
+            padding: EdgeInsets.only(top: 4),
+          ),
+          cursor: dragging ? draggingType : dragType,
+        );
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -79,25 +96,27 @@ class _NodeDraggableState extends State<NodeDraggable> {
                       onDragCompleted: () => endDragging(),
                       feedback: Material(
                           child: MouseRegion(
-                        cursor: SystemMouseCursors.grabbing,
+                        cursor: dragType,
                         child: Container(
                           width: maxWidth,
                           foregroundDecoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.5)),
-                          child: node.build(
-                              operator,
-                              NodeBuildParam(index: index, cursor: null),
-                              context),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              dragIcon,
+                              Expanded(
+                                child: node.build(
+                                    operator,
+                                    NodeBuildParam(index: index, cursor: null),
+                                    context),
+                              ),
+                            ],
+                          ),
                         ),
                       )),
                       childWhenDragging: Container(),
-                      child: MouseRegion(
-                        child: Padding(
-                          child: Icon(Icons.drag_indicator_rounded),
-                          padding: EdgeInsets.only(top: 4),
-                        ),
-                        cursor: SystemMouseCursors.grab,
-                      ),
+                      child: dragIcon,
                     )
                   : null,
             ),
