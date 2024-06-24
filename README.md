@@ -36,3 +36,7 @@ Languages : [English](https://github.com/morn-fun/crayon/blob/main/README_EN.md)
 - v0.8.0 完善从外部复制内容到编辑器，完善从编辑器复制内容到外
 - v0.9.0 核心单元测试补全，高级别bug修复
 - v1.0.0 支持移动端，发布为Dart package
+
+欢迎加入一起讨论
+<img src=https://github.com/asjqkkkk/asjqkkkk.github.io/assets/30992818/b096a429-4894-439a-b577-ce1ae1cc84ec width=400 />
+
