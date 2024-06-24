@@ -92,14 +92,14 @@ class LineThroughAction extends ContextAction<LineThroughIntent> {
 }
 
 void onStyleEvent(NodesOperator operator, RichTextTag tag, BasicCursor cursor,
-    {Map<String, String>? attributes}) {
+    {StyleExtra? extras}) {
   try {
     final type = EventType.values.byName(tag.name);
     if (cursor is SingleNodeCursor) {
       if (cursor is EditingCursor) {
         final r = operator.getNode(cursor.index).onEdit(EditingData(
             cursor, type, operator,
-            extras: StyleExtra(false, attributes)));
+            extras: extras ?? StyleExtra(false, {})));
         operator.execute(ModifyNode(r));
       } else if (cursor is SelectingNodeCursor) {
         final node = operator.getNode(cursor.index);
@@ -121,7 +121,7 @@ void onStyleEvent(NodesOperator operator, RichTextTag tag, BasicCursor cursor,
         }
         final r = operator.getNode(cursor.index).onSelect(SelectingData(
             cursor, type, operator,
-            extras: StyleExtra(containsTag, attributes)));
+            extras: extras ?? StyleExtra(containsTag, {})));
         operator.execute(ModifyNode(r));
       }
     } else if (cursor is SelectingNodesCursor) {
@@ -153,7 +153,7 @@ void onStyleEvent(NodesOperator operator, RichTextTag tag, BasicCursor cursor,
         i++;
       }
       operator.execute(UpdateSelectingNodes(cursor, type,
-          extra: StyleExtra(containsTag, attributes)));
+          extra: extras ?? StyleExtra(containsTag, {})));
     }
   } on ArgumentError catch (e) {
     logger.e('onStyleEvent error: $e');

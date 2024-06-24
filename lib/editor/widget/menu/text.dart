@@ -183,8 +183,7 @@ class _TextMenuState extends State<TextMenu> {
                       onTap: () {
                         hideMenu();
                         if (tagSets.contains(RichTextTag.link.name)) {
-                          onStyleEvent(operator, RichTextTag.link, cursor,
-                              attributes: {});
+                          onStyleEvent(operator, RichTextTag.link, cursor);
                         } else {
                           final alias =
                               node?.getFromPosition(c.left, c.right).text ?? '';

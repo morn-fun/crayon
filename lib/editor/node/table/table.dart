@@ -4,7 +4,6 @@ import 'package:flutter/material.dart' hide RichText, TableCell;
 
 import '../../../../editor/extension/collection.dart';
 import '../../../../editor/extension/unmodifiable.dart';
-import '../../../../editor/node/rich_text/rich_text.dart';
 import '../../core/context.dart';
 import '../../core/copier.dart';
 import '../../cursor/basic.dart';
@@ -240,9 +239,6 @@ class TableNode extends EditorNode {
       {String? newId}) {
     if (begin == beginPosition && end == endPosition) {
       return from(table, widths, id: newId);
-    }
-    if (begin == end) {
-      return RichTextNode.from([], id: newId ?? id, depth: depth);
     }
     final left = begin.isLowerThan(end) ? begin : end;
     final right = begin.isLowerThan(end) ? end : begin;

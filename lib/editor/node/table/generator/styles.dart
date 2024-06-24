@@ -26,7 +26,7 @@ NodeWithCursor styleRichTextNodeWhileSelecting(
         buildTableCellCursor(node.getCell(leftCP), left.cursor, right.cursor);
     final ctx = buildTableCellNodeContext(
         data.operator, leftCP, node, cursor, data.index);
-    onStyleEvent(ctx, RichTextTag.values.byName(tag), cursor);
+    onStyleEvent(ctx, RichTextTag.values.byName(tag), cursor, extras: styleExtra);
     throw NodeUnsupportedException(
         node.runtimeType, 'styleRichTextNodeWhileSelecting', data);
   } else {

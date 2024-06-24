@@ -253,7 +253,20 @@ class _RichTextWidgetState extends State<RichTextWidget> {
     final localPosition =
         global.translate(-widgetPosition.dx, -widgetPosition.dy);
     final textPosition = painter.getPositionForOffset(localPosition);
-    final richPosition = node.getPositionByOffset(textPosition.offset);
+    final textOffset = textPosition.offset;
+    final oldCursor = nodeCursor;
+    if (oldCursor == null) {
+      if (textOffset == 0 || textOffset == node.spans.last.endOffset) {
+        return true;
+      }
+    } else if (oldCursor is EditingCursor) {
+      final p = oldCursor.position;
+      if (p is RichTextNodePosition && p.offset == textOffset) return true;
+    } else if (oldCursor is SelectingNodeCursor) {
+      final p = oldCursor.beginCursor.position;
+      if (p is RichTextNodePosition && p.offset == textOffset) return true;
+    }
+    final richPosition = node.getPositionByOffset(textOffset);
     operator.onPanUpdate(EditingCursor(nodeIndex, richPosition));
     operator.onCursorOffset(
         EditingOffset(global, getCurrentCursorHeight(richPosition), nodeId));
@@ -466,8 +479,7 @@ class _RichTextWidgetState extends State<RichTextWidget> {
                           widgetIndex: nodeIndex,
                           onCancel: (s) {
                             onStyleEvent(
-                                operator, RichTextTag.link, operator.cursor,
-                                attributes: {});
+                                operator, RichTextTag.link, operator.cursor);
                             final r = node.onSelect(SelectingData(
                                 s, EventType.link, operator,
                                 extras: StyleExtra(true, {})));

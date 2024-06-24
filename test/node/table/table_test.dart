@@ -421,9 +421,13 @@ void main() {
     assert(listEquals(node.widths, n1.widths));
     assert(n1.id == node.id);
 
-    final n2 = node.getFromPosition(node.beginPosition, node.beginPosition);
-    assert(n2 is RichTextNode);
-    assert(n2.text.isEmpty);
+
+    try {
+      node.getFromPosition(node.beginPosition, node.beginPosition);
+    } on GetFromPositionReturnMoreNodesException catch (e) {
+      final nodes = e.nodes;
+      assert(nodes.length == 1);
+    }
 
     final editingCursor = EditingCursor(0, RichTextNodePosition.zero());
     var n3 = node.getFromPosition(
@@ -478,9 +482,8 @@ void main() {
     assert(listEquals(node.widths, n1.widths));
     assert(n1.id == node.id);
 
-    final n2 = node.frontPartNode(node.beginPosition);
-    assert(n2 is RichTextNode);
-    assert(n2.text.isEmpty);
+    expect(() => node.frontPartNode(node.beginPosition),
+        throwsA(const TypeMatcher<GetFromPositionReturnMoreNodesException>()));
   });
   test('rearPartNode', () {
     final node = basicTableNode();
@@ -489,9 +492,8 @@ void main() {
     assert(listEquals(node.widths, n1.widths));
     assert(n1.id == node.id);
 
-    final n2 = node.rearPartNode(node.endPosition);
-    assert(n2 is RichTextNode);
-    assert(n2.text.isEmpty);
+    expect(() => node.rearPartNode(node.endPosition),
+        throwsA(const TypeMatcher<GetFromPositionReturnMoreNodesException>()));
   });
 
   test('getInlineNodesFromPosition', () {

@@ -56,7 +56,7 @@ extension CursorExtension on BasicCursor {
   Set<String> tagIntersection(List<EditorNode> nodes) {
     final c = this;
     var basicSets = RichTextTag.values.map((e) => e.name).toSet();
-    if (c is EditingCursor) return {};
+    if (c is EditingCursor || c is NoneCursor) return {};
     if (c is SelectingNodeCursor) {
       basicSets = _intersection(nodes[c.index], c.left, c.right, basicSets);
     } else if (c is SelectingNodesCursor) {
@@ -88,7 +88,7 @@ extension CursorExtension on BasicCursor {
     int i = 0;
     while (i < list.length && basicSets.isNotEmpty) {
       final node = list[i];
-      if (node is RichTextNode && !node.isEmpty) {
+      if (node is RichTextNode) {
         int j = 0;
         while (j < node.spans.length && basicSets.isNotEmpty) {
           final span = node.spans[j];

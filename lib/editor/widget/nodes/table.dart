@@ -82,12 +82,29 @@ class _RichTableState extends State<RichTable> {
     super.didUpdateWidget(oldWidget);
     final oldId = oldWidget.node.id;
     final oldListeners = oldWidget.operator.listeners;
+    final oldCursor = oldWidget.param.cursor;
+    final newCursor = nodeCursor;
     if (oldId != nodeId || oldListeners.hashCode != listeners.hashCode) {
       logger.i('$runtimeType,  didUpdateWidget oldId:$oldId, id:$nodeId');
       oldListeners.removeGestureListener(oldId, onGesture);
       oldListeners.removeArrowDelegate(oldId, onArrowAccept);
       listeners.addGestureListener(nodeId, onGesture);
       listeners.addArrowDelegate(nodeId, onArrowAccept);
+    }
+    if (oldCursor is SelectingNodeCursor && newCursor is SelectingNodeCursor) {
+      try {
+        final tp = oldCursor.as<TablePosition>();
+        final newTp = newCursor.as<TablePosition>();
+        if (tp.begin.sameCell(tp.end) && !newTp.begin.sameCell(newTp.end)) {
+          final entryManager =
+              ShareEditorContextWidget.of(context)?.context.entryManager;
+          if (entryManager?.lastShowingContextType == TableCellNodeContext) {
+            entryManager?.removeEntry();
+          }
+        }
+      } catch (e) {
+        logger.e('$runtimeType, cursor cast error: $e');
+      }
     }
   }
 
@@ -181,21 +198,11 @@ class _RichTableState extends State<RichTable> {
     if (box == null) return false;
     final lcp = left.cellPosition, rcp = right.cellPosition;
     if (box.containsOffsetInTable(s.globalOffset, lcp, rcp, heights, widths)) {
-      bool showTextMenu = false;
-      final innerNodes = node.getInlineNodesFromPosition(left, right);
-      for (var n in innerNodes) {
-        if (n.text.isNotEmpty) {
-          showTextMenu = true;
-          break;
-        }
-      }
-      if (showTextMenu) {
-        entryManager.showTextMenu(
-            Overlay.of(context),
-            MenuInfo(box.globalToLocal(s.globalOffset), s.globalOffset, nodeId,
-                layerLink),
-            operator);
-      }
+      entryManager.showTextMenu(
+          Overlay.of(context),
+          MenuInfo(box.globalToLocal(s.globalOffset), s.globalOffset, nodeId,
+              layerLink),
+          operator);
     }
     return true;
   }
