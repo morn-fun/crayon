@@ -129,7 +129,7 @@ class _OptionalMenuState extends State<OptionalMenu> {
     final filterText = text.replaceFirst('/', '');
     List<MenuItemInfo> newList = [];
     for (var menu in widget.menuItems) {
-      if (menu.text.contains(filterText)) newList.add(menu);
+      if (menu.text.toLowerCase().contains(filterText.toLowerCase())) newList.add(menu);
     }
     if (newList.isNotEmpty) {
       list = newList;
