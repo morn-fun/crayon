@@ -46413,7 +46413,7 @@ if(!B.d.p(s,"/")){if(l.c!=null)l.a.e.eD()
 return}r=B.d.Hh(s,"/","")
 q=A.b([],t.ip)
 for(p=l.a.f,o=p.length,n=0;n<p.length;p.length===o||(0,A.H)(p),++n){m=p[n]
-if(B.d.p(m.a,r))q.push(m)}if(q.length!==0){l.r=q
+if(B.d.p(m.a.toLowerCase(),r.toLowerCase()))q.push(m)}if(q.length!==0){l.r=q
 l.dz()}else{p=l.r
 p===$&&A.c()
 B.b.Y(p)
