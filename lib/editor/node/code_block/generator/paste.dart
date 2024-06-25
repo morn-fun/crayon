@@ -13,7 +13,14 @@ NodeWithCursor pasteWhileEditing(
     throw NodeUnsupportedException(
         node.runtimeType, 'pasteWhileEditing', nodes);
   }
-  final newCodes = nodes.map((e) => e.text).toList();
+  final newCodes = <String>[];
+  for (var n in nodes) {
+    if (n is CodeBlockNode) {
+      newCodes.addAll(n.codes);
+    } else {
+      newCodes.add(n.text.trim());
+    }
+  }
   final p = data.position;
   final codes = node.codes;
   final code = codes[p.index];
@@ -41,7 +48,14 @@ NodeWithCursor pasteWhileSelecting(
     throw PasteToCreateMoreNodesException(
         nodes, node.runtimeType, nodes.last.endPosition);
   }
-  final newCodes = nodes.map((e) => e.text).toList();
+  final newCodes = <String>[];
+  for (var n in nodes) {
+    if (n is CodeBlockNode) {
+      newCodes.addAll(n.codes);
+    } else {
+      newCodes.add(n.text.trim());
+    }
+  }
   bool oneLine = newCodes.length == 1;
   final lastCodeLength = newCodes.last.length;
   final newPosition = CodeBlockPosition(p.left.index + newCodes.length - 1,
