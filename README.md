@@ -6,6 +6,8 @@
 
 Languages : [English](https://github.com/morn-fun/crayon/blob/main/README_EN.md) | [にほんご](https://github.com/morn-fun/crayon/blob/main/README_JA.md) | [한국어](https://github.com/morn-fun/crayon/blob/main/README_KO.md)
 
+[![Coverage Status](https://coveralls.io/repos/github/morn-fun/crayon/badge.svg?branch=main)](https://coveralls.io/github/morn-fun/crayon?branch=main)
+
 ## [☞☞☞ 在线体验](https://morn-fun.github.io/crayon/)
 
 ![screenshot](https://github.com/asjqkkkk/asjqkkkk.github.io/assets/30992818/c952af3d-a5d6-4fa7-a625-d0ea0a0451da)

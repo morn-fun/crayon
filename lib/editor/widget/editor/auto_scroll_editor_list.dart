@@ -35,7 +35,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   final tag = 'AutoScrollEditorList';
   final scrollController = ScrollController();
   final key = GlobalKey();
-  final aliveIndexMap = <int, List<int>>{};
+  final aliveDelegators = BoxDelegators();
 
   CursorOffset lastEditingCursorOffset = CursorOffset.zero();
   double listOffsetY = 0;
@@ -74,7 +74,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
     lastEditingCursorOffset = v;
     final box = renderBox;
     if (box == null) return;
-    bool indexAlive = isIndexAlive(v.index);
+    bool indexAlive = aliveDelegators.isIndexAlive(v.index);
     final y = v.offset.offset.dy;
     final size = box.size;
     final boxY = box.localToGlobal(Offset.zero).dy;
@@ -119,7 +119,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       if (cursor == controller.selectAllCursor) return;
       int? index;
       logger.i(
-          'onCursorChanged alive :${aliveIndexMap.length},  last:$lastEditingCursorOffset   ,cursor:$cursor');
+          'onCursorChanged alive :${aliveDelegators.keys.length},  keys:${aliveDelegators.keys},  last:$lastEditingCursorOffset   ,cursor:$cursor');
       if (cursor is SingleNodeCursor) {
         index = cursor.index;
       } else if (cursor is SelectingNodesCursor) {
@@ -131,7 +131,7 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       final box = renderBox;
       if (box == null) return;
       if (!mounted) return;
-      bool indexAlive = isIndexAlive(index);
+      bool indexAlive = aliveDelegators.isIndexAlive(index);
       logger.i(
           'onCursorChanged index:$index, lastIndex:$lastIndex , indexAlive:$indexAlive,  $cursor');
       if (index == 0) {
@@ -148,20 +148,20 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
   }
 
   Future scrollTo(int index, int lastIndex) async {
-    bool indexAlive = isIndexAlive(index);
+    bool indexAlive = aliveDelegators.isIndexAlive(index);
     if (indexAlive) return;
     final box = renderBox;
     if (box == null) return;
     await Future.doWhile(() async {
       while (!indexAlive) {
-        indexAlive = isIndexAlive(index);
+        indexAlive = aliveDelegators.isIndexAlive(index);
         bool scrollUp = lastIndex > index;
         final height = box.size.height;
         logger.i(
-            '$tag, scrollTo now:$index last:$lastIndex,  map:$aliveIndexMap');
+            '$tag, scrollTo now:$index last:$lastIndex,  map:${aliveDelegators.keys}');
         await scrollController.animateTo(
             scrollUp ? (listOffsetY - height) : (listOffsetY + height),
-            duration: Duration(milliseconds: 50),
+            duration: Duration(milliseconds: 8),
             curve: Curves.linear);
       }
       return false;
@@ -211,11 +211,15 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
           isTripleTap = diffMillSecond < 700;
           logger.i('diffMillSecond:$diffMillSecond');
         }
+        final targetIndex = aliveDelegators.getIndex(d.globalPosition);
+        if (targetIndex == null) return;
+        final node = nodes[targetIndex];
         if (isTripleTap) {
-          controller.notifyGesture(TripleTapGestureState(d.globalPosition));
+          controller.notifyGesture(
+              node.id, TripleTapGestureState(d.globalPosition));
         } else {
-          final id =
-              controller.notifyGesture(TapGestureState(d.globalPosition));
+          final id = controller.notifyGesture(
+              node.id, TapGestureState(d.globalPosition));
           if (id == null) {
             editorContext.execute(AddRichTextNode(RichTextNode.from([])));
           }
@@ -226,7 +230,11 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         logger.i('onDoubleTapDown:$d');
         doubleTappedTime = DateTime.now();
         editorContext.restartInput();
-        controller.notifyGesture(DoubleTapGestureState(d.globalPosition));
+        final targetIndex = aliveDelegators.getIndex(d.globalPosition);
+        if (targetIndex == null) return;
+        final node = nodes[targetIndex];
+        controller.notifyGesture(
+            node.id, DoubleTapGestureState(d.globalPosition));
         editorContext.removeEntry();
       },
       onPanStart: (d) {
@@ -234,7 +242,10 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         // logger.i('onPanStart:$d');
         panUpdateOffset = d.globalPosition;
         panStartOffset = d.globalPosition;
-        controller.notifyGesture(TapGestureState(d.globalPosition));
+        final targetIndex = aliveDelegators.getIndex(d.globalPosition);
+        if (targetIndex == null) return;
+        final node = nodes[targetIndex];
+        controller.notifyGesture(node.id, TapGestureState(d.globalPosition));
       },
       onPanEnd: (d) {
         isInPanGesture = false;
@@ -252,7 +263,11 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         panUpdateOffset = panUpdateOffset.translate(d.delta.dx, d.delta.dy);
         Throttle.execute(
           () {
-            controller.notifyGesture(PanGestureState(panUpdateOffset));
+            final targetIndex = aliveDelegators.getIndex(panUpdateOffset);
+            if (targetIndex == null) return;
+            logger.i('targetIndex:$targetIndex');
+            final node = nodes[targetIndex];
+            controller.notifyGesture(node.id, PanGestureState(d.globalPosition));
             scrollList(d.globalPosition, d.delta);
             editorContext.removeEntry();
           },
@@ -270,8 +285,12 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
         onHover: (d) {
           if (isInPanGesture) return;
           if (controller.cursor is EditingCursor) return;
+          if (controller.cursor is NoneCursor) return;
           if (editorContext.entryManager.showingType != null) return;
-          controller.notifyGesture(HoverGestureState(d.position));
+          final targetIndex = aliveDelegators.getIndex(d.position);
+          if (targetIndex == null) return;
+          final node = nodes[targetIndex];
+          controller.notifyGesture(node.id, HoverGestureState(d.position));
         },
         child: ListView.builder(
             key: key,
@@ -291,11 +310,11 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
                       onAccept: (v) => onNodeAccept(v, index),
                     ),
                     StatefulLifecycleWidget(
-                      onInit: () {
-                        addIndex(index);
+                      onInit: (delegate) {
+                        aliveDelegators.addBoxDelegator(index, delegate);
                       },
-                      onDispose: () {
-                        removeIndex(index);
+                      onDispose: (delegate) {
+                        aliveDelegators.removeBoxDelegator(index, delegate);
                       },
                       child: NodeDraggable(
                         index: index,
@@ -346,26 +365,6 @@ class _AutoScrollEditorListState extends State<AutoScrollEditorList> {
       editorContext.execute(MoveNode(slot.index, index));
     }
   }
-
-  void addIndex(int index) {
-    // logger.i('$tag,  addIndex:$index, length:${aliveIndexMap[index]?.length}');
-    final list = aliveIndexMap[index] ?? <int>[];
-    list.add(0);
-    aliveIndexMap[index] = list;
-  }
-
-  void removeIndex(int index) {
-    final list = aliveIndexMap[index] ?? <int>[];
-    if (list.isEmpty) {
-      aliveIndexMap.remove(index);
-    } else {
-      list.removeLast();
-      aliveIndexMap[index] = list;
-    }
-    // logger.i('$tag,  removeIndex:$index, length:${aliveIndexMap[index]?.length}');
-  }
-
-  bool isIndexAlive(int index) => aliveIndexMap[index]?.isNotEmpty ?? false;
 
   void scrollList(Offset globalPosition, Offset delta) {
     const moveDistance = 20.0;
